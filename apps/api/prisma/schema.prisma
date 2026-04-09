@@ -5,7 +5,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 // ─── Enums ────────────────────────────────────────────
 
 enum GroupCategory {
@@ -53,6 +55,8 @@ enum ActivityType {
   EXPENSE_UPDATED
   EXPENSE_DELETED
   SETTLEMENT_CREATED
+  SETTLEMENT_CONFIRMED
+  SETTLEMENT_REJECTED
   MEMBER_JOINED
   MEMBER_LEFT
   GROUP_UPDATED
@@ -69,21 +73,22 @@ enum NotificationType {
 // ─── Models ───────────────────────────────────────────
 
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  name             String
-  avatarUrl        String?
-  passwordHash     String?
-  googleId         String?  @unique
-  isEmailVerified  Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  avatarUrl       String?
+  passwordHash    String?
+  googleId        String?  @unique
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   groupMemberships    GroupMember[]
-  paidExpenses        Expense[]       @relation("ExpensePaidBy")
+  paidExpenses        Expense[]            @relation("ExpensePaidBy")
   expenseSplits       ExpenseSplit[]
-  sentSettlements     Settlement[]    @relation("SettlementPayer")
-  receivedSettlements Settlement[]    @relation("SettlementReceiver")
+  sentSettlements     Settlement[]         @relation("SettlementPayer")
+  receivedSettlements Settlement[]         @relation("SettlementReceiver")
+  balances            GroupMemberBalance[]
   activityLogs        ActivityLog[]
   notifications       Notification[]
   refreshTokens       RefreshToken[]
@@ -106,31 +111,33 @@ model RefreshToken {
 }
 
 model Group {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  category    GroupCategory @default(OTHER)
-  coverImage  String?
-  inviteCode  String        @unique @default(cuid())
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  category     GroupCategory  @default(OTHER)
+  currencyCode String        @default("INR") // ISO 4217 currency code
+  coverImage   String?
+  inviteCode   String        @unique @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   members     GroupMember[]
   expenses    Expense[]
   settlements Settlement[]
+  balances    GroupMemberBalance[]
   activities  ActivityLog[]
 
   @@map("groups")
 }
 
 model GroupMember {
-  id        String    @id @default(cuid())
-  userId    String
-  groupId   String
-  role      GroupRole @default(MEMBER)
-  nickname  String?
-  joinedAt  DateTime  @default(now())
-  isActive  Boolean   @default(true)
+  id       String    @id @default(cuid())
+  userId   String
+  groupId  String
+  role     GroupRole  @default(MEMBER)
+  nickname String?
+  joinedAt DateTime  @default(now())
+  isActive Boolean   @default(true)
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -140,10 +147,15 @@ model GroupMember {
   @@map("group_members")
 }
 
+// ─── Financial Core ───────────────────────────────────
+// All monetary amounts are stored as integers in the smallest currency unit
+// (e.g., paise for INR, cents for USD). ₹500.50 is stored as 50050.
+// This eliminates floating-point arithmetic errors in split calculations.
+
 model Expense {
   id          String          @id @default(cuid())
   title       String
-  amount      Decimal         @db.Decimal(10, 2)
+  amount      Int             // Amount in smallest currency unit (paise/cents)
   paidById    String
   groupId     String
   splitMethod SplitMethod     @default(EQUAL)
@@ -163,17 +175,17 @@ model Expense {
   @@index([groupId])
   @@index([paidById])
   @@index([date])
+  @@index([groupId, isDeleted]) // Optimized query for active expenses in a group
   @@map("expenses")
 }
 
 model ExpenseSplit {
-  id         String   @id @default(cuid())
+  id         String @id @default(cuid())
   expenseId  String
   userId     String
-  amount     Decimal  @db.Decimal(10, 2)
-  percentage Decimal? @db.Decimal(5, 2)
-  shares     Int?
-  isPaid     Boolean  @default(false)
+  amount     Int    // Amount owed in smallest currency unit (paise/cents)
+  percentage Int?   // Stored as basis points (e.g., 33.33% = 3333)
+  shares     Int?   // Number of shares for SHARES split method
   createdAt  DateTime @default(now())
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
@@ -185,15 +197,34 @@ model ExpenseSplit {
   @@map("expense_splits")
 }
 
+// Materialized balance per user per group.
+// Updated atomically within the same DB transaction as expense/settlement creation.
+// Enables O(1) balance lookups instead of O(N) recalculation from all expenses.
+model GroupMemberBalance {
+  id      String @id @default(cuid())
+  groupId String
+  userId  String
+  balance Int    @default(0) // Net balance in smallest currency unit
+                             // Positive = others owe you, Negative = you owe
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@map("group_member_balances")
+}
+
 model Settlement {
   id         String           @id @default(cuid())
   groupId    String
   payerId    String
   receiverId String
-  amount     Decimal          @db.Decimal(10, 2)
-  status     SettlementStatus @default(CONFIRMED)
+  amount     Int              // Amount in smallest currency unit (paise/cents)
+  status     SettlementStatus @default(PENDING)
   note       String?
   createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer    User  @relation("SettlementPayer",   fields: [payerId],    references: [id])
@@ -204,6 +235,8 @@ model Settlement {
   @@index([receiverId])
   @@map("settlements")
 }
+
+// ─── Audit & Communication ────────────────────────────
 
 model ActivityLog {
   id        String       @id @default(cuid())
@@ -219,7 +252,7 @@ model ActivityLog {
   expense Expense? @relation(fields: [expenseId], references: [id])
 
   @@index([groupId])
-  @@index([createdAt])
+  @@index([groupId, createdAt]) // Optimized for paginated activity feed
   @@map("activity_logs")
 }
 
