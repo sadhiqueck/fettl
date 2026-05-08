@@ -1,6 +1,19 @@
-import { Controller, Get, UseGuards, Request, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  Query,
+  BadRequestException,
+  UsePipes,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { updateProfileSchema } from '@settleup/shared';
+import type { UpdateProfileInput } from '@settleup/shared';
+import { GetUser } from '../common/decorators/get-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -8,13 +21,21 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  async getProfile(@Request() req) {
-    // req.user comes from the JWT AuthGuard validation
-    return this.userService.getProfile(req.user.userId);
+  getProfile(@GetUser('id') userId: string) {
+    return this.userService.getProfile(userId);
+  }
+
+  @Patch('me')
+  @UsePipes(new ZodValidationPipe(updateProfileSchema))
+  updateProfile(
+    @GetUser('id') userId: string,
+    @Body() body: UpdateProfileInput,
+  ) {
+    return this.userService.updateProfile(userId, body);
   }
 
   @Get('search')
-  async searchUsers(@Query('q') query: string) {
+  searchUsers(@Query('q') query: string) {
     if (!query) {
       throw new BadRequestException('Search query is required');
     }

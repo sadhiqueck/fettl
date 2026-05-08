@@ -115,7 +115,7 @@ model Group {
   category     GroupCategory  @default(OTHER)
   currencyCode String        @default("INR") // ISO 4217 currency code
   coverImage   String?
-  inviteCode   String        @unique @default(cuid())
+  inviteCode   String        @unique
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 

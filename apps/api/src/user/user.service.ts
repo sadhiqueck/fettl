@@ -25,6 +25,26 @@ export class UserService {
     return user;
   }
 
+  async updateProfile(
+    userId: string,
+    data: { name?: string; avatarUrl?: string },
+  ) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
   async searchUsers(query: string) {
     return this.prisma.user.findMany({
       where: {

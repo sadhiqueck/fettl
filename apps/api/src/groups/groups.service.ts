@@ -146,4 +146,6 @@ export class GroupsService {
       throw new InternalServerErrorException('Failed to fetch user groups');
     }
   }
+
+  async joinGroupUsingCode() {}
 }

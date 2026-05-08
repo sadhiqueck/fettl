@@ -3,8 +3,8 @@ export interface User {
   email: string
   name: string
   avatarUrl: string | null
-  isEmailVerified: boolean
   createdAt: string
+  updatedAt:string
 }
 
 export interface AuthTokens {
