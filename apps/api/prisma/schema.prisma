@@ -145,6 +145,19 @@ model GroupMember {
   @@map("group_members")
 }
 
+model GroupMemberBalance {
+  id        String  @id @default(cuid())
+  groupId   String
+  userId    String
+  balance   Int     @default(0)  // stored in paise/cents
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+  @@map("group_member_balances")
+}
+
 // ─── Financial Core ───────────────────────────────────
 // All monetary amounts are stored as integers in the smallest currency unit
 // (e.g., paise for INR, cents for USD). ₹500.50 is stored as 50050.

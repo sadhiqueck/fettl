@@ -5,6 +5,7 @@ import {
   Get,
   UsePipes,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -48,6 +49,16 @@ export class GroupsController {
     return {
       message: 'Groups successfully fetched',
       groups,
+    };
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getGroupById(@Param('id') id: string, @GetUser('id') userId: string) {
+    const group = await this.groupsService.getGroupById(id, userId);
+    return {
+      message: 'Group successfully fetched',
+      group,
     };
   }
 }
