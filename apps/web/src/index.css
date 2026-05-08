@@ -1,0 +1,391 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/nunito";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Nunito Variable', 'Nunito', sans-serif;
+
+  --background: oklch(0.98 0.002 286.32); /* #f9fafb / soft white */
+  --foreground: oklch(0.145 0.01 285.938); /* #111827 / very dark gray */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0.01 285.938);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0.01 285.938);
+
+  --primary: oklch(0.704 0.222 143.149); /* #00c700 Neon Green */
+  --primary-foreground: oklch(1 0 0); /* White on top of green */
+  
+  --secondary: #232323; /* Dark Gray */
+  --secondary-foreground: oklch(1 0 0); /* White text */
+  
+  --muted: oklch(0.92 0.004 286.32); /* #e5e7eb */
+  --muted-foreground: oklch(0.552 0.016 285.938); /* #6b7280 Muted Slate */
+  
+  --accent: oklch(0.852 0.225 137.954); /* #6ce71d Lime Green */
+  --accent-foreground: oklch(0.278 0.006 286.033);
+  
+  --destructive: oklch(0.637 0.237 25.331); /* #ff4b4b Coral Red */
+  --destructive-foreground: oklch(1 0 0);
+  
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.704 0.222 143.149); /* Focus ring uses Neon Green */
+  
+  --radius: 1.5rem;
+
+  /* Clay shadow tokens */
+  --clay-shadow-light: rgba(255, 255, 255, 1);
+  --clay-shadow-dark: rgba(209, 213, 219, 0.6);
+  --clay-shadow-dark-strong: rgba(209, 213, 219, 0.75);
+  --clay-glow-green: rgba(0, 199, 0, 0.25);
+  --clay-glow-red: rgba(255, 75, 75, 0.2);
+}
+
+@theme inline {
+  --font-display: 'Nunito Variable', 'Nunito', sans-serif;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-neon-green: #00C700;
+  --color-lime-green: #6CE71D;
+  --color-coral-red: #FF4B4B;
+  --color-soft-clay: #F3F4F6;
+  --color-clay-dark: #d1d5db;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+
+  --animate-clay-bounce: clay-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-clay-press: clay-press 0.15s ease-out forwards;
+  --animate-clay-float: clay-float 6s ease-in-out infinite;
+  --animate-clay-float-delayed: clay-float 6s ease-in-out 2s infinite;
+  --animate-clay-float-slow: clay-float 8s ease-in-out 1s infinite;
+  --animate-clay-fade-up: clay-fade-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-clay-scale-in: clay-scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-clay-slide-right: clay-slide-right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-clay-pulse-glow: clay-pulse-glow 3s ease-in-out infinite;
+}
+
+/* ─── Keyframes ─── */
+@keyframes clay-bounce {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes clay-press {
+  0% { transform: scale(1); }
+  100% { transform: scale(0.96); }
+}
+
+@keyframes clay-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-12px) rotate(2deg); }
+  50% { transform: translateY(-6px) rotate(-1deg); }
+  75% { transform: translateY(-14px) rotate(1.5deg); }
+}
+
+@keyframes clay-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes clay-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes clay-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes clay-pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--clay-glow-green); }
+  50% { box-shadow: 0 0 40px var(--clay-glow-green), 0 0 60px rgba(108, 231, 29, 0.15); }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+/* ─── Claymorphism Component Utilities ─── */
+@layer components {
+
+  /* Card: Standard clay elevation */
+  .clay-card {
+    @apply bg-white rounded-3xl border-0;
+    box-shadow: 
+      8px 8px 16px var(--clay-shadow-dark), 
+      -8px -8px 16px var(--clay-shadow-light);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+  
+  .clay-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+      12px 12px 24px var(--clay-shadow-dark-strong), 
+      -12px -12px 24px var(--clay-shadow-light);
+  }
+
+  /* Card: Elevated variant for stat cards */
+  .clay-card-elevated {
+    @apply bg-white rounded-3xl border-0;
+    box-shadow: 
+      10px 10px 20px var(--clay-shadow-dark-strong), 
+      -10px -10px 20px var(--clay-shadow-light),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.8);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+
+  .clay-card-elevated:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 
+      14px 14px 28px var(--clay-shadow-dark-strong), 
+      -14px -14px 28px var(--clay-shadow-light),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.9);
+  }
+
+  /* Card: Pressed/inset variant */
+  .clay-card-pressed {
+    @apply bg-soft-clay rounded-3xl border-0;
+    box-shadow: 
+      inset 4px 4px 10px var(--clay-shadow-dark),
+      inset -4px -4px 10px var(--clay-shadow-light);
+  }
+
+  /* Primary button: 3D clay with green glow */
+  .clay-btn-primary {
+    @apply rounded-2xl border-0 font-bold transition-all px-6 py-3 text-white cursor-pointer;
+    background: linear-gradient(135deg, #00C700 0%, #00a800 100%);
+    box-shadow: 
+      inset 3px 3px 6px rgba(255, 255, 255, 0.35),
+      inset -3px -3px 6px rgba(0, 0, 0, 0.12),
+      5px 5px 14px var(--clay-glow-green),
+      -2px -2px 8px rgba(255, 255, 255, 0.5);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .clay-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+      inset -3px -3px 6px rgba(0, 0, 0, 0.1),
+      8px 8px 20px var(--clay-glow-green),
+      -3px -3px 10px rgba(255, 255, 255, 0.6);
+  }
+
+  .clay-btn-primary:active {
+    transform: scale(0.96) translateY(0px);
+    box-shadow: 
+      inset 5px 5px 10px rgba(0, 0, 0, 0.2),
+      inset -2px -2px 6px rgba(255, 255, 255, 0.15),
+      2px 2px 6px var(--clay-glow-green);
+  }
+
+  /* Secondary button */
+  .clay-btn-secondary {
+    @apply rounded-2xl border-0 font-semibold transition-all px-5 py-2.5 cursor-pointer;
+    background: linear-gradient(135deg, #3a3a3a 0%, #232323 100%);
+    color: white;
+    box-shadow: 
+      inset 3px 3px 6px rgba(255, 255, 255, 0.1),
+      inset -3px -3px 6px rgba(0, 0, 0, 0.3),
+      4px 4px 12px var(--clay-shadow-dark);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .clay-btn-secondary:hover {
+    transform: translateY(-2px);
+  }
+
+  .clay-btn-secondary:active {
+    transform: scale(0.96);
+  }
+
+  /* Ghost clay button */
+  .clay-btn-ghost {
+    @apply rounded-2xl border-0 font-medium transition-all px-5 py-2.5 bg-white cursor-pointer;
+    box-shadow: 
+      4px 4px 10px var(--clay-shadow-dark),
+      -4px -4px 10px var(--clay-shadow-light);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .clay-btn-ghost:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      6px 6px 14px var(--clay-shadow-dark-strong),
+      -6px -6px 14px var(--clay-shadow-light);
+  }
+
+  .clay-btn-ghost:active {
+    transform: scale(0.96);
+    box-shadow: 
+      inset 3px 3px 8px var(--clay-shadow-dark),
+      inset -3px -3px 8px var(--clay-shadow-light);
+  }
+
+  /* Input: Clay inset */
+  .clay-input {
+    @apply bg-soft-clay rounded-2xl px-4 py-3 border-0 text-foreground outline-none w-full;
+    box-shadow: 
+      inset 4px 4px 8px var(--clay-shadow-dark), 
+      inset -4px -4px 8px var(--clay-shadow-light);
+    transition: box-shadow 0.25s ease, transform 0.15s ease;
+  }
+  
+  .clay-input:focus {
+    transform: scale(1.01);
+    box-shadow: 
+      inset 5px 5px 10px var(--clay-shadow-dark-strong), 
+      inset -5px -5px 10px var(--clay-shadow-light),
+      0 0 0 3px rgba(0, 199, 0, 0.2);
+  }
+
+  .clay-input::placeholder {
+    @apply text-muted-foreground;
+  }
+
+  /* Badge: Pillowy */
+  .clay-badge {
+    @apply rounded-full px-3 py-1 text-xs font-bold inline-flex items-center gap-1;
+    box-shadow: 
+      3px 3px 6px var(--clay-shadow-dark),
+      -3px -3px 6px var(--clay-shadow-light),
+      inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+  }
+
+  .clay-badge-green {
+    background: linear-gradient(135deg, #e6fce6, #d4f5d4);
+    color: #00820d;
+  }
+
+  .clay-badge-red {
+    background: linear-gradient(135deg, #fce6e6, #f5d4d4);
+    color: #cc0000;
+  }
+
+  .clay-badge-neutral {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #4b5563;
+  }
+
+  /* Avatar: Clay depth */
+  .clay-avatar {
+    @apply rounded-full;
+    box-shadow: 
+      4px 4px 8px var(--clay-shadow-dark),
+      -4px -4px 8px var(--clay-shadow-light);
+  }
+
+  /* Separator */
+  .clay-divider {
+    height: 2px;
+    border: none;
+    border-radius: 1px;
+    background: linear-gradient(90deg, transparent, var(--clay-shadow-dark), transparent);
+  }
+
+  /* Stat number glow */
+  .clay-stat-green {
+    color: #00C700;
+    text-shadow: 0 0 20px rgba(0, 199, 0, 0.3);
+  }
+
+  .clay-stat-red {
+    color: #FF4B4B;
+    text-shadow: 0 0 20px rgba(255, 75, 75, 0.3);
+  }
+
+  /* Nav bar */
+  .clay-nav {
+    @apply bg-white;
+    box-shadow: 
+      0 4px 16px var(--clay-shadow-dark),
+      0 -2px 8px var(--clay-shadow-light);
+  }
+
+  /* Google OAuth button */
+  .clay-btn-google {
+    @apply rounded-2xl border-0 font-semibold px-6 py-3 bg-white cursor-pointer flex items-center gap-3 justify-center w-full;
+    color: #3c4043;
+    box-shadow: 
+      5px 5px 12px var(--clay-shadow-dark),
+      -5px -5px 12px var(--clay-shadow-light),
+      inset 1px 1px 3px rgba(255, 255, 255, 0.8);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .clay-btn-google:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      8px 8px 16px var(--clay-shadow-dark-strong),
+      -8px -8px 16px var(--clay-shadow-light),
+      inset 1px 1px 3px rgba(255, 255, 255, 0.9);
+  }
+
+  .clay-btn-google:active {
+    transform: scale(0.97);
+    box-shadow: 
+      inset 4px 4px 8px var(--clay-shadow-dark),
+      inset -4px -4px 8px var(--clay-shadow-light);
+  }
+
+  /* Stagger delay utility classes */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
+}
