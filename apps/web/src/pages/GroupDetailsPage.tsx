@@ -30,11 +30,8 @@ import {
   User as UserIcon,
   /*Calendar*/ Info,
   Loader2,
-  Copy,
-  Share2,
   Plus,
   LogOut,
-  Mail,
 } from "lucide-react";
 import { useGroup, useLeaveGroup } from "@/hooks/useGroups";
 import type { AxiosError } from "axios";
@@ -52,7 +49,9 @@ function formatCurrency(amount: number): string {
 export default function GroupDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"feed" | "balances" | "activity">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "balances" | "activity">(
+    "feed",
+  );
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { data: group, isLoading, error } = useGroup(id);
@@ -107,19 +106,29 @@ export default function GroupDetailsPage() {
               size="icon"
               className="clay-btn-ghost rounded-full size-10 relative shrink-0"
               onClick={() => {
-                if (window.confirm("Are you sure you want to leave this group? Make sure your balance is 0.")) {
+                if (
+                  window.confirm(
+                    "Are you sure you want to leave this group? Make sure your balance is 0.",
+                  )
+                ) {
                   leaveGroupMutation.mutate(id!, {
                     onSuccess: () => navigate("/"),
                     onError: (error: Error) => {
                       const err = error as AxiosError<{ message: string }>;
-                      toast.error(err.response?.data?.message || "Failed to leave group");
-                    }
+                      toast.error(
+                        err.response?.data?.message || "Failed to leave group",
+                      );
+                    },
                   });
                 }
               }}
               disabled={leaveGroupMutation.isPending}
             >
-              {leaveGroupMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : <LogOut size={20} className="text-red-500" />}
+              {leaveGroupMutation.isPending ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <LogOut size={20} className="text-red-500" />
+              )}
             </Button>
             <Button
               variant="ghost"
@@ -172,7 +181,11 @@ export default function GroupDetailsPage() {
                 className="clay-avatar size-10 border-2 border-white ring-2 ring-background"
               >
                 {member.avatarUrl && (
-                  <AvatarImage src={member.avatarUrl} alt={member.name} referrerPolicy="no-referrer" />
+                  <AvatarImage
+                    src={member.avatarUrl}
+                    alt={member.name}
+                    referrerPolicy="no-referrer"
+                  />
                 )}
                 <AvatarFallback
                   className="font-bold text-white text-sm"
@@ -218,28 +231,31 @@ export default function GroupDetailsPage() {
         <div className="flex bg-soft-clay p-1 rounded-2xl mb-6 shadow-inner">
           <button
             onClick={() => setActiveTab("feed")}
-            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${activeTab === "feed"
+            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${
+              activeTab === "feed"
                 ? "bg-white text-foreground shadow-sm scale-100"
                 : "text-muted-foreground hover:text-foreground scale-95"
-              }`}
+            }`}
           >
             Expense Feed
           </button>
           <button
             onClick={() => setActiveTab("balances")}
-            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${activeTab === "balances"
+            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${
+              activeTab === "balances"
                 ? "bg-white text-foreground shadow-sm scale-100"
                 : "text-muted-foreground hover:text-foreground scale-95"
-              }`}
+            }`}
           >
             Balances & Settlement
           </button>
           <button
             onClick={() => setActiveTab("activity")}
-            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${activeTab === "activity"
+            className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${
+              activeTab === "activity"
                 ? "bg-white text-foreground shadow-sm scale-100"
                 : "text-muted-foreground hover:text-foreground scale-95"
-              }`}
+            }`}
           >
             Activity
           </button>

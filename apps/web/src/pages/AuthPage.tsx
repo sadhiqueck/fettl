@@ -65,10 +65,14 @@ export default function AuthPage() {
       localStorage.setItem("user", JSON.stringify(user));
 
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Invalid credentials. Please try again.",
-      );
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.message || "Invalid credentials. Please try again.",
+        );
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,14 +100,18 @@ export default function AuthPage() {
       localStorage.setItem("user", JSON.stringify(user));
 
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(
-        // Handles cases from nestjs like ConflictException('User with this email already exists') or validation errors
-        Array.isArray(err.response?.data?.message)
-          ? err.response.data.message[0]
-          : err.response?.data?.message ||
-              "Failed to create account. Please try again later.",
-      );
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          // Handles cases from nestjs like ConflictException('User with this email already exists') or validation errors
+          Array.isArray(err.response?.data?.message)
+            ? err.response.data.message[0]
+            : err.response?.data?.message ||
+                "Failed to create account. Please try again later.",
+        );
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

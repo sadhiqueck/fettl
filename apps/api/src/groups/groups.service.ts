@@ -21,8 +21,6 @@ const GROUP_CATEGORY_MAP: Record<CreateGroupInput['category'], GroupCategory> =
     OTHER: GroupCategory.OTHER,
   };
 
-
-
 const COLORS = [
   '#FF4B4B', // Red
   '#00C700', // Primary Green

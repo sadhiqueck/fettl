@@ -1,9 +1,14 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import type { RegisterInput, LoginInput } from '@settleup/shared';
+import type { Profile } from 'passport-google-oauth20';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +49,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -53,27 +61,27 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async googleLogin(profile: any) {
+  async googleLogin(profile: Profile) {
     if (!profile) {
       throw new UnauthorizedException('No user from google');
     }
 
-    const email = profile.emails[0].value;
+    const email = profile.emails?.[0]?.value;
     const name = profile.displayName;
     const googleId = profile.id;
-    const avatarUrl = profile.photos[0]?.value;
+    const avatarUrl = profile.photos?.[0]?.value;
+
+    if (!email) {
+      throw new UnauthorizedException('Google profile missing email');
+    }
 
     let user = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { googleId },
-          { email }
-        ]
-      }
+        OR: [{ googleId }, { email }],
+      },
     });
 
     if (!user) {
-      // Create new user
       user = await this.prisma.user.create({
         data: {
           email,
@@ -99,16 +107,24 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    if (!refreshToken) throw new UnauthorizedException('No refresh token provided');
+    if (!refreshToken)
+      throw new UnauthorizedException('No refresh token provided');
 
-    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     const savedToken = await this.prisma.refreshToken.findUnique({
       where: { token: hashedToken },
       include: { user: true },
     });
 
-    if (!savedToken || savedToken.isRevoked || savedToken.expiresAt < new Date()) {
+    if (
+      !savedToken ||
+      savedToken.isRevoked ||
+      savedToken.expiresAt < new Date()
+    ) {
       if (savedToken) {
         // Token reuse detected or expired, revoke it
         await this.prisma.refreshToken.update({
@@ -129,20 +145,30 @@ export class AuthService {
 
   async logout(refreshToken: string) {
     if (refreshToken) {
-      const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(refreshToken)
+        .digest('hex');
       await this.prisma.refreshToken.deleteMany({
         where: { token: hashedToken },
       });
     }
   }
 
-  private async generateTokens(user: { id: string; email: string; name: string }) {
+  private async generateTokens(user: {
+    id: string;
+    email: string;
+    name: string;
+  }) {
     const payload = { sub: user.id, email: user.email };
     const access_token = this.jwtService.sign(payload);
 
     const refresh_token = crypto.randomBytes(64).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(refresh_token).digest('hex');
-    
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(refresh_token)
+      .digest('hex');
+
     // Set expiration to 7 days
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);

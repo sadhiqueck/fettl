@@ -5,6 +5,7 @@ import { registerSchema, loginSchema } from '@settleup/shared';
 import type { RegisterInput, LoginInput } from '@settleup/shared';
 import type { Response, Request } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+import type { Profile } from 'passport-google-oauth20';
 
 @Controller('auth')
 export class AuthController {
@@ -98,7 +99,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleOauthGuard)
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const { access_token, refresh_token } = await this.authService.googleLogin(req.user);
+    const { access_token, refresh_token } = await this.authService.googleLogin(req.user as Profile);
     this.setCookies(res, access_token, refresh_token);
     
     // Redirect to frontend dashboard
