@@ -8,9 +8,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Users as ClayGroupIcon, Check as ClayCheckIcon, Copy, Share2, Loader2, Plus, Mail, X, Check } from "lucide-react";
+import {
+  Users as ClayGroupIcon,
+  Check as ClayCheckIcon,
+  Copy,
+  Share2,
+  Loader2,
+  Plus,
+  Mail,
+  X,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useGroupContacts, useAddMember, useAddMemberByEmail } from "@/hooks/useGroups";
+import {
+  useGroupContacts,
+  useAddMember,
+  useAddMemberByEmail,
+} from "@/hooks/useGroups";
 import { apiClient } from "@/lib/apiClient";
 import type { AxiosError } from "axios";
 
@@ -41,7 +55,8 @@ export function InviteMemberModal({
   const [isSearching, setIsSearching] = useState(false);
   const [previewUser, setPreviewUser] = useState<PreviewUser | null>(null);
 
-  const { data: contacts, isLoading: contactsLoading } = useGroupContacts(groupId);
+  const { data: contacts, isLoading: contactsLoading } =
+    useGroupContacts(groupId);
   const addMemberMutation = useAddMember();
   const addMemberByEmailMutation = useAddMemberByEmail();
 
@@ -63,16 +78,20 @@ export function InviteMemberModal({
 
     setIsSearching(true);
     try {
-      const { data } = await apiClient.get<PreviewUser[]>(`/users/search?q=${encodeURIComponent(email)}`);
-      
-      const exactMatch = data.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      
+      const { data } = await apiClient.get<PreviewUser[]>(
+        `/users/search?q=${encodeURIComponent(email)}`,
+      );
+
+      const exactMatch = data.find(
+        (u) => u.email.toLowerCase() === email.toLowerCase(),
+      );
+
       if (exactMatch) {
         setPreviewUser(exactMatch);
       } else {
         toast.error("No user found with this registered email.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to search for user. Please try again.");
     } finally {
       setIsSearching(false);
@@ -88,15 +107,19 @@ export function InviteMemberModal({
       { groupId, email: previewUser.email },
       {
         onSuccess: () => {
-          toast.success(`${previewUser.name} added to the group!`, { id: toastId });
+          toast.success(`${previewUser.name} added to the group!`, {
+            id: toastId,
+          });
           setEmail("");
           setPreviewUser(null);
         },
         onError: (error: Error) => {
           const err = error as AxiosError<{ message: string }>;
-          toast.error(err.response?.data?.message || "Failed to add user", { id: toastId });
+          toast.error(err.response?.data?.message || "Failed to add user", {
+            id: toastId,
+          });
         },
-      }
+      },
     );
   };
 
@@ -129,7 +152,11 @@ export function InviteMemberModal({
               }
             }}
           >
-            {copied ? <ClayCheckIcon size={18} className="text-green-500" /> : <Copy size={18} />}
+            {copied ? (
+              <ClayCheckIcon size={18} className="text-green-500" />
+            ) : (
+              <Copy size={18} />
+            )}
           </Button>
         </div>
 
@@ -146,7 +173,9 @@ export function InviteMemberModal({
                 console.error("Error sharing", error);
               }
             } else if (inviteCode) {
-              navigator.clipboard.writeText(`${import.meta.env.VITE_FRONTEND_URL}/groups/join/${inviteCode}`);
+              navigator.clipboard.writeText(
+                `${import.meta.env.VITE_FRONTEND_URL}/groups/join/${inviteCode}`,
+              );
               setCopied(true);
               toast.success("Invite link copied to clipboard!");
               setTimeout(() => setCopied(false), 2000);
@@ -159,22 +188,28 @@ export function InviteMemberModal({
 
         {previewUser ? (
           <div className="w-full mt-6 p-4 bg-soft-clay rounded-2xl border border-border/50 animate-clay-fade-up shadow-inner">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">Confirm Member</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
+              Confirm Member
+            </p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="size-10 border-2 border-background">
                   {previewUser.avatarUrl && (
-                    <AvatarImage src={previewUser.avatarUrl} alt={previewUser.name} referrerPolicy="no-referrer" />
+                    <AvatarImage
+                      src={previewUser.avatarUrl}
+                      alt={previewUser.name}
+                      referrerPolicy="no-referrer"
+                    />
                   )}
                   <AvatarFallback className="bg-primary/10 text-primary font-bold">
                     {previewUser.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left">
-                  <span className="text-sm font-semibold truncate max-w-[150px]">
+                  <span className="text-sm font-semibold truncate max-w-37.5">
                     {previewUser.name}
                   </span>
-                  <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                  <span className="text-[10px] text-muted-foreground truncate max-w-37.5">
                     {previewUser.email}
                   </span>
                 </div>
@@ -222,7 +257,11 @@ export function InviteMemberModal({
                 className="clay-btn-secondary h-12 px-4 rounded-xl flex items-center gap-2 transition-all"
                 disabled={isSearching || !email}
               >
-                {isSearching ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                {isSearching ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Mail className="size-4" />
+                )}
                 <span className="font-display font-semibold text-sm">Find</span>
               </Button>
             </form>
@@ -233,7 +272,9 @@ export function InviteMemberModal({
         <div className="w-full mt-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Or Add Friends</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              Or Add Friends
+            </span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -251,7 +292,11 @@ export function InviteMemberModal({
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
                       {contact.avatarUrl && (
-                        <AvatarImage src={contact.avatarUrl} alt={contact.name} referrerPolicy="no-referrer" />
+                        <AvatarImage
+                          src={contact.avatarUrl}
+                          alt={contact.name}
+                          referrerPolicy="no-referrer"
+                        />
                       )}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                         {contact.name.charAt(0).toUpperCase()}
@@ -271,17 +316,31 @@ export function InviteMemberModal({
                     variant="ghost"
                     className="h-8 w-8 p-0 rounded-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
                     onClick={() => {
-                      const toastId = toast.loading(`Adding ${contact.name}...`);
-                      addMemberMutation.mutate({
-                        groupId,
-                        userId: contact.id,
-                      }, {
-                        onSuccess: () => toast.success(`${contact.name} added!`, { id: toastId }),
-                        onError: (error: Error) => {
-                          const err = error as AxiosError<{ message: string }>;
-                          toast.error(err.response?.data?.message || "Failed to add user", { id: toastId });
-                        }
-                      });
+                      const toastId = toast.loading(
+                        `Adding ${contact.name}...`,
+                      );
+                      addMemberMutation.mutate(
+                        {
+                          groupId,
+                          userId: contact.id,
+                        },
+                        {
+                          onSuccess: () =>
+                            toast.success(`${contact.name} added!`, {
+                              id: toastId,
+                            }),
+                          onError: (error: Error) => {
+                            const err = error as AxiosError<{
+                              message: string;
+                            }>;
+                            toast.error(
+                              err.response?.data?.message ||
+                                "Failed to add user",
+                              { id: toastId },
+                            );
+                          },
+                        },
+                      );
                     }}
                     disabled={addMemberMutation.isPending}
                   >

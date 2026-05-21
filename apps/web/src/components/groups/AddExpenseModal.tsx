@@ -24,7 +24,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ClayReceiptIcon } from "@/components/clay-icons";
@@ -52,6 +51,12 @@ interface AddExpenseModalProps {
   groupName: string;
   members: GroupMember[];
 }
+interface SplitItem {
+  userId: string;
+  amount?: number;
+  percentage?: number;
+  shares?: number;
+}
 
 export function AddExpenseModal({
   isOpen,
@@ -67,6 +72,7 @@ export function AddExpenseModal({
     register,
     handleSubmit,
     setValue,
+    getValues,
     control,
     reset,
     formState: { errors },
@@ -105,7 +111,12 @@ export function AddExpenseModal({
 
   // States for ITEMIZED mode
   const [items, setItems] = useState<Item[]>([
-    { id: Math.random().toString(36).substring(2, 9), name: "", price: 0, assignedTo: [] },
+    {
+      id: Math.random().toString(36).substring(2, 9),
+      name: "",
+      price: 0,
+      assignedTo: [],
+    },
   ]);
   const [tax, setTax] = useState<number>(0);
   const [tip, setTip] = useState<number>(0);
@@ -129,8 +140,7 @@ export function AddExpenseModal({
     let totalShares = 0;
     selectedMembers.forEach((m) => {
       const val = Number(splitValues[m.id]) || 0;
-      if (splitMethod === "EXACT")
-        totalEnteredAmount += val;
+      if (splitMethod === "EXACT") totalEnteredAmount += val;
       else if (splitMethod === "PERCENTAGE") totalPercentage += val;
       else if (splitMethod === "SHARES") totalShares += val;
     });
@@ -167,7 +177,9 @@ export function AddExpenseModal({
 
   const isValidSplit = useMemo(() => {
     if (splitMethod === "ITEMIZED") {
-      const hasItemizedSplit = Object.values(itemizedTotals.totals).some((v) => v > 0);
+      const hasItemizedSplit = Object.values(itemizedTotals.totals).some(
+        (v) => v > 0,
+      );
       return hasItemizedSplit && Math.abs(itemizedTotals.total - amount) < 0.01;
     }
     if (selectedMembers.length === 0) return false;
@@ -233,13 +245,22 @@ export function AddExpenseModal({
   const addItem = () => {
     setItems((prev) => [
       ...prev,
-      { id: Math.random().toString(36).substring(2, 9), name: "", price: 0, assignedTo: [] },
+      {
+        id: Math.random().toString(36).substring(2, 9),
+        name: "",
+        price: 0,
+        assignedTo: [],
+      },
     ]);
   };
 
-  const updateItem = (id: string, field: keyof Item, value: any) => {
+  const updateItem = <K extends keyof Item>(
+    id: string,
+    field: K,
+    value: Item[K],
+  ) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -260,57 +281,72 @@ export function AddExpenseModal({
           };
         }
         return item;
-      })
+      }),
     );
   };
 
   // Sync amount for ITEMIZED
   useEffect(() => {
+    let currentAmount = amount;
+    // A. Sync amount if in ITEMIZED mode
     if (splitMethod === "ITEMIZED") {
-      setValue("amount", Number(itemizedTotals.total.toFixed(2)), {
-        shouldValidate: true,
-      });
+      const computedTotal = Number((itemizedTotals.total || 0).toFixed(2));
+      if (amount !== computedTotal) {
+        setValue("amount", computedTotal, { shouldValidate: true });
+        currentAmount = computedTotal; // Use the updated amount immediately in this render cycle
+      }
     }
-  }, [splitMethod, itemizedTotals.total, setValue]);
-
-  // Sync splits to react-hook-form whenever selection, amount, or split values change
-  useEffect(() => {
-    if (splitMethod !== "ITEMIZED" && (selectedMembers.length === 0 || amount <= 0)) {
-      setValue("splits", [], { shouldValidate: false });
-      return;
-    }
-
-    let splits: any[] = [];
+    // B. Calculate next splits array
+    let nextSplits: SplitItem[] = [];
     if (splitMethod === "ITEMIZED") {
-      splits = members
-        .filter((m) => itemizedTotals.totals[m.id] > 0)
+      nextSplits = members
+        .filter((m) => (itemizedTotals.totals[m.id] || 0) > 0)
         .map((m) => ({
           userId: m.id,
-          amount: Number(itemizedTotals.totals[m.id].toFixed(2)),
+          amount: Number((itemizedTotals.totals[m.id] || 0).toFixed(2)),
         }));
-    } else if (splitMethod === "EQUAL") {
-      const splitAmount = amount / selectedMembers.length;
-      splits = selectedMembers.map((m) => ({
-        userId: m.id,
-        amount: splitAmount,
-      }));
-    } else {
-      splits = selectedMembers
-        .map((m) => {
-          const val = Number(splitValues[m.id]) || 0;
-          const base = { userId: m.id };
-          if (splitMethod === "EXACT")
-            return { ...base, amount: val };
-          if (splitMethod === "PERCENTAGE")
-            return { ...base, percentage: val };
-          if (splitMethod === "SHARES") return { ...base, shares: val };
-          return base;
-        })
-        .filter((s) => s.amount || s.percentage || s.shares);
+    } else if (selectedMembers.length > 0 && currentAmount > 0) {
+      if (splitMethod === "EQUAL") {
+        const splitAmount = Number(
+          (currentAmount / selectedMembers.length).toFixed(2),
+        );
+        nextSplits = selectedMembers.map((m) => ({
+          userId: m.id,
+          amount: splitAmount,
+        }));
+      } else {
+        nextSplits = selectedMembers
+          .map((m) => {
+            const val = Number(splitValues[m.id]) || 0;
+            const base = { userId: m.id };
+            if (splitMethod === "EXACT") return { ...base, amount: val };
+            if (splitMethod === "PERCENTAGE")
+              return { ...base, percentage: val };
+            if (splitMethod === "SHARES") return { ...base, shares: val };
+            return base;
+          })
+          .filter((s) => s.amount || s.percentage || s.shares);
+      }
     }
-
-    setValue("splits", splits, { shouldValidate: true });
-  }, [amount, selectedMembers, splitMethod, splitValues, itemizedTotals, members, setValue]);
+    // C. Prevent render loops: Deep-compare before updating RHF state
+    // getValues() synchronously inspects the form state without triggering any re-renders.
+    const currentSplits = getValues("splits") || [];
+    const hasSplitsChanged =
+      JSON.stringify(currentSplits) !== JSON.stringify(nextSplits);
+    if (hasSplitsChanged) {
+      setValue("splits", nextSplits, { shouldValidate: true });
+    }
+  }, [
+    amount,
+    splitMethod,
+    selectedMembers,
+    splitValues,
+    itemizedTotals.total,
+    itemizedTotals.totals,
+    members,
+    setValue,
+    getValues,
+  ]);
 
   // Form submission
   const handleFormSubmit = (data: ExpenseFormValues) => {
@@ -463,8 +499,8 @@ export function AddExpenseModal({
                 Split Between
               </p>
               <select
-                className="clay-input text-xs py-1 px-2 h-auto cursor-pointer border-none shadow-sm rounded-lg font-bold uppercase w-[120px] bg-white text-primary text-center appearance-none"
-                style={{ textAlignLast: 'center' }}
+                className="clay-input text-xs py-1 px-2 h-auto cursor-pointer border-none shadow-sm rounded-lg font-bold uppercase w-30 bg-white text-primary text-center appearance-none"
+                style={{ textAlignLast: "center" }}
                 {...register("splitMethod")}
               >
                 <option value="EQUAL">EQUAL SPLIT</option>
@@ -479,86 +515,147 @@ export function AddExpenseModal({
             {splitMethod === "ITEMIZED" ? (
               <div className="flex flex-col gap-3 mt-3">
                 {items.map((item) => (
-                  <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm border border-border">
+                  <div
+                    key={item.id}
+                    className="bg-white p-3 rounded-xl shadow-sm border border-border"
+                  >
                     <div className="flex gap-2 items-start">
                       <div className="flex-1 min-w-0">
-                        <Input 
-                           placeholder="Item name (e.g. Pizza)" 
-                           className="h-8 text-sm clay-input mb-2" 
-                           value={item.name}
-                           onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                        <Input
+                          placeholder="Item name (e.g. Pizza)"
+                          className="h-8 text-sm clay-input mb-2"
+                          value={item.name}
+                          onChange={(e) =>
+                            updateItem(item.id, "name", e.target.value)
+                          }
                         />
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase mb-1">Shared by</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase mb-1">
+                          Shared by
+                        </p>
                         <div className="flex flex-wrap gap-1.5">
-                          {members.map(m => {
+                          {members.map((m) => {
                             const isAssigned = item.assignedTo.includes(m.id);
                             return (
-                              <Avatar 
-                                key={m.id} 
-                                onClick={() => toggleItemAssignment(item.id, m.id)}
-                                className={`size-6 cursor-pointer transition-all ${isAssigned ? 'ring-2 ring-primary ring-offset-1 scale-110' : 'opacity-40 hover:opacity-100 grayscale hover:grayscale-0'}`}
+                              <Avatar
+                                key={m.id}
+                                onClick={() =>
+                                  toggleItemAssignment(item.id, m.id)
+                                }
+                                className={`size-6 cursor-pointer transition-all ${isAssigned ? "ring-2 ring-primary ring-offset-1 scale-110" : "opacity-40 hover:opacity-100 grayscale hover:grayscale-0"}`}
                               >
-                                 {m.avatarUrl && <AvatarImage src={m.avatarUrl} referrerPolicy="no-referrer" />}
-                                 <AvatarFallback style={{backgroundColor: m.color}} className="text-[10px] text-white font-bold">{m.initial}</AvatarFallback>
+                                {m.avatarUrl && (
+                                  <AvatarImage
+                                    src={m.avatarUrl}
+                                    referrerPolicy="no-referrer"
+                                  />
+                                )}
+                                <AvatarFallback
+                                  style={{ backgroundColor: m.color }}
+                                  className="text-[10px] text-white font-bold"
+                                >
+                                  {m.initial}
+                                </AvatarFallback>
                               </Avatar>
-                            )
+                            );
                           })}
                         </div>
                       </div>
                       <div className="w-24 shrink-0 flex flex-col items-end gap-2">
-                         <Input 
-                           type="number" 
-                           placeholder="₹ 0" 
-                           min="0"
-                           step="0.01"
-                           className="h-8 text-sm clay-input text-right" 
-                           value={item.price || ''}
-                           onChange={(e) => updateItem(item.id, 'price', Number(e.target.value))}
-                         />
-                         {items.length > 1 && (
-                           <button type="button" onClick={() => removeItem(item.id)} className="text-red-400 hover:text-red-500 text-[10px] font-bold px-1">
-                             Remove
-                           </button>
-                         )}
+                        <Input
+                          type="number"
+                          placeholder="₹ 0"
+                          min="0"
+                          step="0.01"
+                          className="h-8 text-sm clay-input text-right"
+                          value={item.price || ""}
+                          onChange={(e) =>
+                            updateItem(item.id, "price", Number(e.target.value))
+                          }
+                        />
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="text-red-400 hover:text-red-500 text-[10px] font-bold px-1"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
-                
-                <Button type="button" variant="ghost" onClick={addItem} className="border border-dashed border-border text-primary hover:bg-soft-clay w-full h-8 text-xs">
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={addItem}
+                  className="border border-dashed border-border text-primary hover:bg-soft-clay w-full h-8 text-xs"
+                >
                   + Add Item
                 </Button>
-                
+
                 <Separator className="clay-divider my-2" />
-                
+
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground font-bold uppercase ml-1">Tax</Label>
-                    <Input type="number" min="0" step="0.01" placeholder="₹ 0" className="h-8 text-xs clay-input" value={tax || ''} onChange={e => setTax(Number(e.target.value))} />
+                    <Label className="text-[10px] text-muted-foreground font-bold uppercase ml-1">
+                      Tax
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="₹ 0"
+                      className="h-8 text-xs clay-input"
+                      value={tax || ""}
+                      onChange={(e) => setTax(Number(e.target.value))}
+                    />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground font-bold uppercase ml-1">Tip</Label>
-                    <Input type="number" min="0" step="0.01" placeholder="₹ 0" className="h-8 text-xs clay-input" value={tip || ''} onChange={e => setTip(Number(e.target.value))} />
+                    <Label className="text-[10px] text-muted-foreground font-bold uppercase ml-1">
+                      Tip
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="₹ 0"
+                      className="h-8 text-xs clay-input"
+                      value={tip || ""}
+                      onChange={(e) => setTip(Number(e.target.value))}
+                    />
                   </div>
                 </div>
-                
+
                 {itemizedTotals.total > 0 && (
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mt-2 flex flex-col gap-1">
-                     {members.map(m => {
-                        const owes = itemizedTotals.totals[m.id];
-                        if (!owes) return null;
-                        return (
-                           <div key={m.id} className="flex justify-between text-xs">
-                              <span className="font-medium text-foreground">{m.id === user?.id ? 'You' : m.name}</span>
-                              <span className="font-bold text-primary">{formatSplitAmount(owes)}</span>
-                           </div>
-                        )
-                     })}
-                     <Separator className="clay-divider my-1.5" />
-                     <div className="flex justify-between text-sm">
-                        <span className="font-bold text-foreground">Total calculated</span>
-                        <span className="font-black text-primary">{formatSplitAmount(itemizedTotals.total)}</span>
-                     </div>
+                    {members.map((m) => {
+                      const owes = itemizedTotals.totals[m.id];
+                      if (!owes) return null;
+                      return (
+                        <div
+                          key={m.id}
+                          className="flex justify-between text-xs"
+                        >
+                          <span className="font-medium text-foreground">
+                            {m.id === user?.id ? "You" : m.name}
+                          </span>
+                          <span className="font-bold text-primary">
+                            {formatSplitAmount(owes)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <Separator className="clay-divider my-1.5" />
+                    <div className="flex justify-between text-sm">
+                      <span className="font-bold text-foreground">
+                        Total calculated
+                      </span>
+                      <span className="font-black text-primary">
+                        {formatSplitAmount(itemizedTotals.total)}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -639,11 +736,13 @@ export function AddExpenseModal({
                             <p className="text-sm font-semibold truncate">
                               {member.id === user?.id ? "You" : member.name}
                             </p>
-                            {splitMethod === "EQUAL" && isSelected && amount > 0 && (
-                              <p className="text-xs text-primary font-medium">
-                                {formatSplitAmount(perPersonAmount)}
-                              </p>
-                            )}
+                            {splitMethod === "EQUAL" &&
+                              isSelected &&
+                              amount > 0 && (
+                                <p className="text-xs text-primary font-medium">
+                                  {formatSplitAmount(perPersonAmount)}
+                                </p>
+                              )}
                           </div>
                         </div>
 
@@ -663,7 +762,10 @@ export function AddExpenseModal({
                                 }`}
                                 value={splitValues[member.id] || ""}
                                 onChange={(e) =>
-                                  handleSplitValueChange(member.id, e.target.value)
+                                  handleSplitValueChange(
+                                    member.id,
+                                    e.target.value,
+                                  )
                                 }
                                 onClick={(e) => e.stopPropagation()}
                               />
@@ -721,7 +823,7 @@ export function AddExpenseModal({
                           {Math.abs(totalEnteredAmount - amount) < 0.01
                             ? "Amount matches"
                             : `Remaining: ${formatSplitAmount(
-                                amount - totalEnteredAmount
+                                amount - totalEnteredAmount,
                               )}`}
                         </span>
                       </div>
@@ -765,8 +867,8 @@ export function AddExpenseModal({
                 {splitMethod === "PERCENTAGE"
                   ? "Percentages must add up to 100%"
                   : splitMethod === "EXACT" || splitMethod === "ITEMIZED"
-                  ? "Split amounts must add up to the total expense amount"
-                  : "Please enter valid split values"}
+                    ? "Split amounts must add up to the total expense amount"
+                    : "Please enter valid split values"}
               </span>
             )}
           </div>
@@ -785,7 +887,9 @@ export function AddExpenseModal({
             <button
               type="submit"
               disabled={
-                isPending || (splitMethod !== "ITEMIZED" && selectedMembers.length === 0) || !isValidSplit
+                isPending ||
+                (splitMethod !== "ITEMIZED" && selectedMembers.length === 0) ||
+                !isValidSplit
               }
               className="clay-btn-primary px-6 py-2.5 text-sm font-display shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
             >
