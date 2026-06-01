@@ -33,7 +33,9 @@ import { AddExpenseModal } from "@/components/groups/AddExpenseModal";
 import { EditExpenseModal } from "@/components/groups/EditExpenseModal";
 import { DeleteExpenseDialog } from "@/components/groups/DeleteExpenseDialog";
 import { UpiPayButton } from "@/components/groups/UpiPayButton";
+import { MarkAsPaidDialog } from "@/components/groups/MarkAsPaidDialog";
 import { useUserProfile } from "@/hooks/useUser";
+import type { GroupSettlement } from "@/hooks/useGroups";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -270,6 +272,7 @@ export default function GroupDetailsPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<GroupExpense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<GroupExpense | null>(null);
+  const [settlingPayment, setSettlingPayment] = useState<GroupSettlement | null>(null);
   const { data: group, isLoading, error } = useGroup(id);
   const { data: currentUser } = useUserProfile();
   const leaveGroupMutation = useLeaveGroup();
@@ -562,12 +565,21 @@ export default function GroupDetailsPage() {
                         <span className="font-sans font-bold text-lg">
                           {formatCurrency(settle.amount)}
                         </span>
-                        <UpiPayButton
-                          receiverVpa={settle.toVpa}
-                          receiverName={settle.to}
-                          amount={settle.amount}
-                          groupName={group.name}
-                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSettlingPayment(settle)}
+                            className="clay-btn-secondary text-xs px-4 py-2 shrink-0 shadow-sm flex items-center gap-1.5 hover:scale-[1.02] transition-transform"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Mark Paid
+                          </button>
+                          <UpiPayButton
+                            receiverVpa={settle.toVpa}
+                            receiverName={settle.to}
+                            amount={settle.amount}
+                            groupName={group.name}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -664,6 +676,20 @@ export default function GroupDetailsPage() {
           expenseId={deletingExpense.id}
           expenseTitle={deletingExpense.title}
           expenseAmount={deletingExpense.amount}
+        />
+      )}
+
+      {/* ── Mark as Paid Dialog ── */}
+      {settlingPayment && (
+        <MarkAsPaidDialog
+          isOpen={true}
+          onClose={() => setSettlingPayment(null)}
+          groupId={group.id}
+          fromName={settlingPayment.from}
+          fromId={settlingPayment.fromId}
+          toName={settlingPayment.to}
+          toId={settlingPayment.toId}
+          amount={settlingPayment.amount}
         />
       )}
     </div>

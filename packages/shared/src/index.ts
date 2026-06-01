@@ -10,3 +10,4 @@ export * from "./schemas/expense.schemas";
 export * from "./schemas/group.schemas";
 export * from "./schemas/user.schemas";
 export * from "./schemas/vpa.schema";
+export * from "./schemas/settlement.schemas";

@@ -237,3 +237,31 @@ export function useLeaveGroup() {
     },
   });
 }
+
+/* ─── Mark as Paid (Manual Settlement) ─── */
+
+interface MarkAsPaidPayload {
+  groupId: string;
+  payerId: string;
+  receiverId: string;
+  amount: number; // In paise/cents (smallest currency unit)
+  note?: string;
+}
+
+async function markAsPaid({ groupId, ...body }: MarkAsPaidPayload) {
+  const { data } = await apiClient.post(`/groups/${groupId}/settlements`, body);
+  return data;
+}
+
+export function useMarkAsPaid() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: markAsPaid,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["group", variables.groupId] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
+  });
+}
+
