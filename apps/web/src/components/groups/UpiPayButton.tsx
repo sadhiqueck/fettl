@@ -8,7 +8,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ExternalLink, Copy, Check } from "lucide-react";
+import { AlertTriangle, ExternalLink, Copy, Check, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface UpiPayButtonProps {
   receiverVpa: string | null;
@@ -40,6 +41,29 @@ function isMobileDevice(): boolean {
   );
 }
 
+function handleDownloadQr() {
+  const svgEl = document.getElementById("upi-qr-code");
+  if (!svgEl) return;
+
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx?.drawImage(img, 0, 0);
+    const pngUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = "upi-qr-code.png";
+    link.href = pngUrl;
+    link.click();
+  };
+
+  img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+}
+
 export function UpiPayButton({
   receiverVpa,
   receiverName,
@@ -62,13 +86,14 @@ export function UpiPayButton({
     );
   }
 
+  const upiUrl = generateUpiUrl(receiverVpa, receiverName, amount, groupName);
+
   const handlePayClick = () => {
     setShowConfirm(true);
   };
 
   const handleConfirmPay = () => {
-    const url = generateUpiUrl(receiverVpa, receiverName, amount, groupName);
-    window.location.href = url;
+    window.location.href = upiUrl;
     setShowConfirm(false);
   };
 
@@ -113,15 +138,37 @@ export function UpiPayButton({
                   Pay {receiverName}
                 </DialogTitle>
                 <DialogDescription className="text-sm mt-1">
-                  You're about to pay via UPI
+                  Scan QR or open your UPI app
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
+          {/* QR Code */}
+          <div className="flex flex-col items-center gap-3 my-1">
+            <div className="clay-card-pressed p-4 rounded-2xl bg-white">
+              <QRCodeSVG
+                id="upi-qr-code"
+                value={upiUrl}
+                size={180}
+                level="M"
+                includeMargin={false}
+                bgColor="transparent"
+                fgColor="#1a1a1a"
+              />
+            </div>
+            <button
+              onClick={handleDownloadQr}
+              className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-1.5 transition-colors"
+            >
+              <Download size={12} />
+              Save QR Code
+            </button>
+          </div>
+
           {/* Payment details */}
-          <div className="clay-card-pressed p-5 rounded-2xl text-center my-1 space-y-2">
-            <p className="font-sans font-extrabold text-3xl text-foreground">
+          <div className="clay-card-pressed p-4 rounded-2xl text-center space-y-1.5">
+            <p className="font-sans font-extrabold text-2xl text-foreground">
               ₹{amount.toLocaleString("en-IN")}
             </p>
             <div className="flex items-center justify-center gap-2">
@@ -143,6 +190,9 @@ export function UpiPayButton({
                 )}
               </button>
             </div>
+            <p className="text-[11px] text-muted-foreground/70 font-medium">
+              SettleUp: {groupName}
+            </p>
           </div>
 
           {/* Warning */}
@@ -171,8 +221,8 @@ export function UpiPayButton({
                 onClick={handleConfirmPay}
                 className="clay-btn-primary flex-1 px-6 py-2.5 text-sm font-display font-bold flex items-center justify-center gap-2"
               >
-                <ExternalLink size={14} />
-                Open UPI App
+              <ExternalLink size={14} />
+              Open UPI App
               </button>
             ) : (
               <button
