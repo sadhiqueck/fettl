@@ -320,9 +320,16 @@ export function AddExpenseModal({
             const val = Number(splitValues[m.id]) || 0;
             const base = { userId: m.id };
             if (splitMethod === "EXACT") return { ...base, amount: val };
-            if (splitMethod === "PERCENTAGE")
-              return { ...base, percentage: val };
-            if (splitMethod === "SHARES") return { ...base, shares: val };
+            if (splitMethod === "PERCENTAGE") {
+              const calculatedAmount = Number((currentAmount * (val / 100)).toFixed(2));
+              return { ...base, percentage: val, amount: calculatedAmount };
+            }
+            if (splitMethod === "SHARES") {
+              const calculatedAmount = totalShares > 0
+                ? Number((currentAmount * (val / totalShares)).toFixed(2))
+                : 0;
+              return { ...base, shares: val, amount: calculatedAmount };
+            }
             return base;
           })
           .filter((s) => s.amount || s.percentage || s.shares);
