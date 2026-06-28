@@ -171,9 +171,9 @@ export default function AuthPage() {
           {/* Brand */}
           <div className="animate-clay-fade-up">
             <h1 className="font-display text-6xl font-extrabold text-white tracking-tight leading-tight">
-              Settle<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#818cf8] to-[#c084fc]">Up</span>
+              Settle<span className="text-amber-400">Up</span>
             </h1>
-            <p className="mt-6 text-2xl text-indigo-100/80 font-display font-medium leading-relaxed max-w-lg">
+            <p className="mt-6 text-2xl text-slate-300 font-display font-medium leading-relaxed max-w-lg">
               Split expenses with friends, track debts, and settle up with ease.
             </p>
           </div>

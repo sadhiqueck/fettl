@@ -108,8 +108,9 @@ export function ChatAppLayout() {
           onCreateGroup={() => setCreateOpen(true)}
         />
 
-        <div className={`chat-middle-container ${hideGroupList ? "hidden md:flex" : "flex"}`}>
+        <div className="chat-middle-container">
           <GroupListSidebar
+            className={hideGroupList ? "hidden md:flex" : "flex"}
             groups={filteredGroups}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -117,24 +118,26 @@ export function ChatAppLayout() {
             onJoinGroup={() => setJoinOpen(true)}
           />
 
-          {isError ? (
-            <div className="chat-main-panel flex flex-col items-center justify-center gap-4 px-8">
-              <AlertCircle size={48} className="text-coral-red" />
-              <p className="text-muted-foreground text-center max-w-sm">
-                {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                  "Could not load groups."}
-              </p>
-              <button onClick={() => refetch()} className="clay-btn-primary px-6 py-2 text-sm">
-                Try again
-              </button>
-            </div>
-          ) : isLoading ? (
-            <div className="chat-main-panel flex items-center justify-center">
-              <Loader2 className="animate-spin text-primary" size={32} />
-            </div>
-          ) : (
-            <Outlet />
-          )}
+          <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${!hideGroupList ? "hidden md:flex" : "flex"}`}>
+            {isError ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
+                <AlertCircle size={48} className="text-coral-red" />
+                <p className="text-muted-foreground text-center max-w-sm">
+                  {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                    "Could not load groups."}
+                </p>
+                <button onClick={() => refetch()} className="clay-btn-primary px-6 py-2 text-sm">
+                  Try again
+                </button>
+              </div>
+            ) : isLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="animate-spin text-primary" size={32} />
+              </div>
+            ) : (
+              <Outlet />
+            )}
+          </div>
         </div>
 
         {activeGroup && activeGroupId && (

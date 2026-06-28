@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { Search, Loader2, Pin } from "lucide-react";
+import { Search, Pin } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import type { GroupData } from "@/hooks/useGroups";
 import { formatCurrency } from "@/lib/format";
@@ -10,6 +10,7 @@ interface GroupListSidebarProps {
   onSearchChange: (query: string) => void;
   isLoading?: boolean;
   onJoinGroup?: () => void;
+  className?: string;
 }
 
 function getLastMessagePreview(group: GroupData): string {
@@ -28,12 +29,13 @@ export function GroupListSidebar({
   onSearchChange,
   isLoading,
   onJoinGroup,
+  className = "",
 }: GroupListSidebarProps) {
   const navigate = useNavigate();
   const { id: activeGroupId } = useParams();
 
   return (
-    <aside className="chat-list-panel">
+    <aside className={`chat-list-panel ${className}`}>
       {/* Header */}
       <div className="px-5 pt-5 pb-2 flex items-center justify-between">
         <div>
@@ -72,8 +74,16 @@ export function GroupListSidebar({
       {/* List */}
       <div className="flex-1 overflow-y-auto pb-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-primary" size={24} />
+          <div className="space-y-3 px-3 py-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-2xl animate-pulse">
+                <div className="size-12 rounded-2xl bg-zinc-100 shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 bg-zinc-200 rounded w-2/3" />
+                  <div className="h-3 bg-zinc-100 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : groups.length === 0 ? (
           <div className="px-5 py-8 text-center">

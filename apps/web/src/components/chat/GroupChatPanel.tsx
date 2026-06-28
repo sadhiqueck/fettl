@@ -5,7 +5,6 @@ import {
   Phone,
   MoreVertical,
   LogOut,
-  Loader2,
   Paperclip,
   Mic,
   Send,
@@ -395,8 +394,43 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
 
 export function GroupChatLoading() {
   return (
-    <div className="chat-main-panel flex items-center justify-center">
-      <Loader2 className="animate-spin text-primary" size={32} />
+    <div className="chat-main-panel overflow-hidden">
+      {/* Header Skeleton */}
+      <header className="chat-header flex items-center justify-between border-b border-border/10">
+        <div className="flex items-center gap-3">
+          <div className="md:hidden size-9 rounded-full bg-zinc-100 animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-5 bg-zinc-200 rounded w-28 animate-pulse" />
+            <div className="h-3 bg-zinc-100 rounded w-20 animate-pulse" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="size-9 rounded-full bg-zinc-100 animate-pulse" />
+          <div className="size-9 rounded-full bg-zinc-100 animate-pulse" />
+          <div className="size-9 rounded-full bg-zinc-100 animate-pulse" />
+        </div>
+      </header>
+
+      {/* Messages List Skeleton */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        {[...Array(4)].map((_, i) => {
+          const isLeft = i % 2 === 0;
+          return (
+            <div
+              key={i}
+              className={`flex items-start gap-3 max-w-[70%] animate-pulse ${
+                isLeft ? "" : "ml-auto flex-row-reverse text-right"
+              }`}
+            >
+              <div className="size-8 rounded-full bg-zinc-100 shrink-0" />
+              <div className="space-y-2 flex-1">
+                <div className="h-3 bg-zinc-100 rounded w-16" />
+                <div className={`h-16 bg-zinc-100 rounded-2xl w-48 ${isLeft ? "rounded-tl-none" : "rounded-tr-none ml-auto"}`} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

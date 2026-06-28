@@ -76,14 +76,14 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
 
-  --animate-clay-bounce: clay-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-clay-bounce: clay-bounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-clay-press: clay-press 0.15s ease-out forwards;
   --animate-clay-float: clay-float 6s ease-in-out infinite;
   --animate-clay-float-delayed: clay-float 6s ease-in-out 2s infinite;
   --animate-clay-float-slow: clay-float 8s ease-in-out 1s infinite;
-  --animate-clay-fade-up: clay-fade-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  --animate-clay-scale-in: clay-scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  --animate-clay-slide-right: clay-slide-right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-clay-fade-up: clay-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-clay-scale-in: clay-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-clay-slide-right: clay-slide-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-clay-pulse-glow: clay-pulse-glow 3s ease-in-out infinite;
 }
 
@@ -100,10 +100,8 @@
 }
 
 @keyframes clay-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25% { transform: translateY(-12px) rotate(2deg); }
-  50% { transform: translateY(-6px) rotate(-1deg); }
-  75% { transform: translateY(-14px) rotate(1.5deg); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes clay-fade-up {
@@ -166,7 +164,7 @@
     box-shadow: 
       6px 6px 12px var(--clay-shadow-dark), 
       -6px -6px 12px var(--clay-shadow-light);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   }
   
   .clay-card:hover {
@@ -183,7 +181,7 @@
       8px 8px 16px var(--clay-shadow-dark-strong), 
       -8px -8px 16px var(--clay-shadow-light),
       inset 2px 2px 4px rgba(255, 255, 255, 0.8);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   }
 
   .clay-card-elevated:hover {
@@ -211,7 +209,7 @@
       inset -3px -3px 6px rgba(0, 0, 0, 0.12),
       5px 5px 14px var(--clay-glow-primary),
       -2px -2px 8px rgba(255, 255, 255, 0.5);
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .clay-btn-primary:hover {
@@ -240,7 +238,7 @@
       inset 3px 3px 6px rgba(255, 255, 255, 0.1),
       inset -3px -3px 6px rgba(0, 0, 0, 0.3),
       4px 4px 12px var(--clay-shadow-dark);
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .clay-btn-secondary:hover {
@@ -257,7 +255,7 @@
     box-shadow: 
       4px 4px 10px var(--clay-shadow-dark),
       -4px -4px 10px var(--clay-shadow-light);
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .clay-btn-ghost:hover {
@@ -362,7 +360,7 @@
       5px 5px 12px var(--clay-shadow-dark),
       -5px -5px 12px var(--clay-shadow-light),
       inset 1px 1px 3px rgba(255, 255, 255, 0.8);
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .clay-btn-google:hover {
@@ -394,15 +392,16 @@
   }
 
   .chat-shell {
-    @apply flex flex-1 overflow-hidden w-full h-screen;
+    @apply flex flex-col md:flex-row flex-1 overflow-hidden w-full h-screen relative;
     background: #1C1C1E;
   }
 
   .chat-nav-rail {
-    @apply shrink-0 flex flex-col items-center py-4 gap-2 z-20 h-full;
-    width: 72px;
-    background: transparent;
-    box-shadow: none;
+    @apply flex z-30 transition-all duration-300;
+    /* Mobile: fixed bottom bar */
+    @apply fixed bottom-0 left-0 w-full h-[60px] flex-row justify-around items-center bg-[#1C1C1E] border-t border-white/10;
+    /* Desktop: left sidebar */
+    @apply md:static md:w-[72px] md:h-full md:flex-col md:py-4 md:gap-2 md:justify-start md:border-t-0 md:bg-transparent;
   }
 
   .chat-nav-item {
@@ -432,13 +431,15 @@
 
   .chat-middle-container {
     @apply flex-1 flex bg-white overflow-hidden;
-    border-radius: 24px;
-    margin: 16px 0;
+    /* Mobile: fill space above bottom bar */
+    @apply rounded-t-[24px] rounded-b-none mt-4 mb-[60px] mx-0;
+    /* Desktop: rounded box with margins */
+    @apply md:rounded-[24px] md:my-4 md:mr-0 md:mb-4;
   }
 
   .chat-list-panel {
-    @apply shrink-0 flex flex-col border-r border-border/20 bg-transparent;
-    width: 320px;
+    @apply flex flex-col border-r border-border/20 bg-transparent;
+    @apply w-full md:w-[320px] md:shrink-0;
   }
 
   .chat-list-search {
@@ -456,9 +457,9 @@
   }
 
   .chat-list-item-active {
-    background: rgba(99, 102, 241, 0.1);
+    background: #F4F4F5;
     color: #111827;
-    box-shadow: inset 3px 0 0 0 #6366F1;
+    box-shadow: none;
   }
 
   .chat-list-item-active .text-foreground {
@@ -474,7 +475,7 @@
   }
 
   .chat-main-panel {
-    @apply flex-1 flex flex-col min-w-0 bg-transparent;
+    @apply flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent;
   }
 
   .chat-header {
@@ -489,11 +490,10 @@
   }
 
   .chat-info-panel {
-    @apply shrink-0 flex flex-col gap-4 overflow-y-auto px-4;
-    width: 316px; /* 300px + 16px padding */
+    @apply shrink-0 flex-col gap-4 overflow-y-auto px-4;
+    @apply hidden xl:flex w-[316px] my-4;
     background: transparent;
     border-left: none;
-    margin: 16px 0;
   }
 
   .chat-info-card {

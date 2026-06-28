@@ -137,7 +137,7 @@ export function EditExpenseModal({
               id="edit-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="clay-input text-sm cursor-pointer border-r-8 border-transparent"
+              className="clay-input text-sm cursor-pointer pr-8"
               disabled={isPending}
             >
               {CATEGORIES.map((cat) => (

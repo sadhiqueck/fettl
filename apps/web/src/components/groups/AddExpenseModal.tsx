@@ -468,7 +468,7 @@ export function AddExpenseModal({
             </Label>
             <select
               id="expense-category"
-              className="clay-input text-sm cursor-pointer border-r-8 border-transparent"
+              className="clay-input text-sm cursor-pointer pr-8"
               {...register("category")}
             >
               <option value="FOOD">Food & Dining</option>

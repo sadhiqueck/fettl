@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, TrendingUp, TrendingDown, PieChart as PieChartIcon } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, PieChart as PieChartIcon } from "lucide-react";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -25,8 +25,40 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="chat-main-panel flex items-center justify-center h-full">
-        <Loader2 className="animate-spin text-primary" size={32} />
+      <div className="chat-main-panel overflow-hidden">
+        <header className="chat-header flex items-center justify-between border-b border-border/10">
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-full bg-zinc-100 animate-pulse" />
+            <div>
+              <div className="h-5 bg-zinc-200 rounded w-28 animate-pulse" />
+              <div className="h-3 bg-zinc-100 rounded w-44 mt-1 animate-pulse" />
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 max-w-5xl mx-auto w-full space-y-6 overflow-y-auto h-[calc(100vh-80px)]">
+          {/* Stats overview row skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="chat-info-card p-6 space-y-3 animate-pulse">
+                <div className="h-4 bg-zinc-100 rounded w-1/3" />
+                <div className="h-8 bg-zinc-200 rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+
+          {/* Charts grid skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="chat-info-card p-6 h-[350px] flex flex-col justify-between animate-pulse">
+              <div className="h-6 bg-zinc-200 rounded w-1/3" />
+              <div className="h-[250px] bg-zinc-50 rounded-2xl w-full" />
+            </div>
+            <div className="chat-info-card p-6 h-[350px] flex flex-col justify-between animate-pulse">
+              <div className="h-6 bg-zinc-200 rounded w-1/3" />
+              <div className="h-[250px] bg-zinc-50 rounded-2xl w-full" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

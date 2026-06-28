@@ -5,10 +5,9 @@ import {
   Home,
   Users,
   Archive,
-  LogOut,
   Plus,
 } from "lucide-react";
-import { useLogout, useUserProfile } from "@/hooks/useUser";
+import { useUserProfile } from "@/hooks/useUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export type NavFilter = "all" | "TRIP" | "HOME" | "OFFICE" | "FRIENDS" | "OTHER";
@@ -36,7 +35,6 @@ export function NavRail({
 }: NavRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const logoutMutation = useLogout();
   const { data: userProfile } = useUserProfile();
 
   const userInitials = userProfile?.name
@@ -55,7 +53,7 @@ export function NavRail({
       {/* Logo */}
       <button
         onClick={() => navigate("/dashboard")}
-        className="mb-6 size-10 rounded-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+        className="hidden md:flex mb-6 size-10 rounded-xl items-center justify-center cursor-pointer hover:scale-105 transition-transform"
         title="SettleUp"
       >
         <div
@@ -70,12 +68,12 @@ export function NavRail({
       </button>
 
       {/* Category filters */}
-      <nav className="flex flex-col items-center gap-1 flex-1">
+      <nav className="flex flex-row md:flex-col items-center justify-start md:justify-center gap-1 md:flex-initial w-full md:w-auto overflow-x-auto md:overflow-visible no-scrollbar px-2 md:px-0">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => onFilterChange(id)}
-            className={`chat-nav-item ${activeFilter === id ? "chat-nav-item-active" : ""}`}
+            className={`chat-nav-item shrink-0 ${activeFilter === id ? "chat-nav-item-active" : ""}`}
             title={label}
           >
             <Icon size={20} strokeWidth={1.75} />
@@ -86,11 +84,12 @@ export function NavRail({
           </button>
         ))}
 
-        <div className="w-8 h-px bg-white/10 my-2" />
+        <div className="hidden md:block w-8 h-px bg-white/10 my-2 shrink-0" />
+        <div className="md:hidden h-8 w-px bg-white/10 mx-2 shrink-0" />
 
         <button
           onClick={() => navigate("/analytics")}
-          className={`chat-nav-item ${location.pathname === "/analytics" ? "chat-nav-item-active" : ""}`}
+          className={`chat-nav-item shrink-0 ${location.pathname === "/analytics" ? "chat-nav-item-active" : ""}`}
           title="Analytics"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
@@ -99,7 +98,7 @@ export function NavRail({
 
         <button
           onClick={onCreateGroup}
-          className="chat-nav-item hover:text-primary"
+          className="chat-nav-item hover:text-primary shrink-0"
           title="Create group"
         >
           <Plus size={22} strokeWidth={2} />
@@ -108,10 +107,11 @@ export function NavRail({
       </nav>
 
       {/* Bottom actions */}
-      <div className="flex flex-col items-center gap-1 mt-auto">
+      <div className="flex flex-row md:flex-col items-center gap-1 md:mt-auto shrink-0 pr-2 md:pr-0">
+        <div className="md:hidden h-8 w-px bg-white/10 mx-2 shrink-0" />
         <button
           onClick={() => navigate("/profile")}
-          className={`chat-nav-item p-1 ${isProfile ? "chat-nav-item-active" : ""}`}
+          className={`chat-nav-item shrink-0 p-1 ${isProfile ? "chat-nav-item-active" : ""}`}
           title="Profile"
         >
           <Avatar className="size-8">
@@ -127,15 +127,6 @@ export function NavRail({
             </AvatarFallback>
           </Avatar>
           <span className="text-[9px] font-semibold">Profile</span>
-        </button>
-
-        <button
-          onClick={() => logoutMutation.mutate()}
-          className="chat-nav-item hover:text-rose-500"
-          title="Log out"
-        >
-          <LogOut size={18} />
-          <span className="text-[9px] font-semibold">Exit</span>
         </button>
       </div>
     </aside>
