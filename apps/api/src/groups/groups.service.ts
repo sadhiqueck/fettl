@@ -38,7 +38,7 @@ const categoryMap: Record<string, string> = {
   HOME: 'Home',
   OFFICE: 'Work',
   ROOMMATES: 'Home',
-  FRIENDS: 'Other',
+  FRIENDS: 'Friends',
   OTHER: 'Other',
 };
 
