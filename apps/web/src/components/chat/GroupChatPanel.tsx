@@ -84,9 +84,17 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   const { data: currentUser } = useUserProfile();
   const leaveGroupMutation = useLeaveGroup();
 
+  const sortedExpenses = useMemo(() => {
+    return [...(group.expenses ?? [])].reverse();
+  }, [group.expenses]);
+
+  const sortedActivity = useMemo(() => {
+    return [...(group.activity ?? [])].reverse();
+  }, [group.activity]);
+
   const dateGroups = useMemo(
-    () => groupExpensesByDate(group.expenses ?? []),
-    [group.expenses],
+    () => groupExpensesByDate(sortedExpenses),
+    [sortedExpenses],
   );
 
   useEffect(() => {
@@ -303,7 +311,7 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
 
         {chatView === "activity" && (
           <div className="space-y-3 max-w-lg mx-auto">
-            {group.activity.map((item) => (
+            {sortedActivity.map((item) => (
               <ActivityBubble
                 key={item.id}
                 user={item.user}

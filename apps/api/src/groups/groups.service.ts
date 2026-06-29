@@ -189,6 +189,17 @@ export class GroupsService {
         orderBy: { joinedAt: 'desc' },
       });
 
+      // Sort in memory by last activity date descending
+      groupMemberships.sort((a, b) => {
+        const dateA = a.group.activities.length > 0 
+          ? new Date(a.group.activities[0].createdAt).getTime() 
+          : new Date(a.group.updatedAt).getTime();
+        const dateB = b.group.activities.length > 0 
+          ? new Date(b.group.activities[0].createdAt).getTime() 
+          : new Date(b.group.updatedAt).getTime();
+        return dateB - dateA;
+      });
+
       return groupMemberships.map((membership) => {
         const g = membership.group;
         const totalExpense = g.expenses.reduce(

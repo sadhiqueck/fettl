@@ -27,10 +27,12 @@
 | **Database** | PostgreSQL 16 + Prisma 7 | Relational data, migrations, type-safe ORM |
 | **Frontend** | React 19 + Vite 7 | SPA with HMR, fast builds |
 | **Styling** | TailwindCSS 4 + shadcn/ui 4 | Component library, design tokens |
-| **State** | Zustand + TanStack React Query | Client state + server cache |
-| **Auth** | Passport (Google OAuth + JWT) | Authentication strategy |
-| **Real-time** | Socket.io | Live expense updates, notifications |
-| **File Storage** | Cloudflare R2 (S3-compatible) | Receipt uploads |
+| **State** | TanStack React Query + localStorage | Server cache + auth persistence |
+| **Auth** | Passport (Google OAuth + JWT cookies) | httpOnly cookie-based authentication |
+| **Real-time** | Socket.io 4 (`@nestjs/websockets`) | Live chat, expense updates, notifications |
+| **Queue** | BullMQ + Redis | Background job processing (AI receipts) |
+| **AI** | Google Gemini Pro Vision | Receipt OCR & structured data extraction |
+| **File Storage** | Cloudflare R2 (S3-compatible) | Receipt uploads (10GB free, zero egress) |
 | **Validation** | Zod (`@settleup/shared`) | Shared schemas across frontend & backend |
 | **Charts** | Recharts | Analytics visualizations |
 | **DevOps** | Docker Compose + Docker Engine v29 | Containerized local development |
@@ -44,16 +46,32 @@ SettleUp/
 ├── apps/
 │   ├── api/                    # NestJS backend
 │   │   ├── prisma/
-│   │   │   └── schema.prisma   # Database schema (10 models)
-│   │   ├── src/                # Application source
-│   │   ├── Dockerfile.dev      # Dev container
-│   │   └── .env.example        # Environment template
+│   │   │   └── schema.prisma   # Database schema
+│   │   ├── src/
+│   │   │   ├── auth/           # JWT cookie auth + Google OAuth
+│   │   │   ├── chat/           # ★ WebSocket gateway + WS auth guard
+│   │   │   │   ├── chat.gateway.ts
+│   │   │   │   ├── chat.module.ts
+│   │   │   │   └── guards/
+│   │   │   │       └── ws-jwt.guard.ts
+│   │   │   ├── groups/         # Groups CRUD + role guards
+│   │   │   ├── expenses/       # Expense CRUD + balance updates
+│   │   │   ├── settlements/    # Settlement creation + confirmation
+│   │   │   ├── user/           # Profile + search
+│   │   │   ├── analytics/      # Spending analytics
+│   │   │   ├── prisma/         # Global Prisma module
+│   │   │   └── common/         # Decorators, pipes, utils
+│   │   ├── Dockerfile.dev
+│   │   └── .env.example
 │   └── web/                    # Vite + React frontend
 │       ├── src/
-│       │   ├── components/     # UI components (shadcn)
-│       │   ├── lib/            # Utilities
+│       │   ├── components/     # UI components (shadcn + features)
+│       │   ├── context/        # ★ SocketContext (WebSocket provider)
+│       │   ├── hooks/          # TanStack Query hooks
+│       │   ├── lib/            # apiClient, socket.ts, utils
+│       │   ├── pages/          # Route page components
 │       │   └── index.css       # Design tokens + Tailwind
-│       └── Dockerfile.dev      # Dev container
+│       └── Dockerfile.dev
 ├── packages/
 │   └── shared/                 # @settleup/shared
 │       └── src/
@@ -535,49 +553,59 @@ Individual splits are not "paid" — settlements operate at the user-to-user lev
 
 ## Build Order & Roadmap
 
-### Phase 1 — Foundation (Current → Week 2)
+### Phase 1 — Foundation ✅ Complete
 
 ```
-1. Fix Prisma schema (datasource url, add GroupMemberBalance, currency)
-2. Build NestJS module structure:
-   └── PrismaModule → AuthModule → UsersModule → GroupsModule
-3. Implement Auth (Google OAuth + JWT + refresh rotation)
-4. Implement Groups CRUD + join/leave
-5. Wire frontend routing (React Router)
-6. Build Auth pages + Dashboard skeleton
+1. ✅ Prisma schema (datasource url, GroupMemberBalance, integer amounts)
+2. ✅ NestJS module structure:
+   └── PrismaModule → AuthModule → UserModule → GroupsModule → ExpensesModule → SettlementsModule
+3. ✅ Auth (Google OAuth + JWT cookies + refresh token rotation)
+4. ✅ Groups CRUD + join/leave + invite codes + role-based guards
+5. ✅ Frontend routing (React Router + ProtectedRoute/PublicRoute guards)
+6. ✅ Auth pages + Dashboard + Group details UI
 ```
 
-### Phase 2 — Core Engine (Week 2 → Week 4)
+### Phase 2 — Core Engine ✅ Complete
 
 ```
-1. Implement ExpensesModule (create with equal split)
-2. Implement balance calculation service (materialized balances)
-3. Implement settlement optimization algorithm
-4. Build Group Details page (balance summary + expense feed)
-5. Build Add Expense modal (equal split only)
-6. Build Settlement suggestions UI
+1. ✅ ExpensesModule (create/update/delete with equal split)
+2. ✅ Materialized balance calculation (GroupMemberBalance, transactional updates)
+3. ✅ Settlement optimization (greedy min-transactions algorithm)
+4. ✅ Group Details page (balance summary + expense feed + members panel)
+5. ✅ Add Expense modal (equal split)
+6. ✅ Settlement suggestions + mark-as-paid flow
+7. ✅ Analytics dashboard (Recharts — category breakdown, monthly trends, top groups)
+8. ✅ Profile page with VPA (UPI) onboarding
 ```
 
-### Phase 3 — Polish & Complete (Week 4 → Week 6)
+### Phase 3 — Real-Time Chat & AI Receipts (Current → In Progress)
 
 ```
-1. Add advanced split methods (exact, percentage, shares)
-2. Build Activity timeline
-3. Add receipt upload (R2 integration)
-4. Add real-time updates (Socket.io for live expense sync)
-5. Build Profile page
-6. Add notification system
+Step 1: ⏳ WebSocket setup & authentication
+         └── NestJS ChatGateway + WsJwtGuard + React SocketContext
+         └── Cookie-based WebSocket auth (reuses existing httpOnly JWT)
+Step 2: [ ] Real-time group chat with Socket.io Rooms
+         └── Users join room per group, send/receive messages
+Step 3: [ ] Receipt image uploads via Cloudflare R2
+         └── Pre-signed URL flow (REST upload, NOT over WebSocket)
+Step 4: [ ] BullMQ queue for background AI processing
+         └── Offload Gemini calls to a worker (don't block the WS server)
+Step 5: [ ] Gemini AI receipt parsing
+         └── Extract merchant, total, date → auto-create expense
+Step 6: [ ] Real-time expense notifications
+         └── Worker → Redis → Gateway → broadcast to group room
 ```
 
-### Phase 4 — Analytics & Scale (Week 6+)
+### Phase 4 — Scale & Polish (Upcoming)
 
 ```
-1. Analytics dashboard with Recharts
-2. PWA support for mobile
-3. Email notifications (settlement reminders)
-4. Export group data (PDF/CSV)
-5. Multi-currency support
-6. Docker production builds (multi-stage + turbo prune)
+1. [ ] Advanced split methods (exact, percentage, shares)
+2. [ ] Push notifications (in-app + email settlement reminders)
+3. [ ] PWA support for mobile
+4. [ ] Export group data (PDF/CSV)
+5. [ ] Multi-currency support
+6. [ ] Docker production builds (multi-stage + turbo prune)
+7. [ ] Socket.io Redis Adapter (multi-instance horizontal scaling)
 ```
 
 ---
@@ -587,19 +615,21 @@ Individual splits are not "paid" — settlements operate at the user-to-user lev
 - [x] Prisma schema defined
 - [x] Docker Compose setup
 - [x] Shared validation package
-- [ ] Auth (Google OAuth + email)
-- [ ] Create / join groups
-- [ ] Add expense (equal split)
-- [ ] View balances
-- [ ] Settlement suggestions
-- [ ] Basic group page UI
+- [x] Auth (Google OAuth + email + JWT cookies)
+- [x] Create / join groups
+- [x] Add expense (equal split)
+- [x] View balances
+- [x] Settlement suggestions + mark-as-paid
+- [x] Group details page UI
+- [x] Analytics dashboard
+- [x] Profile page + VPA onboarding
 
-**Explicitly excluded from V1:**
-- Advanced split logic (percentage, shares, itemized)  
-- Real-time WebSocket updates
-- Analytics charts
-- Receipt OCR / AI features
-- Push notifications
+**V2 — In Progress (Real-Time & AI):**
+- [ ] WebSocket setup & authentication
+- [ ] Real-time group chat
+- [ ] Receipt image upload (Cloudflare R2)
+- [ ] AI receipt parsing (Gemini Pro Vision)
+- [ ] Real-time expense broadcast
 
 
 # How SettleUp Can Beat GPay Split
