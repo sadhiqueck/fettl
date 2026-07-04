@@ -302,6 +302,8 @@ export function AddExpenseModal({
     }
     // B. Calculate next splits array
     let nextSplits: SplitItem[] = [];
+    const totalCents = Math.round(currentAmount * 100);
+
     if (splitMethod === "ITEMIZED") {
       nextSplits = members
         .filter((m) => (itemizedTotals.totals[m.id] || 0) > 0)
@@ -311,13 +313,20 @@ export function AddExpenseModal({
         }));
     } else if (selectedMembers.length > 0 && currentAmount > 0) {
       if (splitMethod === "EQUAL") {
-        const splitAmount = Number(
-          (currentAmount / selectedMembers.length).toFixed(2),
-        );
-        nextSplits = selectedMembers.map((m) => ({
-          userId: m.id,
-          amount: splitAmount,
-        }));
+        const baseCents = Math.floor(totalCents / selectedMembers.length);
+        let remainder = totalCents % selectedMembers.length;
+
+        nextSplits = selectedMembers.map((m) => {
+          let cents = baseCents;
+          if (remainder > 0) {
+            cents += 1;
+            remainder -= 1;
+          }
+          return {
+            userId: m.id,
+            amount: cents / 100,
+          };
+        });
       } else {
         nextSplits = selectedMembers
           .map((m): SplitItem => {
@@ -325,18 +334,34 @@ export function AddExpenseModal({
             const base = { userId: m.id };
             if (splitMethod === "EXACT") return { ...base, amount: val };
             if (splitMethod === "PERCENTAGE") {
-              const calculatedAmount = Number((currentAmount * (val / 100)).toFixed(2));
-              return { ...base, percentage: val, amount: calculatedAmount };
+              const calculatedCents = Math.round(totalCents * (val / 100));
+              return { ...base, percentage: val, amount: calculatedCents / 100 };
             }
             if (splitMethod === "SHARES") {
-              const calculatedAmount = totalShares > 0
-                ? Number((currentAmount * (val / totalShares)).toFixed(2))
+              const calculatedCents = totalShares > 0
+                ? Math.round(totalCents * (val / totalShares))
                 : 0;
-              return { ...base, shares: val, amount: calculatedAmount };
+              return { ...base, shares: val, amount: calculatedCents / 100 };
             }
             return base;
           })
           .filter((s) => s.amount || s.percentage || s.shares);
+
+        // For PERCENTAGE and SHARES, fix rounding discrepancies
+        if ((splitMethod === "PERCENTAGE" || splitMethod === "SHARES") && nextSplits.length > 0) {
+          const currentSumCents = nextSplits.reduce((sum, s) => sum + Math.round((s.amount || 0) * 100), 0);
+          const diff = totalCents - currentSumCents;
+          
+          if (diff !== 0 && Math.abs(diff) < nextSplits.length * 2) {
+             let remainingDiff = diff;
+             for (let i = 0; i < nextSplits.length && remainingDiff !== 0; i++) {
+                const adjustment = remainingDiff > 0 ? 1 : -1;
+                const currentAmountCents = Math.round((nextSplits[i].amount || 0) * 100);
+                nextSplits[i].amount = (currentAmountCents + adjustment) / 100;
+                remainingDiff -= adjustment;
+             }
+          }
+        }
       }
     }
     // C. Prevent render loops: Deep-compare before updating RHF state

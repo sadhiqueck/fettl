@@ -158,10 +158,48 @@ export class ChatGateway
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     });
 
-    // Send history to the client who just joined
-    client.emit('chatHistory', history.reverse());
+    // Send history to this specific client
+    client.emit('chatHistory', {
+      history: history.reverse(),
+      hasMore: history.length === 50,
+    });
+    return { status: 'joined' };
+  }
 
-    return { status: 'success', room: roomName };
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('loadMoreMessages')
+  async handleLoadMoreMessages(
+    @ConnectedSocket() client: AuthSocket,
+    @MessageBody() data: { groupId: string; cursor: string },
+  ) {
+    if (!data.groupId || !data.cursor) {
+      return { status: 'error', message: 'Missing groupId or cursor' };
+    }
+
+    const isMember = await this.prisma.groupMember.findUnique({
+      where: {
+        userId_groupId: { userId: client.data.user!.id, groupId: data.groupId },
+      },
+    });
+
+    if (!isMember) {
+      return { status: 'error', message: 'Not a member of this group' };
+    }
+
+    const history = await this.prisma.chatMessage.findMany({
+      where: { groupId: data.groupId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      skip: 1, // Skip the cursor itself
+      cursor: { id: data.cursor },
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    });
+
+    client.emit('olderMessages', {
+      history: history.reverse(),
+      hasMore: history.length === 50,
+    });
+    return { status: 'success' };
   }
 
   @UseGuards(WsJwtGuard)

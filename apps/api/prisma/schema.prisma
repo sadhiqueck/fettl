@@ -145,6 +145,7 @@ model GroupMember {
 
   @@unique([userId, groupId])
   @@index([groupId])
+  @@index([userId])
   @@map("group_members")
 }
 
@@ -226,6 +227,7 @@ model Settlement {
   note       String?
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
+  isDeleted  Boolean          @default(false)
 
   group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer    User  @relation("SettlementPayer",   fields: [payerId],    references: [id])
@@ -283,6 +285,7 @@ model ChatMessage {
   content   String
   imageUrl  String?
   createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

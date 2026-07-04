@@ -175,10 +175,6 @@ export class GroupsService {
               balances: {
                 where: { userId },
               },
-              expenses: {
-                where: { isDeleted: false },
-                select: { amount: true },
-              },
               activities: {
                 orderBy: { createdAt: 'desc' },
                 take: 1,
@@ -202,12 +198,20 @@ export class GroupsService {
         return dateB - dateA;
       });
 
+      // Optimization: Fetch all expense sums for these groups in one SQL query instead of loading objects
+      const groupIds = groupMemberships.map((m) => m.groupId);
+      const expenseSums = await this.prisma.expense.groupBy({
+        by: ['groupId'],
+        where: { groupId: { in: groupIds }, isDeleted: false },
+        _sum: { amount: true },
+      });
+      const sumMap = new Map(
+        expenseSums.map((s) => [s.groupId, s._sum.amount || 0])
+      );
+
       return groupMemberships.map((membership) => {
         const g = membership.group;
-        const totalExpense = g.expenses.reduce(
-          (sum, exp) => sum + exp.amount,
-          0,
-        );
+        const totalExpense = sumMap.get(g.id) || 0;
         const userBalance = g.balances.length > 0 ? g.balances[0].balance : 0;
         const lastActivityDate =
           g.activities.length > 0 ? g.activities[0].createdAt : g.updatedAt;
@@ -270,6 +274,7 @@ export class GroupsService {
             },
           },
           orderBy: { date: 'desc' },
+          take: 20, // Paginate to limit memory load
         },
         activities: {
           include: { user: { select: { id: true, name: true } } },
@@ -280,13 +285,14 @@ export class GroupsService {
     });
 
     if (!group) {
-      throw new Error('Group not found');
+      throw new NotFoundException('Group not found');
     }
 
-    const totalExpense = group.expenses.reduce(
-      (sum, exp) => sum + exp.amount,
-      0,
-    );
+    const expenseSum = await this.prisma.expense.aggregate({
+      where: { groupId: id, isDeleted: false },
+      _sum: { amount: true },
+    });
+    const totalExpense = expenseSum._sum.amount || 0;
     const userBalanceRecord = group.balances.find((b) => b.userId === userId);
     const userBalance = userBalanceRecord ? userBalanceRecord.balance : 0;
     const lastActivityDate =

@@ -14,7 +14,7 @@ export const createExpenseSchema = z.object({
   amount: z.number().int("Amount must be in paise (integer)").positive(),
   paidById: z.string(),
   category: z
-    .enum(['FOOD', 'TRANSPORT', 'ACCOMMODATION', 'SHOPPING', 'ENTERTAINMENT', 'UTILITIES', 'OTHER'])
+    .enum(['FOOD', 'TRANSPORT', 'ACCOMMODATION', 'SHOPPING', 'ENTERTAINMENT', 'UTILITIES', 'RENT', 'OTHER'])
     .default('OTHER'),
   splitMethod: z.enum(['EQUAL', 'EXACT', 'PERCENTAGE', 'SHARES', 'ITEMIZED']).default('EQUAL'),
   date: z.string().datetime(),
