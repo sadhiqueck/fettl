@@ -32,7 +32,8 @@ export class GroupRoleGuard implements CanActivate {
       .getRequest<import('express').Request>();
     const user = request.user as { id: string } | undefined;
     // Support both :groupId (expenses/settlements) and :id (groups)
-    const groupId = request.params.groupId || request.params.id;
+    const rawGroupId = request.params.groupId || request.params.id;
+    const groupId = Array.isArray(rawGroupId) ? rawGroupId[0] : rawGroupId as string;
 
     if (!user || !groupId) {
       throw new ForbiddenException('Invalid user or group context');

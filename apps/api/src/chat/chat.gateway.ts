@@ -28,15 +28,11 @@ import { PrismaService } from '../prisma/prisma.service';
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      const allowed = ['http://localhost:5173'];
-      if (process.env.FRONTEND_URL) allowed.push(process.env.FRONTEND_URL);
-
-      // Allow if origin is in allowed list, or if it's undefined (e.g. Postman)
-      if (
-        !origin ||
-        allowed.includes(origin) ||
-        allowed.includes(origin.replace(/\/$/, ''))
-      ) {
+      const allowedOrigins = ['http://localhost:5173'];
+      if (process.env.FRONTEND_URL) {
+        allowedOrigins.push(process.env.FRONTEND_URL);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`Not allowed by CORS: ${origin}`));
@@ -158,48 +154,10 @@ export class ChatGateway
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     });
 
-    // Send history to this specific client
-    client.emit('chatHistory', {
-      history: history.reverse(),
-      hasMore: history.length === 50,
-    });
-    return { status: 'joined' };
-  }
+    // Send history to the client who just joined
+    client.emit('chatHistory', history.reverse());
 
-  @UseGuards(WsJwtGuard)
-  @SubscribeMessage('loadMoreMessages')
-  async handleLoadMoreMessages(
-    @ConnectedSocket() client: AuthSocket,
-    @MessageBody() data: { groupId: string; cursor: string },
-  ) {
-    if (!data.groupId || !data.cursor) {
-      return { status: 'error', message: 'Missing groupId or cursor' };
-    }
-
-    const isMember = await this.prisma.groupMember.findUnique({
-      where: {
-        userId_groupId: { userId: client.data.user!.id, groupId: data.groupId },
-      },
-    });
-
-    if (!isMember) {
-      return { status: 'error', message: 'Not a member of this group' };
-    }
-
-    const history = await this.prisma.chatMessage.findMany({
-      where: { groupId: data.groupId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      skip: 1, // Skip the cursor itself
-      cursor: { id: data.cursor },
-      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
-    });
-
-    client.emit('olderMessages', {
-      history: history.reverse(),
-      hasMore: history.length === 50,
-    });
-    return { status: 'success' };
+    return { status: 'success', room: roomName };
   }
 
   @UseGuards(WsJwtGuard)

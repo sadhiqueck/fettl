@@ -10,6 +10,8 @@ interface ChatFeedProps {
   group: GroupDetailsData;
   currentUser: { id: string } | undefined;
   messages: ChatMessage[];
+  hasMore: boolean;
+  loadMore: () => void;
   chatInput: string;
   setChatInput: (input: string) => void;
   sendMessage: (content: string, imageUrl?: string) => void;
@@ -30,6 +32,8 @@ export function ChatFeed({
   group,
   currentUser,
   messages,
+  hasMore,
+  loadMore,
   chatInput,
   setChatInput,
   sendMessage,
@@ -60,12 +64,27 @@ export function ChatFeed({
   }, [messages, group.expenses]);
 
   useEffect(() => {
+    // Only scroll to bottom on initial load or new messages, 
+    // not when older messages are loaded. For now, simple scroll is fine.
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [unifiedFeed]);
+  }, [messages.length, group.expenses.length]);
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 space-y-4">
+        {hasMore && unifiedFeed.length > 0 && (
+          <div className="flex justify-center pb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadMore}
+              className="text-xs bg-white text-muted-foreground hover:text-foreground"
+            >
+              Load older messages
+            </Button>
+          </div>
+        )}
+        
         {unifiedFeed.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
             <div className="clay-card p-5 rounded-full mb-4">
@@ -126,7 +145,7 @@ export function ChatFeed({
                       </div>
                     )}
                     {msg.content && msg.content.trim() && (
-                      <p className="text-sm break-words">{msg.content}</p>
+                      <p className="text-sm wrap-break-words">{msg.content}</p>
                     )}
                     <span className={`text-[10px] block text-right mt-1 ${isImageOnly ? "absolute bottom-2 right-3 text-white drop-shadow-md z-10 font-medium" : "opacity-70"}`}>
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

@@ -20,6 +20,7 @@ export function useChat(groupId: string) {
   const { socket, isConnected } = useSocket();
   const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -32,8 +33,19 @@ export function useChat(groupId: string) {
       setMessages((prev) => [...prev, message]);
     };
 
-    const handleHistory = (history: ChatMessage[]) => {
-      setMessages(history);
+    const handleHistory = (payload: { history: ChatMessage[]; hasMore: boolean } | ChatMessage[]) => {
+      if (Array.isArray(payload)) {
+        setMessages(payload);
+        setHasMore(false);
+      } else {
+        setMessages(payload.history || []);
+        setHasMore(payload.hasMore || false);
+      }
+    };
+
+    const handleOlderMessages = (payload: { history: ChatMessage[]; hasMore: boolean }) => {
+      setMessages((prev) => [...(payload.history || []), ...prev]);
+      setHasMore(payload.hasMore || false);
     };
 
     // 3. Listen for real-time expense/settlement broadcasts
@@ -46,6 +58,7 @@ export function useChat(groupId: string) {
 
     socket.on('newMessage', handleNewMessage);
     socket.on('chatHistory', handleHistory);
+    socket.on('olderMessages', handleOlderMessages);
     socket.on('expense:created', handleExpenseChange);
     socket.on('expense:updated', handleExpenseChange);
     socket.on('expense:deleted', handleExpenseChange);
@@ -56,6 +69,7 @@ export function useChat(groupId: string) {
       socket.emit('leaveGroup', { groupId });
       socket.off('newMessage', handleNewMessage);
       socket.off('chatHistory', handleHistory);
+      socket.off('olderMessages', handleOlderMessages);
       socket.off('expense:created', handleExpenseChange);
       socket.off('expense:updated', handleExpenseChange);
       socket.off('expense:deleted', handleExpenseChange);
@@ -70,8 +84,16 @@ export function useChat(groupId: string) {
     }
   }, [socket, isConnected, groupId]);
 
+  const loadMore = useCallback(() => {
+    if (socket && isConnected && messages.length > 0 && hasMore) {
+      socket.emit('loadMoreMessages', { groupId, cursor: messages[0].id });
+    }
+  }, [socket, isConnected, groupId, messages, hasMore]);
+
   return {
     messages,
+    hasMore,
+    loadMore,
     sendMessage,
     setMessages,
   };

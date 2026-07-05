@@ -1,40 +1,36 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
   Phone,
   MoreVertical,
   LogOut,
-  Send,
-  Wallet,
   Info,
   ArrowLeft,
   MessageCircle,
-  Plus,
-  Image as ImageIcon,
-  Loader2,
 } from "lucide-react";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  ClayWalletIcon,
-} from "@/components/clay-icons";
-import type { GroupDetailsData, GroupExpense, GroupSettlement } from "@/hooks/useGroups";
+import { ClayWalletIcon } from "@/components/clay-icons";
+import type {
+  GroupDetailsData,
+  GroupExpense,
+  GroupSettlement,
+} from "@/hooks/useGroups";
 import { useLeaveGroup } from "@/hooks/useGroups";
 import { useUserProfile } from "@/hooks/useUser";
 import { InviteMemberModal } from "@/components/groups/InviteMemberModal";
 import { AddExpenseModal } from "@/components/groups/AddExpenseModal";
 import { EditExpenseModal } from "@/components/groups/EditExpenseModal";
 import { DeleteExpenseDialog } from "@/components/groups/DeleteExpenseDialog";
-import { UpiPayButton } from "@/components/groups/UpiPayButton";
 import { MarkAsPaidDialog } from "@/components/groups/MarkAsPaidDialog";
 import { useUpload } from "@/hooks/useUpload";
 import { ChatFeed } from "./ChatFeed";
 import { ChatBalances } from "./ChatBalances";
 import { ChatActivity } from "./ChatActivity";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useChat } from "@/hooks/useChat";
 
 type ChatView = "feed" | "balances" | "activity";
 
@@ -42,29 +38,30 @@ interface GroupChatPanelProps {
   group: GroupDetailsData;
 }
 
-
-
-
 export function GroupChatPanel({ group }: GroupChatPanelProps) {
   const navigate = useNavigate();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatView, setChatView] = useState<ChatView>("feed");
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<GroupExpense | null>(null);
-  const [deletingExpense, setDeletingExpense] = useState<GroupExpense | null>(null);
-  const [settlingPayment, setSettlingPayment] = useState<GroupSettlement | null>(null);
+  const [editingExpense, setEditingExpense] = useState<GroupExpense | null>(
+    null,
+  );
+  const [deletingExpense, setDeletingExpense] = useState<GroupExpense | null>(
+    null,
+  );
+  const [settlingPayment, setSettlingPayment] =
+    useState<GroupSettlement | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const { data: currentUser } = useUserProfile();
   const leaveGroupMutation = useLeaveGroup();
-  
+
   // File Upload
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
 
   // Real-time chat integration
-  const { messages, sendMessage } = useChat(group.id);
+  const { messages, hasMore, loadMore, sendMessage } = useChat(group.id);
 
   // Optimistic preview: show a local preview immediately while uploading
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -72,16 +69,16 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Create a local preview URL immediately
     const localPreview = URL.createObjectURL(file);
     setUploadPreview(localPreview);
-    
+
     try {
       const fileUrl = await uploadFile(file);
       sendMessage("", fileUrl);
       toast.success("Image sent");
-    } catch (error) {
+    } catch {
       toast.error("Failed to upload image");
     } finally {
       setUploadPreview(null);
@@ -131,10 +128,18 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="rounded-full size-9 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full size-9 text-muted-foreground"
+          >
             <Search size={18} />
           </Button>
-          <Button variant="ghost" size="icon" className="rounded-full size-9 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full size-9 text-muted-foreground"
+          >
             <Phone size={18} />
           </Button>
           <div className="relative">
@@ -148,16 +153,25 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
             </Button>
             {showMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 z-50 clay-card py-1 min-w-[160px] animate-clay-scale-in">
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 top-full mt-1 z-50 clay-card py-1 min-w-40 animate-clay-scale-in">
                   <button
-                    onClick={() => { setIsInviteModalOpen(true); setShowMenu(false); }}
+                    onClick={() => {
+                      setIsInviteModalOpen(true);
+                      setShowMenu(false);
+                    }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-soft-clay font-medium"
                   >
                     Invite members
                   </button>
                   <button
-                    onClick={() => { handleLeaveGroup(); setShowMenu(false); }}
+                    onClick={() => {
+                      handleLeaveGroup();
+                      setShowMenu(false);
+                    }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-red-50 text-rose-500 font-medium flex items-center gap-2"
                   >
                     <LogOut size={14} />
@@ -175,7 +189,11 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
         {(
           [
             { id: "feed" as const, label: "Feed", icon: MessageCircle },
-            { id: "balances" as const, label: "Balances", icon: ClayWalletIcon },
+            {
+              id: "balances" as const,
+              label: "Balances",
+              icon: ClayWalletIcon,
+            },
             { id: "activity" as const, label: "Activity", icon: Info },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
@@ -200,6 +218,8 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
             group={group}
             currentUser={currentUser}
             messages={messages}
+            hasMore={hasMore}
+            loadMore={loadMore}
             chatInput={chatInput}
             setChatInput={setChatInput}
             sendMessage={sendMessage}
@@ -315,7 +335,9 @@ export function GroupChatLoading() {
                 }`}
               >
                 {isLeft && <Skeleton className="h-3 w-16 mb-1" />}
-                <Skeleton className={`h-16 ${i % 3 === 0 ? "w-64" : "w-48"} rounded-2xl`} />
+                <Skeleton
+                  className={`h-16 ${i % 3 === 0 ? "w-64" : "w-48"} rounded-2xl`}
+                />
               </div>
             </div>
           );
@@ -351,7 +373,8 @@ export function GroupChatEmpty() {
         Settle<span className="text-emerald-500">Up</span>
       </h2>
       <p className="text-muted-foreground max-w-sm text-sm">
-        Select a group from the sidebar to view expenses, balances, and settlements — all in one conversation-style feed.
+        Select a group from the sidebar to view expenses, balances, and
+        settlements — all in one conversation-style feed.
       </p>
     </div>
   );

@@ -21,7 +21,6 @@ export function VpaOnboardingModal({ isOpen }: VpaOnboardingModalProps) {
   const [vpa, setVpa] = useState("");
   const [touched, setTouched] = useState(false);
   const updateProfileMutation = useUpdateProfile();
-  console.log(VPA_REGEX)
 
   const isValid = VPA_REGEX.test(vpa);
   const showError = touched && vpa.length > 0 && !isValid;
