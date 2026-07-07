@@ -13,6 +13,7 @@ import { SettlementsModule } from './settlements/settlements.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ChatModule } from './chat/chat.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { PushModule } from './push/push.module';
 
 @Module({
   imports: [

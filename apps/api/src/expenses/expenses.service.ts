@@ -7,10 +7,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateExpenseInput, UpdateExpenseInput } from '@settleup/shared';
 import { ActivityType, ExpenseCategory, SplitMethod } from '@prisma/client';
+import { PushService } from '../push/push.service';
 
 @Injectable()
 export class ExpensesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushService: PushService,
+  ) {}
 
   async getExpenseById(expenseId: string) {
     return this.prisma.expense.findUnique({
@@ -35,7 +39,7 @@ export class ExpensesService {
     }
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx) => {
         // 1. Create the Expense
         const expense = await tx.expense.create({
           data: {
@@ -107,6 +111,29 @@ export class ExpensesService {
 
         return expense;
       });
+      
+      // 5. Send Push Notification
+      const group = await this.prisma.group.findUnique({
+        where: { id: groupId },
+        select: { name: true },
+      });
+      
+      const payer = await this.prisma.user.findUnique({
+        where: { id: data.paidById },
+        select: { name: true, avatarUrl: true },
+      });
+      
+      if (group && payer) {
+        // Run push notification async so it doesn't block response
+        void this.pushService.sendPushToGroupMembers(groupId, userId, {
+          title: `New expense in ${group.name}`,
+          body: `${payer.name} added "${data.title}" for ₹${(data.amount / 100).toFixed(2)}`,
+          icon: payer.avatarUrl || '/icon-192x192.png',
+          url: `/group/${groupId}`,
+        });
+      }
+
+      return result;
     } catch (error) {
       console.error('Error adding expense:', error);
       throw new InternalServerErrorException('Failed to add expense');

@@ -21,6 +21,7 @@ export interface AuthSocket extends Socket {
 }
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 
 @WebSocketGateway({
   cors: {
@@ -53,6 +54,7 @@ export class ChatGateway
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly pushService: PushService,
   ) {}
 
   // ─── Lifecycle: Gateway initialized ─────────────────
@@ -198,6 +200,21 @@ export class ChatGateway
     // 2. Broadcast to everyone in the room (including the sender)
     const roomName = `group_${payload.groupId}`;
     this.server.to(roomName).emit('newMessage', message);
+
+    // 3. Send push notification to offline members
+    const group = await this.prisma.group.findUnique({
+      where: { id: payload.groupId },
+      select: { name: true },
+    });
+    
+    if (group) {
+      await this.pushService.sendPushToGroupMembers(payload.groupId, user.id, {
+        title: `New message in ${group.name}`,
+        body: `${user.name}: ${payload.imageUrl ? 'sent an image' : payload.content}`,
+        icon: user.avatarUrl || '/icon-192x192.png',
+        url: `/group/${payload.groupId}`,
+      });
+    }
 
     return { status: 'delivered' };
   }

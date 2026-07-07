@@ -17,6 +17,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { useUpdateProfile, useUserProfile, useLogout } from "@/hooks/useUser";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
@@ -28,6 +29,8 @@ export default function ProfilePage() {
   const { data: user, isLoading } = useUserProfile();
   const updateProfileMutation = useUpdateProfile();
   const logoutMutation = useLogout();
+  
+  const { isSupported, permission, loading: pushLoading, subscribe } = usePushNotifications();
 
   if (user && !isInitialized) {
     setName(user.name || "");
@@ -209,6 +212,42 @@ export default function ProfilePage() {
                   {updateProfileMutation.isPending ? "Saving..." : "Save changes"}
                 </button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Notifications Card */}
+          <Card className="chat-info-card border-0 ring-0 p-0 shadow-none">
+            <CardHeader className="pb-4 pt-6 px-6">
+              <CardTitle className="font-display text-xl font-bold flex items-center gap-2">
+                <Bell size={20} className="text-primary" /> Push Notifications
+              </CardTitle>
+              <CardDescription>
+                Receive alerts for new expenses and messages even when the app is closed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-6 pb-6">
+              {!isSupported ? (
+                <p className="text-sm text-muted-foreground">
+                  Push notifications are not supported on your current browser.
+                </p>
+              ) : permission === "granted" ? (
+                <div className="flex items-center gap-2 text-green-600 font-medium">
+                  <CheckCircle2 size={18} />
+                  Notifications are enabled
+                </div>
+              ) : permission === "denied" ? (
+                <p className="text-sm text-red-500 font-medium">
+                  Notifications are blocked. Please enable them in your browser settings.
+                </p>
+              ) : (
+                <button
+                  onClick={() => subscribe()}
+                  disabled={pushLoading}
+                  className={`clay-btn-primary px-6 text-sm ${pushLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {pushLoading ? "Enabling..." : "Enable Notifications"}
+                </button>
+              )}
             </CardContent>
           </Card>
         </div>
