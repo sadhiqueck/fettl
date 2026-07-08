@@ -5,6 +5,7 @@ import type { GroupDetailsData, GroupExpense } from "@/hooks/useGroups";
 import { ExpenseMessageBubble } from "@/components/chat/ExpenseMessageBubble";
 import { ChatImageBubble } from "@/components/chat/ChatImageBubble";
 import type { ChatMessage } from "@/hooks/useChat";
+import { Button } from "../ui/button";
 
 interface ChatFeedProps {
   group: GroupDetailsData;

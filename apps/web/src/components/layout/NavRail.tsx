@@ -56,15 +56,11 @@ export function NavRail({
         className="hidden md:flex mb-6 size-10 rounded-xl items-center justify-center cursor-pointer hover:scale-105 transition-transform"
         title="SettleUp"
       >
-        <div
-          className="size-9 rounded-xl flex items-center justify-center font-display font-extrabold text-sm text-white"
-          style={{
-            background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
-            boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
-          }}
-        >
-          S
-        </div>
+        <img
+          src="/icon-192x192.png"
+          alt="SettleUp Logo"
+          className="size-10 rounded-xl object-contain drop-shadow-md"
+        />
       </button>
 
       {/* Category filters */}

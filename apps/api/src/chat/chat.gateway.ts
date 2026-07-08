@@ -16,7 +16,7 @@ import { Server, Socket } from 'socket.io';
 
 export interface AuthSocket extends Socket {
   data: {
-    user?: { id: string; name: string; email: string };
+    user?: { id: string; name: string; email: string; avatarUrl?: string };
   };
 }
 import { WsJwtGuard } from './guards/ws-jwt.guard';
@@ -83,7 +83,7 @@ export class ChatGateway
       // Lookup the user in the database
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, avatarUrl: true },
       });
 
       if (!user) {
@@ -94,7 +94,10 @@ export class ChatGateway
       }
 
       // Attach user data to the socket for all future event handlers
-      client.data.user = user;
+      client.data.user = {
+        ...user,
+        avatarUrl: user.avatarUrl ?? undefined,
+      };
 
       this.logger.log(`✅ Connected: ${user.name} (${client.id})`);
     } catch {
@@ -206,7 +209,7 @@ export class ChatGateway
       where: { id: payload.groupId },
       select: { name: true },
     });
-    
+
     if (group) {
       await this.pushService.sendPushToGroupMembers(payload.groupId, user.id, {
         title: `New message in ${group.name}`,
