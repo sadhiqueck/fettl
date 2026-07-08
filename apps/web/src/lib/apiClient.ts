@@ -1,20 +1,26 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError } from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   withCredentials: true, // Send HTTP-Only cookies with every request
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Flag to prevent multiple concurrent refresh requests
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: Error | AxiosError) => void }> = [];
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: Error | AxiosError) => void;
+}> = [];
 
-const processQueue = (error: Error | AxiosError | null, token: string | null = null) => {
+const processQueue = (
+  error: Error | AxiosError | null,
+  token: string | null = null,
+) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -36,9 +42,9 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      originalRequest.url !== '/auth/refresh' &&
-      originalRequest.url !== '/auth/login' &&
-      originalRequest.url !== '/auth/register'
+      originalRequest.url !== "/auth/refresh" &&
+      originalRequest.url !== "/auth/login" &&
+      originalRequest.url !== "/auth/register"
     ) {
       if (isRefreshing) {
         // If another request is already refreshing the token, wait for it to finish
@@ -58,18 +64,26 @@ apiClient.interceptors.response.use(
 
       try {
         // The browser will automatically send the `refresh_token` cookie
-        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-        
+        await axios.post(
+          `${API_URL}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
+
         processQueue(null);
-        
+
         // Retry the original request
         return apiClient(originalRequest);
       } catch (refreshError: unknown) {
-        processQueue(refreshError instanceof Error ? refreshError : new Error(String(refreshError)));
-        
+        processQueue(
+          refreshError instanceof Error
+            ? refreshError
+            : new Error(String(refreshError)),
+        );
+
         // Refresh failed (e.g. refresh token expired), redirect to login
         // Alternatively, your AuthProvider could handle this, but for now we throw
-        // window.location.href = '/login'; 
+        // window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -77,5 +91,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

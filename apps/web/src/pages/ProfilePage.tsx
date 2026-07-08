@@ -14,6 +14,7 @@ import {
   AtSign,
   CheckCircle2,
   LogOut,
+  Bell,
   User as UserIcon,
 } from "lucide-react";
 import { useUpdateProfile, useUserProfile, useLogout } from "@/hooks/useUser";
@@ -29,8 +30,13 @@ export default function ProfilePage() {
   const { data: user, isLoading } = useUserProfile();
   const updateProfileMutation = useUpdateProfile();
   const logoutMutation = useLogout();
-  
-  const { isSupported, permission, loading: pushLoading, subscribe } = usePushNotifications();
+
+  const {
+    isSupported,
+    permission,
+    loading: pushLoading,
+    subscribe,
+  } = usePushNotifications();
 
   if (user && !isInitialized) {
     setName(user.name || "");
@@ -110,7 +116,8 @@ export default function ProfilePage() {
           <div
             className="absolute top-[-50%] left-[-10%] w-64 h-64 rounded-full opacity-10 pointer-events-none"
             style={{
-              background: "radial-gradient(circle, #00C700 0%, transparent 70%)",
+              background:
+                "radial-gradient(circle, #00C700 0%, transparent 70%)",
               filter: "blur(40px)",
             }}
           />
@@ -152,11 +159,19 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="px-6 pb-6 space-y-5">
               <div className="space-y-2">
-                <Label className="font-display font-bold text-sm">Full name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} className="clay-input" />
+                <Label className="font-display font-bold text-sm">
+                  Full name
+                </Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="clay-input"
+                />
               </div>
               <div className="space-y-2">
-                <Label className="font-display font-bold text-sm">Email address</Label>
+                <Label className="font-display font-bold text-sm">
+                  Email address
+                </Label>
                 <Input value={email} className="clay-input" disabled />
               </div>
               <div className="space-y-2">
@@ -170,7 +185,10 @@ export default function ProfilePage() {
                   )}
                 </Label>
                 <div className="relative">
-                  <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <AtSign
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    size={18}
+                  />
                   <Input
                     value={vpa}
                     onChange={(e) => setVpa(e.target.value.trim())}
@@ -198,8 +216,8 @@ export default function ProfilePage() {
                   onClick={handleSaveChanges}
                   disabled={Boolean(
                     updateProfileMutation.isPending ||
-                      (name === user?.name && vpa === (user?.vpa || "")) ||
-                      (vpa && !isVpaValid),
+                    (name === user?.name && vpa === (user?.vpa || "")) ||
+                    (vpa && !isVpaValid),
                   )}
                   className={`clay-btn-primary px-8 text-sm ${
                     updateProfileMutation.isPending ||
@@ -209,7 +227,9 @@ export default function ProfilePage() {
                       : ""
                   }`}
                 >
-                  {updateProfileMutation.isPending ? "Saving..." : "Save changes"}
+                  {updateProfileMutation.isPending
+                    ? "Saving..."
+                    : "Save changes"}
                 </button>
               </div>
             </CardContent>
@@ -222,7 +242,8 @@ export default function ProfilePage() {
                 <Bell size={20} className="text-primary" /> Push Notifications
               </CardTitle>
               <CardDescription>
-                Receive alerts for new expenses and messages even when the app is closed.
+                Receive alerts for new expenses and messages even when the app
+                is closed.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-6">
@@ -237,7 +258,8 @@ export default function ProfilePage() {
                 </div>
               ) : permission === "denied" ? (
                 <p className="text-sm text-red-500 font-medium">
-                  Notifications are blocked. Please enable them in your browser settings.
+                  Notifications are blocked. Please enable them in your browser
+                  settings.
                 </p>
               ) : (
                 <button
