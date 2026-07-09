@@ -37,6 +37,20 @@
 | **Charts** | Recharts | Analytics visualizations |
 | **DevOps** | Docker Compose + Docker Engine v29 | Containerized local development |
 
+Purpose         	Library
+
+Styling	          Tailwind CSS 4
+Components	      shadcn/ui
+UI Primitives	    Radix UI (via shadcn)
+Icons	            Lucide React
+Animations	      Motion (Framer Motion)
+Forms	            React Hook Form + Zod
+Tables	          TanStack Table
+Server State    	TanStack Query
+Charts	          Recharts
+Notifications	    Sonner
+Dates	            date-fns
+
 ---
 
 ## Repository Structure
@@ -197,8 +211,9 @@ A bright, friendly palette that makes finances feel approachable. It uses **Clay
 | **Exact** | Manual amount per person, must sum to total |
 | **Percentage** | Slider/input per person, must sum to 100% |
 | **Shares** | Integer shares per person, divide proportionally |
+| **Itemized** | (WIP/Schema supported) Link specific items to users |
 
-> **MVP**: Ship with EQUAL only. The form architecture should use a state machine pattern so adding split modes later is additive, not a rewrite.
+> All core split modes (Equal, Exact, Percentage, Shares) are fully implemented in the frontend UI and backend schema.
 
 **Endpoints**: `POST /expenses` · `PATCH /expenses/:id` · `DELETE /expenses/:id`
 
@@ -578,30 +593,32 @@ Individual splits are not "paid" — settlements operate at the user-to-user lev
 8. ✅ Profile page with VPA (UPI) onboarding
 ```
 
-### Phase 3 — Real-Time Chat & AI Receipts (Current → In Progress)
+### Phase 3 — Real-Time Chat & AI Receipts ✅ Complete
 
 ```
-Step 1: ⏳ WebSocket setup & authentication
+Step 1: ✅ WebSocket setup & authentication
          └── NestJS ChatGateway + WsJwtGuard + React SocketContext
          └── Cookie-based WebSocket auth (reuses existing httpOnly JWT)
-Step 2: [ ] Real-time group chat with Socket.io Rooms
+Step 2: ✅ Real-time group chat with Socket.io Rooms
          └── Users join room per group, send/receive messages
-Step 3: [ ] Receipt image uploads via Cloudflare R2
-         └── Pre-signed URL flow (REST upload, NOT over WebSocket)
-Step 4: [ ] BullMQ queue for background AI processing
-         └── Offload Gemini calls to a worker (don't block the WS server)
-Step 5: [ ] Gemini AI receipt parsing
+Step 3: ✅ Receipt image uploads via Cloudflare R2
+         └── Pre-signed URL flow
+Step 4: ✅ Gemini AI receipt parsing
          └── Extract merchant, total, date → auto-create expense
-Step 6: [ ] Real-time expense notifications
-         └── Worker → Redis → Gateway → broadcast to group room
+Step 5: ✅ Real-time expense & chat notifications
+         └── Web Push API integration for background mobile notifications
+         └── Service worker & push subscription handling
 ```
 
-### Phase 4 — Scale & Polish (Upcoming)
+### Phase 4 — Scale & Polish ✅ In Progress
 
 ```
-1. [ ] Advanced split methods (exact, percentage, shares)
-2. [ ] Push notifications (in-app + email settlement reminders)
-3. [ ] PWA support for mobile
+1. ✅ PWA support for mobile
+   └── Web App Manifest, Service Worker caching, Installable on home screen
+2. ✅ Push notifications
+   └── Triggered on new chat messages and expenses
+3. ✅ Advanced split methods
+   └── Exact, Percentage, Shares fully supported in AddExpenseModal
 4. [ ] Export group data (PDF/CSV)
 5. [ ] Multi-currency support
 6. [ ] Docker production builds (multi-stage + turbo prune)
@@ -624,13 +641,55 @@ Step 6: [ ] Real-time expense notifications
 - [x] Analytics dashboard
 - [x] Profile page + VPA onboarding
 
-**V2 — In Progress (Real-Time & AI):**
-- [ ] WebSocket setup & authentication
-- [ ] Real-time group chat
-- [ ] Receipt image upload (Cloudflare R2)
-- [ ] AI receipt parsing (Gemini Pro Vision)
-- [ ] Real-time expense broadcast
+**V2 — Real-Time & AI (Completed):**
+- [x] WebSocket setup & authentication
+- [x] Real-time group chat
+- [x] Receipt image upload (Cloudflare R2)
+- [x] AI receipt parsing (Gemini Pro Vision)
+- [x] Real-time expense broadcast
+- [x] Web Push API background notifications
+- [x] PWA (Progressive Web App) mobile installation
+- [x] Advanced split methods (Exact, Percentage, Shares)
 
+**V3 — Upcoming Features:**
+- [ ] Export group data (PDF/CSV)
+- [ ] Multi-currency support
+- [ ] Docker production builds
+- [ ] Socket.io Redis Adapter
+
+---
+
+## Non-Functional Requirements (Upcoming)
+
+To ensure the system scales elegantly and securely, the following non-functional requirements (NFRs) are planned for implementation:
+
+### ⚡ Performance Targets
+- **P95 API Latency:** `< 100ms` for core read operations (e.g., fetching balances, expense feed).
+- **WebSocket Latency:** Sub-`50ms` real-time message delivery.
+- **Frontend Load:** First Contentful Paint (FCP) `< 1.2s` via Vite code-splitting and asset compression.
+
+### 🛡️ Security Infrastructure
+- **Rate Limiting:** Implement `@nestjs/throttler` to prevent abuse on public endpoints (e.g., login, register).
+- **CSRF Protection:** Anti-CSRF tokens for any cookie-mutating endpoints.
+- **Content Security Policy (CSP):** Strict helmet configurations to prevent XSS attacks.
+- **Input Sanitization:** Global pipes using `class-validator` and `zod` to scrub all incoming payload data.
+
+### 🧪 Testing Strategy
+- **Unit Testing:** `Vitest` for frontend hooks/components and `Jest` for backend NestJS services (target: 80% coverage on core business logic like split calculations).
+- **Integration Testing:** Supertest for API endpoint boundaries.
+- **E2E Testing:** `Playwright` for critical user flows (e.g., Login → Create Group → Add Expense → Settle Up).
+
+### 🚀 CI/CD Pipeline
+- **Continuous Integration:** GitHub Actions to run linting (`eslint`), type-checking (`tsc`), and the test suite on every PR.
+- **Continuous Deployment:** Automated staging deployments on merge to `main`, with manual gates for production releases.
+- **Database Migrations:** Automated Prisma migrations in the pipeline before server rollout.
+
+### 📊 Monitoring & Logging
+- **Error Tracking:** `Sentry` integration for unhandled exceptions in both React and NestJS.
+- **Metrics:** `Prometheus` scraping for system health (CPU/Memory) and business metrics (active Websocket connections).
+- **Tracing & APM:** `OpenTelemetry` to trace slow requests and bottleneck queries.
+
+---
 
 # How SettleUp Can Beat GPay Split
 
