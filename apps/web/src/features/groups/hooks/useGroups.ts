@@ -1,78 +1,43 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/lib/apiClient";
+import type { 
+  GroupDetails, 
+  GroupSummary,
+  ExpenseWithSplits,
+  Settlement,
+  ActivityLog,
+  GroupMember
+} from "@settleup/shared";
+import { toast } from "sonner";
+import { groupKeys } from "./queryKeys";
 
-/* ─── Types ─── */
+/* ─── View Models ─── */
 
-export interface GroupMember {
-  id: string;
-  name: string;
-  initial: string;
-  color: string;
-  avatarUrl?: string | null;
-}
-
-export interface GroupData {
-  id: string;
-  name: string;
-  category: string;
+export interface GroupDataViewModel extends Omit<GroupSummary, "totalExpense"> {
   totalExpense: number;
   memberCount: number;
   members: GroupMember[];
   lastActivity: string;
-  userBalance: number; // positive = owed to you, negative = you owe
+  userBalance: number; 
   inviteCode?: string;
 }
 
-interface GroupsApiResponse {
-  message: string;
-  groups: GroupData[];
-}
-
-export interface ExpenseSplitDetail {
-  userId: string;
-  name: string;
-  amount: number;
-}
-
-export interface GroupExpense {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
-  splitMethod: string;
-  paidBy: string;
-  paidById: string;
+export interface GroupExpenseViewModel extends ExpenseWithSplits {
   paidByAvatar?: string | null;
-  date: string;
-  notes?: string | null;
   splitCount: number;
-  splits: ExpenseSplitDetail[];
 }
 
-export interface GroupBalance {
+export interface GroupBalanceViewModel {
   memberId: string;
   name: string;
   balance: number;
 }
 
-export interface GroupSettlement {
-  from: string;
-  fromId: string;
-  fromVpa: string | null;
-  to: string;
-  toId: string;
-  toVpa: string | null;
-  amount: number;
+interface GroupsApiResponse {
+  message: string;
+  groups: GroupDataViewModel[];
 }
 
-export interface GroupActivity {
-  id: string;
-  type: "expense" | "settlement" | "info";
-  user: string;
-  action: string;
-  target?: string;
-  timestamp: string;
-}
 export interface ContactData {
   id: string;
   name: string;
@@ -80,11 +45,11 @@ export interface ContactData {
   avatarUrl?: string;
 }
 
-export interface GroupDetailsData extends GroupData {
-  expenses: GroupExpense[];
-  balances: GroupBalance[];
-  settlements: GroupSettlement[];
-  activity: GroupActivity[];
+export interface GroupDetailsData extends GroupDataViewModel {
+  expenses: GroupExpenseViewModel[];
+  balances: GroupBalanceViewModel[];
+  settlements: Settlement[];
+  activity: ActivityLog[];
 }
 
 interface CreateGroupPayload {
@@ -95,14 +60,14 @@ interface CreateGroupPayload {
 
 /* ─── Fetch all groups for the authenticated user ─── */
 
-async function fetchGroups(): Promise<GroupData[]> {
+async function fetchGroups(): Promise<GroupDataViewModel[]> {
   const { data } = await apiClient.get<GroupsApiResponse>("/groups");
   return data.groups;
 }
 
 export function useGroups() {
-  return useQuery<GroupData[]>({
-    queryKey: ["groups"],
+  return useQuery<GroupDataViewModel[]>({
+    queryKey: groupKeys.all,
     queryFn: fetchGroups,
     staleTime: 1000 * 60 * 2, // Consider data fresh for 2 minutes
     retry: 2,
@@ -121,7 +86,7 @@ async function fetchGroupById(id: string): Promise<GroupDetailsData> {
 
 export function useGroup(id: string | undefined) {
   return useQuery<GroupDetailsData>({
-    queryKey: ["group", id],
+    queryKey: groupKeys.detail(id!),
     queryFn: () => fetchGroupById(id!),
     enabled: !!id,
     staleTime: 1000 * 60 * 2,
@@ -143,8 +108,11 @@ export function useCreateGroup() {
     mutationFn: createGroup,
     onSuccess: () => {
       // Invalidate the groups query to refetch the list after creation
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
+    onError: () => {
+      toast.error("Couldn't create the group. Please try again.");
+    }
   });
 }
 
@@ -162,8 +130,11 @@ export function useJoinGroup() {
     mutationFn: joinGroup,
     onSuccess: () => {
       // Invalidate to fetch the newly joined group
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
+    onError: () => {
+      toast.error("Couldn't join the group. Please check the code.");
+    }
   });
 }
 
@@ -176,7 +147,7 @@ async function fetchGroupContacts(groupId: string): Promise<ContactData[]> {
 
 export function useGroupContacts(groupId: string | undefined) {
   return useQuery<ContactData[]>({
-    queryKey: ["groupContacts", groupId],
+    queryKey: groupKeys.contacts(groupId!),
     queryFn: () => fetchGroupContacts(groupId!),
     enabled: !!groupId,
   });
@@ -196,9 +167,12 @@ export function useAddMember() {
     mutationFn: addMemberDirectly,
     onSuccess: (_, variables) => {
       // Refetch the group details and contacts after adding a member
-      queryClient.invalidateQueries({ queryKey: ["group", variables.groupId] });
-      queryClient.invalidateQueries({ queryKey: ["groupContacts", variables.groupId] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.contacts(variables.groupId) });
     },
+    onError: () => {
+      toast.error("Couldn't add member. Try again.");
+    }
   });
 }
 
@@ -215,9 +189,12 @@ export function useAddMemberByEmail() {
   return useMutation({
     mutationFn: addMemberByEmail,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["group", variables.groupId] });
-      queryClient.invalidateQueries({ queryKey: ["groupContacts", variables.groupId] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.contacts(variables.groupId) });
     },
+    onError: () => {
+      toast.error("Couldn't add member by email. Try again.");
+    }
   });
 }
 
@@ -234,8 +211,11 @@ export function useLeaveGroup() {
   return useMutation({
     mutationFn: leaveGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
+    onError: () => {
+      toast.error("Couldn't leave the group. Try again.");
+    }
   });
 }
 
@@ -260,9 +240,12 @@ export function useMarkAsPaid() {
   return useMutation({
     mutationFn: markAsPaid,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["group", variables.groupId] });
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
+    onError: () => {
+      toast.error("Couldn't record the settlement. Try again.");
+    }
   });
 }
 
