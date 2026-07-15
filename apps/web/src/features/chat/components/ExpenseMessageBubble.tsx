@@ -118,7 +118,7 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
         {expense.paidBy}
       </span>
       <div className="flex items-end gap-2 max-w-[85%]">
-        <Avatar className="clay-avatar size-8 shrink-0 border border-border/50">
+        <Avatar className="app-avatar size-8 shrink-0 border border-border/50">
           {expense.paidByAvatar && (
             <AvatarImage src={expense.paidByAvatar} alt={expense.paidBy} referrerPolicy="no-referrer" />
           )}

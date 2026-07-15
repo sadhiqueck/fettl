@@ -105,21 +105,21 @@ export default function AnalyticsPage() {
         
         {/* Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="clay-card-elevated p-5 flex flex-col gap-1">
+          <div className="app-card-elevated p-5 flex flex-col gap-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Spent</span>
             <span className="text-2xl font-black font-sans text-slate-800">
               {formatCurrency(overview.totalSpent)}
             </span>
             <span className="text-xs text-slate-400 mt-1">{overview.totalExpenses} expenses</span>
           </div>
-          <div className="clay-card-elevated p-5 flex flex-col gap-1">
+          <div className="app-card-elevated p-5 flex flex-col gap-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Paid</span>
             <span className="text-2xl font-black font-sans text-emerald-500">
               {formatCurrency(overview.totalPaid)}
             </span>
             <span className="text-xs text-slate-400 mt-1">Money out of pocket</span>
           </div>
-          <div className="clay-card-elevated p-5 flex flex-col gap-1">
+          <div className="app-card-elevated p-5 flex flex-col gap-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Net Balance</span>
             <span className={`text-2xl font-black font-sans flex items-center gap-1 ${overview.netBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
               {overview.netBalance >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
               {overview.netBalance >= 0 ? "You are owed" : "You owe"}
             </span>
           </div>
-          <div className="clay-card-elevated p-5 flex flex-col gap-1">
+          <div className="app-card-elevated p-5 flex flex-col gap-1">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Settled</span>
             <span className="text-2xl font-black font-sans text-slate-800">
               {formatCurrency(overview.totalSettled)}
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Monthly Trend Chart */}
-          <div className="clay-card-elevated p-5 lg:col-span-2 flex flex-col h-[360px]">
+          <div className="app-card-elevated p-5 lg:col-span-2 flex flex-col h-[360px]">
             <h3 className="font-display font-bold text-sm text-slate-700 mb-4">Spending Trend (6 Months)</h3>
             <div className="flex-1 min-h-0">
               {monthlyTrend.length > 0 ? (
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Category Breakdown */}
-          <div className="clay-card-elevated p-5 flex flex-col h-[360px]">
+          <div className="app-card-elevated p-5 flex flex-col h-[360px]">
             <h3 className="font-display font-bold text-sm text-slate-700 mb-2">By Category</h3>
             <div className="flex-1 min-h-0 flex flex-col justify-center">
               {categoryBreakdown.length > 0 ? (
@@ -228,7 +228,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Top Groups */}
-          <div className="clay-card-elevated p-5 lg:col-span-3 flex flex-col h-[320px]">
+          <div className="app-card-elevated p-5 lg:col-span-3 flex flex-col h-[320px]">
             <h3 className="font-display font-bold text-sm text-slate-700 mb-4">Top Groups by Spending</h3>
             <div className="flex-1 min-h-0">
               {topGroups.length > 0 ? (

@@ -9,7 +9,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { ClayArrowRightIcon } from "@/shared/components/ui/clay-icons";
+import { ArrowRightIcon } from "@/shared/components/ui/icons";
 import { useMarkAsPaid } from "@/features/groups/hooks/useGroups";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
@@ -74,10 +74,10 @@ export function MarkAsPaidDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
+      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
         <DialogHeader className="pb-2">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="clay-card-elevated p-4 rounded-2xl bg-primary/10">
+            <div className="app-card-elevated p-4 rounded-2xl bg-primary/10">
               <CheckCircle2 size={32} className="text-primary" />
             </div>
             <div>
@@ -92,7 +92,7 @@ export function MarkAsPaidDialog({
         </DialogHeader>
 
         {/* Settlement details */}
-        <div className="clay-card-pressed p-5 rounded-2xl text-center my-1 space-y-3">
+        <div className="app-card-pressed p-5 rounded-2xl text-center my-1 space-y-3">
           <p className="font-sans font-extrabold text-3xl text-foreground">
             {formatCurrency(amount)}
           </p>
@@ -100,7 +100,7 @@ export function MarkAsPaidDialog({
             <span className="font-display font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm">
               {fromName}
             </span>
-            <ClayArrowRightIcon
+            <ArrowRightIcon
               size={16}
               className="text-muted-foreground mx-1"
             />
@@ -121,7 +121,7 @@ export function MarkAsPaidDialog({
             onChange={(e) => setNote(e.target.value)}
             placeholder="e.g. Paid in cash, Google Pay, Bank transfer..."
             maxLength={200}
-            className="w-full clay-card-pressed px-4 py-3 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+            className="w-full app-card-pressed px-4 py-3 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
           />
         </div>
 

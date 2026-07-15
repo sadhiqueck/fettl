@@ -88,7 +88,7 @@ export function ChatFeed({
         
         {unifiedFeed.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
-            <div className="clay-card p-5 rounded-full mb-4">
+            <div className="app-card p-5 rounded-full mb-4">
               <MessageCircle size={40} className="text-muted-foreground opacity-50" />
             </div>
             <h3 className="font-display font-bold text-lg mb-1">Start the conversation</h3>

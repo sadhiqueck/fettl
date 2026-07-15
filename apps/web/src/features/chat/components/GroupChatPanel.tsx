@@ -12,7 +12,7 @@ import {
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
-import { ClayWalletIcon } from "@/shared/components/ui/clay-icons";
+import { WalletIcon } from "@/shared/components/ui/icons";
 import type {
   GroupDetailsData,
   GroupExpense,
@@ -157,7 +157,7 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-1 z-50 clay-card py-1 min-w-40 animate-clay-scale-in">
+                <div className="absolute right-0 top-full mt-1 z-50 app-card py-1 min-w-40 animate-app-scale-in">
                   <button
                     onClick={() => {
                       setIsInviteModalOpen(true);
@@ -192,7 +192,7 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
             {
               id: "balances" as const,
               label: "Balances",
-              icon: ClayWalletIcon,
+              icon: WalletIcon,
             },
             { id: "activity" as const, label: "Activity", icon: Info },
           ] as const

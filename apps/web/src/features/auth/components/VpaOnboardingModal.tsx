@@ -8,7 +8,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { ClayShieldIcon } from "@/shared/components/ui/clay-icons";
+import { ShieldIcon } from "@/shared/components/ui/icons";
 import { Loader2, CheckCircle2, AlertCircle, AtSign } from "lucide-react";
 import { useUpdateProfile } from "@/shared/hooks/useUser";
 import { VPA_REGEX } from "@fettl/shared";
@@ -43,7 +43,7 @@ export function VpaOnboardingModal({ isOpen }: VpaOnboardingModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
-        className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-md [&>button]:hidden"
+        className="app-card-elevated border-0 ring-0 rounded-3xl max-w-md [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
@@ -67,8 +67,8 @@ export function VpaOnboardingModal({ isOpen }: VpaOnboardingModalProps) {
         <DialogHeader className="pb-1 relative z-10">
           <div className="flex flex-col items-center text-center gap-4">
             {/* Icon */}
-            <div className="clay-card-elevated p-4 rounded-2xl animate-clay-float">
-              <ClayShieldIcon size={40} />
+            <div className="app-card-elevated p-4 rounded-2xl animate-app-float">
+              <ShieldIcon size={40} />
             </div>
 
             <div>

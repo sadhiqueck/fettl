@@ -4,8 +4,9 @@ import axios from "axios";
 import { apiClient } from "@/shared/lib/apiClient";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Button } from "@/shared/components/ui/button";
 import { Separator } from "@/shared/components/ui/separator";
-import { ClayGoogleIcon } from "@/shared/components/ui/clay-icons";
+import { GoogleIcon } from "@/shared/components/ui/icons";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -113,14 +114,14 @@ export function LoginForm() {
         </div>
 
         {/* Submit */}
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="clay-btn-primary w-full h-10 mt-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(17,24,39,0.2)]"
+          className="w-full mt-1"
         >
           {isLoading && <Loader2 className="animate-spin" size={16} />}
           {isLoading ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-1">
@@ -132,15 +133,16 @@ export function LoginForm() {
         </div>
 
         {/* Google */}
-        <button
+        <Button
           type="button"
+          variant="outline"
           disabled={isLoading}
           onClick={() => (window.location.href = `${API_URL}/auth/google`)}
-          className="clay-btn-google"
+          className="w-full gap-3"
         >
-          <ClayGoogleIcon size={18} />
-          <span className="font-semibold text-sm">Continue with Google</span>
-        </button>
+          <GoogleIcon size={18} />
+          <span>Continue with Google</span>
+        </Button>
       </form>
     </>
   );

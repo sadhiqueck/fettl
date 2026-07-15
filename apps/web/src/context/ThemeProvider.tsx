@@ -6,9 +6,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeColor, setThemeColorState] = useState<ThemeColor>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("theme-color") as ThemeColor;
-      return stored || "indigo";
+      return stored || "amber";
     }
-    return "indigo";
+    return "amber";
   });
 
   const setThemeColor = (color: ThemeColor) => {

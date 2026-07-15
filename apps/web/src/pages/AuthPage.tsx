@@ -23,11 +23,9 @@ export default function AuthPage() {
 
   const isDark = resolvedTheme === "dark";
 
-  // Customize background colors specifically for this Auth page
-  // Dark mode: Pure Black (#000000)
-  // Light mode: Beautiful soft grayish blue-gray that matches and blends with the light image (#f1f3f7)
-  const bgColor = isDark ? "#000000" : "#f1f3f7";
-  const bgRgba = isDark ? "0,0,0" : "241,243,247";
+
+  const bgColor = isDark ? "#000000" : "#ffffff";
+  const bgRgba = isDark ? "0,0,0" : "255,255,255";
 
   return (
     <div 
@@ -38,9 +36,9 @@ export default function AuthPage() {
       <div className="max-w-[1440px] mx-auto relative min-h-svh w-full flex flex-col justify-center">
         
         {/* ── Full-page background image (centered, scaled down, feathered) ── */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-end justify-end pointer-events-none">
           <img
-            src={isDark ? "/auth-bg-dark.webp" : "/auth-bg-light.webp"}
+            src={isDark ? "/auth-bg-dark.webp" : "/auth-bg-light.png"}
             alt=""
             className="w-[90%] md:w-[85%] max-w-[1100px] h-auto object-contain select-none opacity-90"
             onError={(e) => {
@@ -93,7 +91,7 @@ export default function AuthPage() {
             />
           </div>
 
-          <Card className="border-0 shadow-none bg-background/80 backdrop-blur-xl ring-1 ring-border/50">
+          <Card className="border-0 shadow-none bg-background backdrop-blur-xl ring-1 ring-border/50">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold font-display">
                 {activeTab === "login" ? "Welcome back" : "Create account"}

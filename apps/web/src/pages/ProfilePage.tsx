@@ -110,7 +110,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full animate-clay-fade-up">
+      <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full animate-app-fade-up">
         {/* Profile card */}
         <div className="chat-info-card p-8 mb-6 flex flex-col items-center text-center relative overflow-hidden">
           <div
@@ -121,7 +121,7 @@ export default function ProfilePage() {
               filter: "blur(40px)",
             }}
           />
-          <div className="clay-avatar size-24 border-4 border-white mb-4 relative z-10">
+          <div className="app-avatar size-24 border-4 border-white mb-4 relative z-10">
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                 <Label className="font-display font-bold text-sm flex items-center gap-2">
                   UPI ID (VPA)
                   {vpa && isVpaValid && (
-                    <span className="clay-badge clay-badge-green text-[10px] px-2 py-0 flex items-center gap-1">
+                    <span className="app-badge app-badge-green text-[10px] px-2 py-0 flex items-center gap-1">
                       <CheckCircle2 size={10} />
                       Valid
                     </span>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <Separator className="clay-divider my-4" />
+              <Separator className="app-divider my-4" />
 
               <div className="flex justify-end">
                 <button

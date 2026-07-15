@@ -69,10 +69,10 @@ export function EditExpenseModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-md">
+      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-md">
         <DialogHeader className="pb-2">
           <div className="flex items-center gap-3">
-            <div className="clay-card p-2">
+            <div className="app-card p-2">
               <Pencil size={24} className="text-primary" />
             </div>
             <div>

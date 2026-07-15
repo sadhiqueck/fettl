@@ -26,7 +26,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
-import { ClayReceiptIcon } from "@/shared/components/ui/clay-icons";
+import { ReceiptIcon } from "@/shared/components/ui/icons";
 import { Loader2, Check, Users, ImagePlus, Trash2 } from "lucide-react";
 import { useAddExpense } from "@/features/groups/hooks/useExpense";
 import { useUpload } from "@/shared/hooks/useUpload";
@@ -427,11 +427,11 @@ export function AddExpenseModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-md">
+      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-md">
         <DialogHeader className="pb-2">
           <div className="flex items-center gap-3">
-            <div className="clay-card p-2">
-              <ClayReceiptIcon size={28} />
+            <div className="app-card p-2">
+              <ReceiptIcon size={28} />
             </div>
             <div>
               <DialogTitle className="font-display text-lg font-bold">
@@ -486,7 +486,7 @@ export function AddExpenseModal({
             ) : (
               <div 
                 onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`clay-card border border-dashed border-primary/30 h-24 flex flex-col items-center justify-center cursor-pointer hover:bg-soft-clay transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`app-card border border-dashed border-primary/30 h-24 flex flex-col items-center justify-center cursor-pointer hover:bg-soft-clay transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <input 
                   type="file" 
@@ -683,7 +683,7 @@ export function AddExpenseModal({
                   + Add Item
                 </Button>
 
-                <Separator className="clay-divider my-2" />
+                <Separator className="app-divider my-2" />
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
@@ -735,7 +735,7 @@ export function AddExpenseModal({
                         </div>
                       );
                     })}
-                    <Separator className="clay-divider my-1.5" />
+                    <Separator className="app-divider my-1.5" />
                     <div className="flex justify-between text-sm">
                       <span className="font-bold text-foreground">
                         Total calculated
@@ -773,7 +773,7 @@ export function AddExpenseModal({
                   </button>
                 )}
 
-                <Separator className="clay-divider my-2" />
+                <Separator className="app-divider my-2" />
 
                 {/* Member list */}
                 <div className="space-y-1 max-h-45 overflow-y-auto pr-1">
@@ -886,7 +886,7 @@ export function AddExpenseModal({
                 {/* Summary */}
                 {amount > 0 && selectedMembers.length > 0 && (
                   <>
-                    <Separator className="clay-divider my-3" />
+                    <Separator className="app-divider my-3" />
                     {splitMethod === "EQUAL" ? (
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground font-medium">

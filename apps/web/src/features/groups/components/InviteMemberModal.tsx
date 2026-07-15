@@ -9,8 +9,8 @@ import { Button } from "@/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { Input } from "@/shared/components/ui/input";
 import {
-  Users as ClayGroupIcon,
-  Check as ClayCheckIcon,
+  Users as GroupIcon,
+  Check as CheckIcon,
   Copy,
   Share2,
   Loader2,
@@ -125,9 +125,9 @@ export function InviteMemberModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-sm text-center flex flex-col items-center p-8">
-        <div className="clay-card p-4 mb-4 bg-soft-clay rounded-full">
-          <ClayGroupIcon size={32} className="text-primary" />
+      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm text-center flex flex-col items-center p-8">
+        <div className="app-card p-4 mb-4 bg-soft-clay rounded-full">
+          <GroupIcon size={32} className="text-primary" />
         </div>
         <DialogTitle className="font-display text-xl font-bold mb-2">
           Invite Members
@@ -153,7 +153,7 @@ export function InviteMemberModal({
             }}
           >
             {copied ? (
-              <ClayCheckIcon size={18} className="text-green-500" />
+              <CheckIcon size={18} className="text-green-500" />
             ) : (
               <Copy size={18} />
             )}
@@ -187,7 +187,7 @@ export function InviteMemberModal({
         </Button>
 
         {previewUser ? (
-          <div className="w-full mt-6 p-4 bg-soft-clay rounded-2xl border border-border/50 animate-clay-fade-up shadow-inner">
+          <div className="w-full mt-6 p-4 bg-soft-clay rounded-2xl border border-border/50 animate-app-fade-up shadow-inner">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
               Confirm Member
             </p>

@@ -45,10 +45,10 @@ export function DeleteExpenseDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
+      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
         <DialogHeader className="pb-2">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="clay-card-elevated p-4 rounded-2xl bg-red-500/10">
+            <div className="app-card-elevated p-4 rounded-2xl bg-red-500/10">
               <AlertTriangle size={32} className="text-red-500" />
             </div>
             <div>
@@ -63,7 +63,7 @@ export function DeleteExpenseDialog({
         </DialogHeader>
 
         {/* Expense details */}
-        <div className="clay-card-pressed p-4 rounded-2xl text-center my-2">
+        <div className="app-card-pressed p-4 rounded-2xl text-center my-2">
           <p className="font-display font-bold text-base text-foreground truncate">
             {expenseTitle}
           </p>

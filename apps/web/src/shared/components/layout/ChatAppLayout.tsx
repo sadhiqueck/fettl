@@ -19,9 +19,9 @@ import { Label } from "@/shared/components/ui/label";
 import { Button } from "@/shared/components/ui/button";
 import { InviteMemberModal } from "@/features/groups/components/InviteMemberModal";
 import {
-  ClayPlusIcon,
-  ClayLinkIcon,
-} from "@/shared/components/ui/clay-icons";
+  PlusIcon,
+  LinkIcon,
+} from "@/shared/components/ui/icons";
 
 const CATEGORIES = [
   { label: "Travel", value: "TRIP" },
@@ -155,11 +155,11 @@ export function ChatAppLayout() {
 
       {/* Create Group Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl">
+        <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="clay-card p-2">
-                <ClayPlusIcon size={28} />
+              <div className="app-card p-2">
+                <PlusIcon size={28} />
               </div>
               <div>
                 <DialogTitle className="font-display text-lg font-bold">
@@ -210,11 +210,11 @@ export function ChatAppLayout() {
 
       {/* Join Group Dialog */}
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
-        <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl">
+        <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="clay-card p-2">
-                <ClayLinkIcon size={28} />
+              <div className="app-card p-2">
+                <LinkIcon size={28} />
               </div>
               <div>
                 <DialogTitle className="font-display text-lg font-bold">

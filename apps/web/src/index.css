@@ -7,11 +7,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Geist is the primary font — matches cal.com exactly */
+  /* Geist is the primary font */
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
-  /* Light bg: #f6f7f9 (cal.com uses this exact tone, not white) */
+  /* Light bg: #f6f7f9  */
   --background: var(--bg-color, #f6f7f9);
   /* Cool slate */
   --foreground: var(--fg-color, oklch(0.145 0.01 285.938));
@@ -45,26 +45,29 @@
   --input: var(--input-color, oklch(0.92 0.004 286.32));
   --ring: var(--theme-primary, #FACC15);
 
-  /* Cal.com uses tight radius — ~8px base. We use 0.5rem */
   --radius: 0.5rem;
 
-  --clay-shadow-light: var(--clay-light, rgba(255, 255, 255, 1));
-  --clay-shadow-dark: var(--clay-dark, rgba(245, 158, 11, 0.35));
-  --clay-shadow-dark-strong: var(--clay-dark-strong, rgba(245, 158, 11, 0.5));
-  --clay-glow-primary: var(--clay-glow, rgba(245, 158, 11, 0.2));
-  --clay-glow-red: var(--clay-glow-r, rgba(244, 63, 94, 0.2));
+  --app-shadow-light: var(--clay-light, rgba(255, 255, 255, 1));
+  --app-shadow-dark: var(--clay-dark, rgba(245, 158, 11, 0.35));
+  --app-shadow-dark-strong: var(--clay-dark-strong, rgba(245, 158, 11, 0.5));
+  --app-glow-primary: var(--app-glow, rgba(245, 158, 11, 0.2));
+  --app-glow-red: var(--app-glow-r, rgba(244, 63, 94, 0.2));
 }
 
-/* Dark Mode Overrides (Discord-style, Minimal & Clean) */
+/* Dark Mode Overrides */
 .dark {
-  --bg-color: #313338; /* Main chat background */
-  --fg-color: #dbdee1; /* Text */
-  --card-color: #2b2d31; /* Sidebar / Info cards */
+  --bg-color: #313338;
+  /* Main chat background */
+  --fg-color: #dbdee1;
+  /* Text */
+  --card-color: #2b2d31;
+  /* Sidebar / Info cards */
   --card-fg-color: #dbdee1;
-  --popover-color: #1e1f22; /* Lowest level / Nav Rail */
+  --popover-color: #1e1f22;
+  /* Lowest level / Nav Rail */
   --popover-fg-color: #dbdee1;
-  --muted-color: #3f4147; 
-  --muted-fg-color: #949ba4; 
+  --muted-color: #3f4147;
+  --muted-fg-color: #949ba4;
   --border-color: rgba(255, 255, 255, 0.06);
   --input-color: #1e1f22;
   --secondary-color: #2b2d31;
@@ -73,57 +76,57 @@
   --clay-light: transparent;
   --clay-dark: rgba(0, 0, 0, 0.2);
   --clay-dark-strong: rgba(0, 0, 0, 0.4);
-  --clay-glow: transparent;
-  --clay-glow-r: transparent;
+  --app-glow: transparent;
+  --app-glow-r: transparent;
 }
 
 /* Theme Color Overrides */
 [data-theme="indigo"] {
   --theme-primary: #6366f1;
   /* Indigo 500 */
-  --clay-glow: rgba(99, 102, 241, 0.25);
+  --app-glow: rgba(99, 102, 241, 0.25);
   --clay-dark: rgba(99, 102, 241, 0.15);
 }
 
 .dark[data-theme="indigo"] {
   --clay-dark: rgba(0, 0, 0, 0.5);
-  --clay-glow: rgba(99, 102, 241, 0.3);
+  --app-glow: rgba(99, 102, 241, 0.3);
 }
 
 [data-theme="emerald"] {
   --theme-primary: #10b981;
   /* Emerald 500 */
-  --clay-glow: rgba(16, 185, 129, 0.25);
+  --app-glow: rgba(16, 185, 129, 0.25);
   --clay-dark: rgba(16, 185, 129, 0.15);
 }
 
 .dark[data-theme="emerald"] {
   --clay-dark: rgba(0, 0, 0, 0.5);
-  --clay-glow: rgba(16, 185, 129, 0.3);
+  --app-glow: rgba(16, 185, 129, 0.3);
 }
 
 [data-theme="rose"] {
   --theme-primary: #f43f5e;
   /* Rose 500 */
-  --clay-glow: rgba(244, 63, 94, 0.25);
+  --app-glow: rgba(244, 63, 94, 0.25);
   --clay-dark: rgba(244, 63, 94, 0.15);
 }
 
 .dark[data-theme="rose"] {
   --clay-dark: rgba(0, 0, 0, 0.5);
-  --clay-glow: rgba(244, 63, 94, 0.3);
+  --app-glow: rgba(244, 63, 94, 0.3);
 }
 
 [data-theme="amber"] {
   --theme-primary: #f59e0b;
   /* Amber 500 */
-  --clay-glow: rgba(245, 158, 11, 0.25);
+  --app-glow: rgba(245, 158, 11, 0.25);
   --clay-dark: rgba(245, 158, 11, 0.15);
 }
 
 .dark[data-theme="amber"] {
   --clay-dark: rgba(0, 0, 0, 0.5);
-  --clay-glow: rgba(245, 158, 11, 0.3);
+  --app-glow: rgba(245, 158, 11, 0.3);
 }
 
 @theme inline {
@@ -154,15 +157,15 @@
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) * 1.5);
 
-  --animate-clay-bounce: clay-bounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-clay-press: clay-press 0.15s ease-out forwards;
-  --animate-clay-float: clay-float 6s ease-in-out infinite;
-  --animate-clay-float-delayed: clay-float 6s ease-in-out 2s infinite;
-  --animate-clay-float-slow: clay-float 8s ease-in-out 1s infinite;
-  --animate-clay-fade-up: clay-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-clay-scale-in: clay-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-clay-slide-right: clay-slide-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-clay-pulse-glow: clay-pulse-glow 3s ease-in-out infinite;
+  --animate-app-bounce: app-bounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-app-press: app-press 0.15s ease-out forwards;
+  --animate-app-float: app-float 6s ease-in-out infinite;
+  --animate-app-float-delayed: app-float 6s ease-in-out 2s infinite;
+  --animate-app-float-slow: app-float 8s ease-in-out 1s infinite;
+  --animate-app-fade-up: app-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-app-scale-in: app-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-app-slide-right: app-slide-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-app-pulse-glow: app-pulse-glow 3s ease-in-out infinite;
 }
 
 /* ─── Keyframes ─── */
@@ -180,7 +183,7 @@
   }
 }
 
-@keyframes clay-bounce {
+@keyframes app-bounce {
   0% {
     transform: scale(0.95);
   }
@@ -194,7 +197,7 @@
   }
 }
 
-@keyframes clay-press {
+@keyframes app-press {
   0% {
     transform: scale(1);
   }
@@ -204,7 +207,7 @@
   }
 }
 
-@keyframes clay-float {
+@keyframes app-float {
 
   0%,
   100% {
@@ -216,7 +219,7 @@
   }
 }
 
-@keyframes clay-fade-up {
+@keyframes app-fade-up {
   from {
     opacity: 0;
     transform: translateY(24px) scale(0.96);
@@ -228,7 +231,7 @@
   }
 }
 
-@keyframes clay-scale-in {
+@keyframes app-scale-in {
   from {
     opacity: 0;
     transform: scale(0.85);
@@ -240,7 +243,7 @@
   }
 }
 
-@keyframes clay-slide-right {
+@keyframes app-slide-right {
   from {
     opacity: 0;
     transform: translateX(-30px);
@@ -252,15 +255,15 @@
   }
 }
 
-@keyframes clay-pulse-glow {
+@keyframes app-pulse-glow {
 
   0%,
   100% {
-    box-shadow: 0 0 20px var(--clay-glow-primary);
+    box-shadow: 0 0 20px var(--app-glow-primary);
   }
 
   50% {
-    box-shadow: 0 0 40px var(--clay-glow-primary), 0 0 60px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 40px var(--app-glow-primary), 0 0 60px rgba(99, 102, 241, 0.15);
   }
 }
 
@@ -283,131 +286,72 @@
 @layer components {
 
   /* Card: Standard minimal elevation */
-  .clay-card {
+  .app-card {
     @apply bg-card rounded-3xl border border-border;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .clay-card:hover {
+  .app-card:hover {
     @apply shadow-sm;
   }
 
   /* Card: Elevated variant for stat cards */
-  .clay-card-elevated {
+  .app-card-elevated {
     @apply bg-card rounded-3xl border border-border shadow-sm;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .clay-card-elevated:hover {
+  .app-card-elevated:hover {
     transform: translateY(-2px);
     @apply shadow-md;
   }
 
   /* Card: Pressed/inset variant */
-  .clay-card-pressed {
+  .app-card-pressed {
     @apply bg-muted rounded-3xl border border-border/50;
   }
 
-  /* Primary button — cal.com style: near-black bg, white text, pill shape, subtle shadow */
-  .clay-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-[12px] border border-[#141414]
-           font-semibold text-sm transition-all px-4 py-2.5 h-10
-           bg-[#111827] text-white
-           hover:bg-[#1f2937]
-           shadow-[inset_0px_2px_0px_0px_rgba(255,255,255,0.15)]
-           cursor-pointer active:scale-[0.98] select-none
-           disabled:opacity-50 disabled:pointer-events-none;
-  }
 
-  /* Secondary button — amber accent, black text */
-  .clay-btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-[12px] border border-[#d97706]
-           font-semibold text-sm transition-all px-4 py-2.5 h-10
-           bg-primary text-primary-foreground
-           hover:bg-primary/90
-           shadow-[inset_0px_2px_0px_0px_rgba(255,255,255,0.3)]
-           cursor-pointer active:scale-[0.98] select-none
-           disabled:opacity-50 disabled:pointer-events-none;
-  }
-
-  /* Ghost button — white bg, border, like cal.com OAuth buttons */
-  .clay-btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-[12px] border border-[#e5e7eb] 
-           font-semibold text-sm transition-all px-4 py-2.5 h-10
-           bg-white text-[#111827]
-           hover:bg-[#f9fafb]
-           shadow-sm
-           cursor-pointer active:scale-[0.98] select-none
-           disabled:opacity-50 disabled:pointer-events-none;
-  }
-
-  /* Input — cal.com style: white bg, 1px border, rounded-md, clean */
-  .clay-input {
-    @apply bg-white border border-[#e5e7eb] rounded-md
-           px-3 py-2.5 h-10 
-           text-[#111827] text-sm
-           outline-none w-full transition-all
-           placeholder:text-[#9ca3af]
-           focus:ring-2 focus:ring-[#f59e0b]/40 focus:border-[#f59e0b]
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .dark .clay-input {
-    @apply bg-[#1e1f22] border-[rgba(255,255,255,0.08)] text-[#dbdee1]
-           placeholder:text-[#4e5058]
-           focus:ring-[#f59e0b]/30 focus:border-[#f59e0b];
-  }
 
   /* Badge: flat */
-  .clay-badge {
+  .app-badge {
     @apply rounded-full px-3 py-1 text-xs font-bold inline-flex items-center gap-1 border border-border/50;
   }
 
-  .clay-badge-green {
+  .app-badge-green {
     @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800;
   }
 
-  .clay-badge-red {
+  .app-badge-red {
     @apply bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800;
   }
 
-  .clay-badge-neutral {
+  .app-badge-neutral {
     @apply bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700;
   }
 
   /* Avatar: Minimal border */
-  .clay-avatar {
+  .app-avatar {
     @apply rounded-full border border-border;
   }
 
   /* Separator */
-  .clay-divider {
+  .app-divider {
     @apply h-px w-full bg-border border-0;
   }
 
   /* Stat number */
-  .clay-stat-green {
+  .app-stat-green {
     color: var(--color-emerald);
   }
 
-  .clay-stat-red {
+  .app-stat-red {
     color: var(--color-rose);
   }
 
   /* Nav bar */
-  .clay-nav {
+  .app-nav {
     @apply bg-background border-b border-border shadow-sm;
-  }
-
-  /* Google OAuth button — cal.com dark style */
-  .clay-btn-google {
-    @apply inline-flex items-center justify-center gap-3 rounded-[12px]
-           font-semibold text-sm transition-all px-4 h-10 w-full
-           bg-[#111827] text-white border border-[#141414]
-           hover:bg-[#1f2937]
-           shadow-[inset_0px_2px_0px_0px_rgba(255,255,255,0.15)]
-           cursor-pointer active:scale-[0.98] select-none
-           disabled:opacity-50 disabled:pointer-events-none;
   }
 
   /* Stagger delay utility classes */

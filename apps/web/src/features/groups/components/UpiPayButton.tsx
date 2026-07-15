@@ -127,10 +127,10 @@ export function UpiPayButton({
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="clay-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
+        <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
           <DialogHeader className="pb-2">
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="clay-card-elevated p-4 rounded-2xl bg-primary/10">
+              <div className="app-card-elevated p-4 rounded-2xl bg-primary/10">
                 <span className="text-3xl">💳</span>
               </div>
               <div>
@@ -146,7 +146,7 @@ export function UpiPayButton({
 
           {/* QR Code */}
           <div className="flex flex-col items-center gap-3 my-1">
-            <div className="clay-card-pressed p-4 rounded-2xl bg-white">
+            <div className="app-card-pressed p-4 rounded-2xl bg-white">
               <QRCodeSVG
                 id="upi-qr-code"
                 value={upiUrl}
@@ -167,7 +167,7 @@ export function UpiPayButton({
           </div>
 
           {/* Payment details */}
-          <div className="clay-card-pressed p-4 rounded-2xl text-center space-y-1.5">
+          <div className="app-card-pressed p-4 rounded-2xl text-center space-y-1.5">
             <p className="font-sans font-extrabold text-2xl text-foreground">
               ₹{amount.toLocaleString("en-IN")}
             </p>

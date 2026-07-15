@@ -101,7 +101,7 @@ export function GroupListSidebar({
                 onClick={() => navigate(`/groups/${group.id}`)}
                 className={`chat-list-item w-[calc(100%-16px)] text-left ${isActive ? "chat-list-item-active" : ""}`}
               >
-                <Avatar className="clay-avatar size-12 shrink-0 rounded-2xl bg-[#f0eef9]">
+                <Avatar className="app-avatar size-12 shrink-0 rounded-2xl bg-[#f0eef9]">
                   <img
                     src={`/icons/${(group.category || 'other').toLowerCase()}.png`}
                     alt={group.category}
