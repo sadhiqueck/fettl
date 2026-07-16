@@ -49,7 +49,7 @@ export function useAuth() {
   });
 
   const loginWithGoogle = () => {
-    // Best practice for OAuth: Redirect the browser directly to the backend NestJS endpoint
+    // Redirect the browser directly to the backend NestJS endpoint
     // The backend will handle the Google redirect, and then redirect back to the frontend with the token.
     const googleAuthUrl = import.meta.env.VITE_API_URL 
       ? `${import.meta.env.VITE_API_URL}/auth/google` 

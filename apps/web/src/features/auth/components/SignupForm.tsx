@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { EmailInputStep } from "./shared/EmailInputStep";
 import { OtpInputStep } from "./shared/OtpInputStep";
 
-export function LoginForm({
+export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -44,7 +44,7 @@ export function LoginForm({
     } else {
       verifyOtp.mutate({ email, otp }, {
         onSuccess: () => {
-          // Login specific redirect
+          // Signup specific redirect (e.g. Onboarding)
           navigate("/dashboard"); 
         }
       });
@@ -62,10 +62,10 @@ export function LoginForm({
       <div className="flex flex-col items-center gap-2 md:gap-4 text-center mb-0 md:mb-2">
         <div className="space-y-1 md:space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Sign in to Fettl
+            Create your Fettl account
           </h1>
           <p className="text-sm md:text-lg text-muted-foreground text-balance">
-            Welcome back! Enter your email to access your account.
+            Balance Together. Start sharing expenses the smarter way.
           </p>
         </div>
       </div>
@@ -92,17 +92,17 @@ export function LoginForm({
       </form>
 
       <div className="text-center text-sm md:text-base text-muted-foreground px-6 mt-1">
-        Don't have an account?{" "}
+        Already using Fettl?{" "}
         <Link
-          to="/signup"
+          to="/login"
           className="text-blue-500 hover:text-blue-600 font-medium hover:underline transition-colors"
         >
-          Sign up
+          Sign in
         </Link>
       </div>
-
+      
       <div className="px-6 text-center mt-4 text-xs text-muted-foreground">
-        By signing in, you agree to our{" "}
+        By clicking continue, you agree to our{" "}
         <Link to="/terms" className="underline hover:text-foreground transition-colors">Terms</Link> and{" "}
         <Link to="/privacy" className="underline hover:text-foreground transition-colors">Privacy Policy</Link>.
       </div>

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "@/features/auth/components/RouteGuards";
 import { ChatAppLayout } from "@/shared/components/layout/ChatAppLayout";
 import { SocketProvider } from "@/context/SocketProvider";
@@ -8,7 +8,6 @@ import { Loader2 } from "lucide-react";
 
 // AuthPage stays eager as it's the entry point most sessions hit first
 import AuthPage from "@/pages/AuthPage";
-import Signup from '@/pages/Signup';
 
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const GroupDetailsPage = lazy(() => import("@/pages/GroupDetailsPage"));
@@ -42,7 +41,7 @@ export const router = createBrowserRouter([
     element: <PublicRoute />,
     children: [
       { path: "login", element: <AuthPage /> },
-      { path: "register", element: <Signup /> },
+      { path: "signup", element: <AuthPage /> },
     ],
   },
   {
