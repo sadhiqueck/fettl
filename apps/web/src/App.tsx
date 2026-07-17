@@ -1,5 +1,5 @@
 import { RouterProvider } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Toaster } from "@/shared/components/ui/sonner";
 import { ThemeProvider } from "./context/ThemeProvider";
 import { router } from "./routes/router";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
