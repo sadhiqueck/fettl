@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { ProtectedRoute, PublicRoute } from "@/features/auth/components/RouteGuards";
+import { ProtectedRoute, PublicRoute, OnboardingRoute } from "@/features/auth/components/RouteGuards";
 import { ChatAppLayout } from "@/shared/components/layout/ChatAppLayout";
 import { SocketProvider } from "@/context/SocketProvider";
 import { withSuspense } from "@/shared/components/layout/withSuspense";
@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const GroupDetailsPage = lazy(() => import("@/pages/GroupDetailsPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 
 
 export const router = createBrowserRouter([
@@ -24,6 +25,12 @@ export const router = createBrowserRouter([
     children: [
       { path: "login", element: <AuthPage /> },
       { path: "signup", element: <AuthPage /> },
+    ],
+  },
+  {
+    element: <OnboardingRoute />,
+    children: [
+      { path: "onboarding", element: withSuspense(OnboardingPage) },
     ],
   },
   {

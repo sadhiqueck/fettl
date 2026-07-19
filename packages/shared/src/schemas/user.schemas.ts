@@ -8,6 +8,7 @@ export const updateProfileSchema = z.object({
     .string()
     .regex(VPA_REGEX, 'Enter a valid UPI ID (e.g. yourname@upi)')
     .optional(),
+  isOnboarded: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/shared/lib/utils";
 import { FieldGroup } from "@/shared/components/ui/field";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { EmailInputStep } from "./shared/EmailInputStep";
 import { OtpInputStep } from "./shared/OtpInputStep";
@@ -18,6 +19,7 @@ export function LoginForm({
   const { sendOtp, verifyOtp, loginWithGoogle } = useAuth();
   const [cooldown, setCooldown] = useState(0);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -43,7 +45,8 @@ export function LoginForm({
       });
     } else {
       verifyOtp.mutate({ email, otp }, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({ queryKey: ["user", "profile"] });
           // Login specific redirect
           navigate("/dashboard"); 
         }

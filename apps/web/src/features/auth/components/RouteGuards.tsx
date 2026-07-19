@@ -2,8 +2,6 @@ import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { Loader2 } from "lucide-react";
-import { VpaOnboardingModal } from "./VpaOnboardingModal";
-
 export function ProtectedRoute() {
   const { data: user, isLoading, isError } = useUserProfile();
 
@@ -26,18 +24,39 @@ export function ProtectedRoute() {
     );
   }
 
-  // If there's an error fetching the user (e.g., 401 Unauthorized), or no user data, redirect to login
   if (isError || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <>
-      {/* Show VPA onboarding modal if user hasn't set their UPI ID yet */}
-      <VpaOnboardingModal isOpen={!user.vpa} />
-      <Outlet />
-    </>
-  );
+  // If they haven't finished onboarding, force them to onboarding
+  if (!user.isOnboarded) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Outlet />;
+}
+
+export function OnboardingRoute() {
+  const { data: user, isLoading, isError } = useUserProfile();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If they ARE onboarded, they shouldn't be here
+  if (user.isOnboarded) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
 }
 
 export function PublicRoute() {

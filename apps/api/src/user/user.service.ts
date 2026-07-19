@@ -15,6 +15,7 @@ export class UserService {
         name: true,
         vpa: true,
         avatarUrl: true,
+        isOnboarded: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -30,7 +31,7 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string; vpa?: string },
+    data: { name?: string; avatarUrl?: string; vpa?: string; isOnboarded?: boolean },
   ) {
     // Encrypt VPA before storing in the database
     const dbData = {
@@ -47,6 +48,7 @@ export class UserService {
         name: true,
         vpa: true,
         avatarUrl: true,
+        isOnboarded: true,
         createdAt: true,
         updatedAt: true,
       },
