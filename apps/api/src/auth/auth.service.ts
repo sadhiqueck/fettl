@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import type { PasswordlessStartInput } from '@fettl/shared';
+import type { PasswordlessStartInput, VerifyOtpInput } from '@fettl/shared';
 import { decryptVpaSafe } from '../common/utils/encryption';
 import { getMagicLinkEmailTemplate } from './templates/magic-link.template';
 import { Resend } from 'resend';
@@ -76,56 +76,56 @@ export class AuthService {
     return { message: 'Verification sent' };
   }
 
-  // async verifyOtp(dto: VerifyOtpInput) {
-  //   const otpHash = crypto.createHash('sha256').update(dto.otp).digest('hex');
+  async verifyOtp(dto: VerifyOtpInput) {
+    const otpHash = crypto.createHash('sha256').update(dto.otp).digest('hex');
 
-  //   const request = await this.prisma.passwordlessRequest.findFirst({
-  //     where: {
-  //       email: dto.email,
-  //       otpHash,
-  //       expiresAt: { gt: new Date() },
-  //     },
-  //   });
+    const request = await this.prisma.passwordlessRequest.findFirst({
+      where: {
+        email: dto.email,
+        otpHash,
+        expiresAt: { gt: new Date() },
+      },
+    });
 
-  //   if (!request) {
-  //     throw new UnauthorizedException('Invalid or expired OTP');
-  //   }
+    if (!request) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
 
-  //   // One-time use — delete immediately after verification
-  //   await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
+    // One-time use — delete immediately after verification
+    await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
 
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { email: dto.email },
-  //   });
-  //   if (!user) throw new UnauthorizedException('User not found');
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
 
-  //   return this.generateTokens(user);
-  // }
+    return this.generateTokens(user);
+  }
 
-  // async verifyMagicLink(token: string) {
-  //   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  async verifyMagicLink(token: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-  //   const request = await this.prisma.passwordlessRequest.findFirst({
-  //     where: {
-  //       tokenHash,
-  //       expiresAt: { gt: new Date() },
-  //     },
-  //   });
+    const request = await this.prisma.passwordlessRequest.findFirst({
+      where: {
+        tokenHash,
+        expiresAt: { gt: new Date() },
+      },
+    });
 
-  //   if (!request) {
-  //     throw new UnauthorizedException('Invalid or expired magic link');
-  //   }
+    if (!request) {
+      throw new UnauthorizedException('Invalid or expired login link');
+    }
 
-  //   // One-time use — delete immediately after verification
-  //   await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
+    // One-time use — delete immediately after verification
+    await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
 
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { email: request.email },
-  //   });
-  //   if (!user) throw new UnauthorizedException('User not found');
+    const user = await this.prisma.user.findUnique({
+      where: { email: request.email },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
 
-  //   return this.generateTokens(user);
-  // }
+    return this.generateTokens(user);
+  }
 
   // ─── Google OAuth ──────────────────────────────────────
 

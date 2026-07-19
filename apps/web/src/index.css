@@ -278,9 +278,15 @@
 
   /* Hide system cursor on interactive elements so emoji pointer takes over (desktop only) */
   @media (hover: hover) and (pointer: fine) {
-    button, a, [role="button"], label[for],
-    input[type="submit"], input[type="button"],
-    input[type="reset"], [data-cursor="pointer"] {
+
+    button,
+    a,
+    [role="button"],
+    label[for],
+    input[type="submit"],
+    input[type="button"],
+    input[type="reset"],
+    [data-cursor="pointer"] {
       cursor: none !important;
     }
   }
@@ -400,9 +406,9 @@
   .chat-nav-rail {
     @apply flex z-30 transition-all duration-300;
     /* Mobile: fixed bottom bar */
-    @apply fixed bottom-0 left-0 w-full h-[60px] flex-row justify-around items-center bg-popover border-t border-border/10;
+    @apply fixed bottom-0 left-0 w-full h-15 flex-row justify-around items-center bg-popover border-t border-border/10;
     /* Desktop: left sidebar */
-    @apply md:static md:w-[72px] md:h-full md:flex-col md:py-4 md:gap-2 md:justify-start md:border-t-0 md:bg-transparent;
+    @apply md:static md:w-18 md:h-full md:flex-col md:py-4 md:gap-2 md:justify-start md:border-t-0 md:bg-transparent;
   }
 
   .chat-nav-item {
@@ -490,13 +496,13 @@
 
   .chat-info-panel {
     @apply shrink-0 flex-col gap-4 overflow-y-auto px-4;
-    @apply hidden xl:flex w-[316px] my-4;
+    @apply hidden xl:flex w-79 my-4;
     background: transparent;
     border-left: none;
   }
 
   .chat-info-card {
-    @apply rounded-[24px] p-5;
+    @apply rounded-3xl p-5;
     background: var(--card-color);
     box-shadow: none;
   }

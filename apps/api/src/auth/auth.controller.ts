@@ -10,11 +10,12 @@ import {
   UnauthorizedException,
   Get,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { passwordlessStartSchema } from '@fettl/shared';
-import type { PasswordlessStartInput } from '@fettl/shared';
+import { passwordlessStartSchema, verifyOtpSchema } from '@fettl/shared';
+import type { PasswordlessStartInput, VerifyOtpInput } from '@fettl/shared';
 import type { Response, Request } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 
@@ -53,29 +54,29 @@ export class AuthController {
     return this.authService.passwordlessStart(dto);
   }
 
-  // @Post('passwordless/verify')
-  // @HttpCode(HttpStatus.OK)
-  // @UsePipes(new ZodValidationPipe(verifyOtpSchema))
-  // async passwordlessVerify(
-  //   @Body() dto: VerifyOtpInput,
-  //   @Res({ passthrough: true }) res: Response,
-  // ) {
-  //   const { access_token, refresh_token, user } =
-  //     await this.authService.verifyOtp(dto);
-  //   this.setCookies(res, access_token, refresh_token);
-  //   return { user };
-  // }
+  @Post('passwordless/verify')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(verifyOtpSchema))
+  async passwordlessVerify(
+    @Body() dto: VerifyOtpInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { access_token, refresh_token, user } =
+      await this.authService.verifyOtp(dto);
+    this.setCookies(res, access_token, refresh_token);
+    return { user };
+  }
 
-  // @Get('magic-link/verify')
-  // async magicLinkVerify(@Query('token') token: string, @Res() res: Response) {
-  //   const { access_token, refresh_token } =
-  //     await this.authService.verifyMagicLink(token);
-  //   this.setCookies(res, access_token, refresh_token);
+  @Get('magic-link/verify')
+  async magicLinkVerify(@Query('token') token: string, @Res() res: Response) {
+    const { access_token, refresh_token } =
+      await this.authService.verifyMagicLink(token);
+    this.setCookies(res, access_token, refresh_token);
 
-  //   const frontendUrl =
-  //     process.env.VITE_FRONTEND_URL ?? 'http://localhost:5173';
-  //   return res.redirect(`${frontendUrl}/dashboard`);
-  // }
+    const frontendUrl =
+      process.env.VITE_FRONTEND_URL ?? 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/dashboard`);
+  }
 
   // ─── Google OAuth ──────────────────────────────────────
 
