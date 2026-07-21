@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useUserProfile, useUpdateProfile } from "@/shared/hooks/useUser";
 import { useUpload } from "@/shared/hooks/useUpload";
 import { VPA_REGEX } from "@fettl/shared";
-import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
 import { Loader2, CheckCircle2, AlertCircle, AtSign, Camera, ChevronRight, User as UserIcon } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -19,10 +19,9 @@ const PREDEFINED_AVATARS = [
   "https://api.dicebear.com/9.x/notionists/svg?seed=Zoe",
 ];
 
-export default function OnboardingPage() {
+export function OnboardingModal() {
   const { data: user } = useUserProfile();
   const updateProfileMutation = useUpdateProfile();
-  const navigate = useNavigate();
   const { uploadFile, isUploading } = useUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,7 +88,6 @@ export default function OnboardingPage() {
       {
         onSuccess: () => {
           toast.success("Welcome to Fettl!");
-          navigate("/dashboard");
         },
         onError: () => {
           toast.error("Failed to save profile. Please try again.");
@@ -103,17 +101,13 @@ export default function OnboardingPage() {
   const showVpaSuccess = vpa.length > 0 && isVpaValid;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative background glows removed as requested */}
-
-      <div className="w-full max-w-md relative z-10">
+    <Dialog open={true} onOpenChange={() => {}}>
+      <DialogContent className="app-card-elevated p-6 md:p-8 rounded-3xl border-0 ring-0 sm:max-w-md" showCloseButton={false}>
         {/* Progress indicator */}
         <div className="flex gap-2 mb-8 px-2">
           <div className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
           <div className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
         </div>
-
-        <div className="app-card-elevated p-6 md:p-8 rounded-3xl border-0 ring-0">
           {step === 1 ? (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="text-center mb-8">
@@ -273,8 +267,7 @@ export default function OnboardingPage() {
               </form>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

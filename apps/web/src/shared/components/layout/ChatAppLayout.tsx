@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useParams, useLocation } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
+import { useUserProfile } from "@/shared/hooks/useUser";
 import { NavRail, type NavFilter } from "@/shared/components/layout/NavRail";
 import { GroupListSidebar } from "@/shared/components/layout/GroupListSidebar";
 import { ProfileSidebar } from "@/shared/components/layout/ProfileSidebar";
@@ -22,6 +23,7 @@ import {
   PlusIcon,
   LinkIcon,
 } from "@/shared/components/ui/icons";
+import { OnboardingModal } from "@/features/auth/components/OnboardingModal";
 
 const CATEGORIES = [
   { label: "Travel", value: "TRIP" },
@@ -36,6 +38,7 @@ export function ChatAppLayout() {
   const location = useLocation();
   const hideGroupList =
     !!activeGroupId || location.pathname === "/profile" || location.pathname === "/analytics";
+  const { data: user } = useUserProfile();
   const { data: groups = [], isLoading, isError, error, refetch } = useGroups();
   const { data: activeGroup } = useGroup(activeGroupId);
   const createGroupMutation = useCreateGroup();
@@ -255,6 +258,8 @@ export function ChatAppLayout() {
           inviteCode={activeGroup.inviteCode}
         />
       )}
+
+      {user && !user.isOnboarded && <OnboardingModal />}
     </div>
   );
 }
