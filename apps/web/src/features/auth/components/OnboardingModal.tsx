@@ -11,6 +11,10 @@ import {
   Camera,
   ChevronRight,
   User as UserIcon,
+  LayoutGrid,
+  Home,
+  Briefcase,
+  Users,
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -117,7 +121,7 @@ export function OnboardingModal() {
   return (
     <Dialog open={true} onOpenChange={() => {}}>
       <DialogContent
-        className="max-w-4xl md:max-w-5xl w-[95vw] h-[85vh] max-h-[90vh] p-0 flex flex-col md:flex-row overflow-hidden border-0 ring-0 bg-background"
+        className="w-[95vw] sm:max-w-5xl md:aspect-[16/10] max-h-[90vh] p-0 flex flex-col md:flex-row overflow-hidden border border-border/40 ring-0 bg-background dark:bg-[#171717]"
         showCloseButton={false}
       >
         {/* Left Column: Form */}
@@ -345,36 +349,48 @@ export function OnboardingModal() {
         </div>
 
         {/* Right Column: App Mockup Preview */}
-        <div className="hidden md:flex flex-1 bg-muted/30 dark:bg-black/20 border-l border-border relative overflow-hidden">
+        <div className="hidden md:flex flex-1 bg-muted/30 dark:bg-[radial-gradient(circle_at_35%_35%,var(--tw-gradient-stops))] dark:from-[#202020] dark:to-[#050505] border-l border-border/40 relative overflow-hidden">
           {/* Abstract App Mockup Container */}
-          <div 
-            className={`absolute top-[30%] left-[20%] w-187 h-200 bg-background rounded-tl-3xl border-t border-l border-border shadow-2xl flex overflow-hidden transition-transform duration-700 ease-out ${
-              step === 1 ? "translate-x-0" : "-translate-x-85 -translate-y-5"
+          <div
+            className={`absolute top-[20%] left-[25%] w-150 h-150 bg-white dark:bg-[#0a0a0a] rounded-t-xl border-t border-l border-border/40 dark:border-white/5  flex overflow-hidden transition-transform duration-700 ease-out ${
+              step === 1 ? "translate-x-10" : "-translate-x-100 translate-y-5"
             }`}
           >
             {/* Nav Rail Mockup */}
-            <div className="w-16 border-r border-border bg-muted/20 flex flex-col items-center py-4 gap-4 shrink-0">
-              <Avatar className="size-8 shadow-sm">
+            <div className="w-12 border-r border-border bg-muted/20 dark:bg-black flex flex-col items-center py-4 gap-6 shrink-0 opacity-70">
+              <Avatar className="size-8 shadow-sm opacity-100">
                 <AvatarImage src={avatarUrl} />
                 <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
                   {name ? name.charAt(0).toUpperCase() : "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary mt-4">
-                <div className="size-4 rounded-full bg-primary/40"></div>
+              <div className="w-full flex flex-col items-center gap-6 mt-4">
+                <LayoutGrid
+                  size={20}
+                  className="text-primary"
+                  strokeWidth={1.75}
+                />
+                <Home
+                  size={20}
+                  className="text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <Briefcase
+                  size={20}
+                  className="text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <Users
+                  size={20}
+                  className="text-muted-foreground"
+                  strokeWidth={1.75}
+                />
               </div>
-              <div className="size-8 rounded-full bg-border/40 flex items-center justify-center">
-                <div className="w-4 h-0.5 bg-muted-foreground/30 rounded-full"></div>
-              </div>
-              <div className="size-8 rounded-full bg-border/40 flex items-center justify-center">
-                <div className="w-4 h-0.5 bg-muted-foreground/30 rounded-full"></div>
-              </div>
-              <div className="mt-auto size-8 rounded-full bg-border/30"></div>
             </div>
 
             {/* Middle Pane Mockup (Chats List) */}
-            <div className="hidden lg:flex w-56 border-r border-border bg-background flex-col shrink-0">
-              <div className="h-14 border-b border-border flex items-center px-4 font-semibold text-sm">
+            <div className="hidden lg:flex w-56 border-r border-border dark:border-white/5 bg-white dark:bg-[#0a0a0a] flex-col shrink-0">
+              <div className="h-14 border-b border-border  dark:border-white/5 flex items-center px-4 font-semibold text-sm">
                 Chats
               </div>
               <div className="p-2 flex flex-col gap-1">
@@ -382,10 +398,10 @@ export function OnboardingModal() {
                 <div className="p-2 rounded-lg bg-primary/5 border border-primary/10 flex items-center gap-3">
                   <div className="size-10 rounded-full bg-orange-100 dark:bg-orange-950 flex items-center justify-center text-orange-600 dark:text-orange-400 text-lg">
                     <img
-                    src="/icons/travel.png"
-                    alt="Travel"
-                    className="w-full h-full object-cover rounded-2xl mix-blend-multiply"
-                  />
+                      src="/icons/travel.png"
+                      alt="Travel"
+                      className="w-full h-full object-cover rounded-2xl mix-blend-multiply"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">Goa Trip</div>
@@ -406,9 +422,9 @@ export function OnboardingModal() {
             </div>
 
             {/* Main Chat Area Mockup */}
-            <div className="flex-1 bg-background flex flex-col">
+            <div className="flex-1 bg-white dark:bg-[#0a0a0a] flex flex-col">
               {/* Header */}
-              <div className="h-14 border-b border-border flex items-center px-6 gap-3 shrink-0">
+              <div className="h-14 border-b border-border dark:border-white/5 flex items-center px-6 gap-3 shrink-0">
                 <div className="size-8 rounded-full bg-background/50 dark:bg-orange-950 flex items-center justify-center text-orange-600 dark:text-orange-400 text-sm">
                   <img
                     src="/icons/travel.png"

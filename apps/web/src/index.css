@@ -55,21 +55,21 @@
 
 /* Dark Mode Overrides */
 .dark {
-  --bg-color: #313338;
-  /* Main chat background */
+  --bg-color: oklch(0.248 0 0);
+  /* Main chat background (#202020) */
   --fg-color: #dbdee1;
   /* Text */
-  --card-color: #2b2d31;
-  /* Sidebar / Info cards */
+  --card-color: oklch(0.234 0 0);
+  /* Sidebar / Info cards (#1d1d1d) */
   --card-fg-color: #dbdee1;
-  --popover-color: #1e1f22;
-  /* Lowest level / Nav Rail */
+  --popover-color: oklch(0.234 0 0);
+  /* Lowest level / Nav Rail (#1d1d1d) */
   --popover-fg-color: #dbdee1;
-  --muted-color: #3f4147;
+  --muted-color: oklch(0.3 0 0);
   --muted-fg-color: #949ba4;
   --border-color: rgba(255, 255, 255, 0.06);
-  --input-color: #1e1f22;
-  --secondary-color: #2b2d31;
+  --input-color: oklch(0.234 0 0);
+  --secondary-color: oklch(0.234 0 0);
 
   /* Remove heavy clay neon effects for a clean minimal dark mode */
   --clay-light: transparent;
