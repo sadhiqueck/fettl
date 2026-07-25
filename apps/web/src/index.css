@@ -42,9 +42,9 @@
 
   --border: var(--border-color, oklch(0.92 0.004 286.32));
   --input: var(--input-color, oklch(0.92 0.004 286.32));
-  --ring: var(--theme-primary, #FACC15);
+  --ring: var(--primary);
 
-  --radius: 0.5rem;
+  --radius: 1rem;
 
   --app-shadow-light: var(--clay-light, rgba(255, 255, 255, 1));
   --app-shadow-dark: var(--clay-dark, rgba(245, 158, 11, 0.35));
@@ -281,7 +281,6 @@
     button,
     a,
     [role="button"],
-    label[for],
     input[type="submit"],
     input[type="button"],
     input[type="reset"],
@@ -438,7 +437,7 @@
   .chat-middle-container {
     @apply flex-1 flex bg-background overflow-hidden;
     /* Mobile: fill space above bottom bar */
-    @apply rounded-t-[24px] rounded-b-none mt-4 mb-[60px] mx-0;
+    @apply rounded-t-3xl rounded-b-none mt-4 mb-[60px] mx-0;
     /* Desktop: rounded box with margins */
     @apply md:rounded-[24px] md:my-4 md:mr-0 md:mb-4;
   }

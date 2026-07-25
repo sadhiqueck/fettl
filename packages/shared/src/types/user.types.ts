@@ -2,8 +2,10 @@ export interface User {
   id: string
   email: string
   name: string
+  phone: string | null
   vpa: string | null
   avatarUrl: string | null
+  isOnboarded: boolean
   createdAt: string
   updatedAt:string
 }

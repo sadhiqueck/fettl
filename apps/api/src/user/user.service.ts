@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { encryptVpa, decryptVpaSafe } from '../common/utils/encryption';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -13,6 +14,7 @@ export class UserService {
         id: true,
         email: true,
         name: true,
+        phone: true,
         vpa: true,
         avatarUrl: true,
         isOnboarded: true,
@@ -31,7 +33,7 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string; vpa?: string; isOnboarded?: boolean },
+    data: { name?: string; avatarUrl?: string; vpa?: string; phone?: string | null; isOnboarded?: boolean },
   ) {
     // Encrypt VPA before storing in the database
     const dbData = {
@@ -39,23 +41,36 @@ export class UserService {
       ...(data.vpa !== undefined ? { vpa: encryptVpa(data.vpa) } : {}),
     };
 
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: dbData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        vpa: true,
-        avatarUrl: true,
-        isOnboarded: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: dbData,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          vpa: true,
+          avatarUrl: true,
+          isOnboarded: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
-    // Decrypt VPA before returning to the client
-    return { ...user, vpa: decryptVpaSafe(user.vpa) };
+      // Decrypt VPA before returning to the client
+      return { ...user, vpa: decryptVpaSafe(user.vpa) };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002' &&
+        error.meta?.target &&
+        (error.meta.target as string[]).includes('phone')
+      ) {
+        throw new ConflictException('This phone number is already in use by another account');
+      }
+      throw error;
+    }
   }
 
   async searchUsers(query: string) {

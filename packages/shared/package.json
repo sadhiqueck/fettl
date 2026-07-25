@@ -24,6 +24,7 @@
     "typescript": "^5.4.0"
   },
   "dependencies": {
+    "libphonenumber-js": "^1.13.9",
     "zod": "^3.25.76"
   }
 }

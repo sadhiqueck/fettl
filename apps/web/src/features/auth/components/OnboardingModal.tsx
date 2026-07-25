@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useUserProfile, useUpdateProfile } from "@/shared/hooks/useUser";
 import { useUpload } from "@/shared/hooks/useUpload";
 import { VPA_REGEX } from "@fettl/shared";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
 import {
   Loader2,
@@ -24,6 +25,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/shared/components/ui/avatar";
+import { Button } from "@/shared/components/ui/button";
 
 //default avatars
 const PREDEFINED_AVATARS = [
@@ -45,6 +47,8 @@ export function OnboardingModal() {
 
   // Step 1 State
   const [name, setName] = useState(user?.name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(
     user?.avatarUrl || PREDEFINED_AVATARS[0],
   );
@@ -83,6 +87,13 @@ export function OnboardingModal() {
       toast.error("Please enter your name");
       return;
     }
+    if (phone.trim()) {
+      const phoneNumber = parsePhoneNumberFromString(phone, "IN");
+      if (!phoneNumber || !phoneNumber.isValid()) {
+        toast.error("Please enter a valid phone number");
+        return;
+      }
+    }
     setStep(2);
   };
 
@@ -96,11 +107,20 @@ export function OnboardingModal() {
       return;
     }
 
+    let formattedPhone: string | undefined;
+    if (phone.trim()) {
+      const phoneNumber = parsePhoneNumberFromString(phone, "IN");
+      if (phoneNumber?.isValid()) {
+        formattedPhone = phoneNumber.format("E.164");
+      }
+    }
+
     updateProfileMutation.mutate(
       {
         name,
         avatarUrl,
         ...(vpa.trim() ? { vpa: vpa.trim() } : {}),
+        ...(formattedPhone ? { phone: formattedPhone } : {}),
         isOnboarded: true,
       },
       {
@@ -125,9 +145,9 @@ export function OnboardingModal() {
         showCloseButton={false}
       >
         {/* Left Column: Form */}
-        <div className="flex-1 md:w-[45%] shrink-0 flex flex-col p-6 md:p-10 overflow-y-auto">
+        <div className="flex-1 md:w-[45%] shrink-0 flex flex-col p-6 md:p-8 overflow-y-auto">
           {/* Progress indicator */}
-          <div className="flex gap-2 mb-8 px-2">
+          <div className="flex gap-2 mb-6 px-2">
             <div
               className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${step >= 1 ? "bg-primary" : "bg-muted"}`}
             />
@@ -138,7 +158,7 @@ export function OnboardingModal() {
 
           {step === 1 ? (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <h1 className="text-2xl font-display font-bold mb-2">
                   Complete your profile
                 </h1>
@@ -147,11 +167,11 @@ export function OnboardingModal() {
                 </p>
               </div>
 
-              <form onSubmit={handleStep1Submit} className="space-y-6">
+              <form onSubmit={handleStep1Submit} className="space-y-4">
                 {/* Avatar Selection */}
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-3">
                   <div className="relative group">
-                    <Avatar className="size-24 ring-4 ring-background shadow-xl">
+                    <Avatar className="size-20 ring-4 ring-background shadow-xl">
                       <AvatarImage src={avatarUrl} className="object-cover" />
                       <AvatarFallback className="bg-muted text-2xl">
                         {name ? (
@@ -184,7 +204,7 @@ export function OnboardingModal() {
                   </div>
 
                   <div className="w-full">
-                    <p className="text-xs text-muted-foreground font-medium mb-3 text-center uppercase tracking-wider">
+                    <p className="text-xs text-muted-foreground font-medium mb-2 text-center uppercase tracking-wider">
                       Or pick an avatar
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
@@ -193,7 +213,7 @@ export function OnboardingModal() {
                           key={url}
                           type="button"
                           onClick={() => setAvatarUrl(url)}
-                          className={`size-12 rounded-full overflow-hidden transition-all duration-200 ${
+                          className={`size-10 rounded-full overflow-hidden transition-all duration-200 ${
                             avatarUrl === url
                               ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
                               : "hover:scale-110 ring-1 ring-border opacity-70 hover:opacity-100"
@@ -210,30 +230,94 @@ export function OnboardingModal() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="name"
-                    className="font-display font-bold text-sm"
-                  >
-                    Full Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="clay-input"
-                    autoFocus
-                  />
-                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="name"
+                      className="font-display font-bold text-sm"
+                    >
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="clay-input"
+                      autoFocus
+                    />
+                  </div>
 
-                <button
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label
+                        htmlFor="phone"
+                        className="font-display font-bold text-sm"
+                      >
+                        Phone Number
+                      </Label>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Optional
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-muted-foreground">
+                        <span className="text-sm font-medium">+91</span>
+                        <div className="w-px h-4 bg-border mx-1"></div>
+                      </div>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (!phoneTouched) setPhoneTouched(true);
+                        }}
+                        onBlur={() => setPhoneTouched(true)}
+                        placeholder="98765 43210"
+                        className={`clay-input pl-14 ${
+                          phoneTouched && phone.length > 0 && !parsePhoneNumberFromString(phone, "IN")?.isValid()
+                            ? "border-red-500/50 focus-visible:ring-red-500/20"
+                            : ""
+                        }`}
+                      />
+                      {phoneTouched && phone.length > 0 && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          {parsePhoneNumberFromString(
+                            phone,
+                            "IN",
+                          )?.isValid() ? (
+                            <CheckCircle2 className="size-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="size-4 text-red-500" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {phoneTouched && phone.length > 0 && !parsePhoneNumberFromString(phone, "IN")?.isValid() ? (
+                      <p className="text-xs text-red-500 font-medium">
+                        Please enter a valid phone number.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Helps you connect with friends easily.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
                   type="submit"
-                  disabled={!name.trim() || isUploading}
-                  className="clay-btn-primary w-full py-3 flex items-center justify-center gap-2 mt-4"
+                  variant="glassyInverted"
+                  disabled={
+                    !name.trim() ||
+                    isUploading ||
+                    (phone.trim().length > 0 &&
+                      !parsePhoneNumberFromString(phone, "IN")?.isValid())
+                  }
+                  className=" w-full py-2 flex items-center justify-center gap-1 mt-4"
                 >
-                  Continue <ChevronRight size={18} />
-                </button>
+                  Continue <ChevronRight size={12} className="mt-0.5" />
+                </Button>
               </form>
             </div>
           ) : (
@@ -316,8 +400,9 @@ export function OnboardingModal() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <button
+                  <Button
                     type="submit"
+                    variant="glassyInverted"
                     disabled={
                       (!isVpaValid && vpa.length > 0) ||
                       updateProfileMutation.isPending
@@ -332,16 +417,17 @@ export function OnboardingModal() {
                     ) : (
                       "Complete Setup"
                     )}
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setStep(1)}
                     className="text-sm text-muted-foreground hover:text-foreground py-2 font-medium"
                     disabled={updateProfileMutation.isPending}
                   >
                     Back to Profile
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -349,7 +435,7 @@ export function OnboardingModal() {
         </div>
 
         {/* Right Column: App Mockup Preview */}
-        <div className="hidden md:flex flex-1 bg-muted/30 dark:bg-[radial-gradient(circle_at_35%_35%,var(--tw-gradient-stops))] dark:from-[#202020] dark:to-[#050505] border-l border-border/40 relative overflow-hidden">
+        <div className="hidden md:flex flex-1 bg-muted/30 dark:bg-[radial-gradient(circle_at_45%_45%,#2a2a2a_0%,#050505_70%)] border-l border-border/40 relative overflow-hidden">
           {/* Abstract App Mockup Container */}
           <div
             className={`absolute top-[20%] left-[25%] w-150 h-150 bg-white dark:bg-[#0a0a0a] rounded-t-xl border-t border-l border-border/40 dark:border-white/5  flex overflow-hidden transition-transform duration-700 ease-out ${
@@ -470,7 +556,6 @@ export function OnboardingModal() {
                           size={10}
                           className="text-green-500 shrink-0"
                         />
-                        <span className="truncate">Auto-settle to {vpa}</span>
                       </div>
                     )}
                   </div>

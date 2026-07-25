@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
 
 const INTERACTIVE_SELECTORS =
-  "button, a, [role='button'], label[for], input[type='submit'], input[type='button'], input[type='reset'], [data-cursor='pointer']";
+  "button, a, [role='button'], input[type='submit'], input[type='button'], input[type='reset'], [data-cursor='pointer']";
 
 /**
  * Returns true only on devices with a real mouse (not touch-only).
