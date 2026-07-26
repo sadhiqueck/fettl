@@ -5,157 +5,144 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  /* Geist is the primary font */
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-
-  /* Light bg: #f6f7f9  */
-  --background: var(--bg-color, #f6f7f9);
-  /* Cool slate */
-  --foreground: var(--fg-color, oklch(0.145 0.01 285.938));
-  /* #111827 / very dark gray */
-
-  --card: var(--card-color, oklch(1 0 0));
-  --card-foreground: var(--card-fg-color, oklch(0.145 0.01 285.938));
-
-  --popover: var(--popover-color, oklch(1 0 0));
-  --popover-foreground: var(--popover-fg-color, oklch(0.145 0.01 285.938));
-
-  /* Primary: Brand */
-  --primary: var(--theme-primary, oklch(79.508% 0.15938 91.254));
-  /* default brand */
-  --primary-foreground: #000000;
-  /* Black text on brand for contrast */
-
-  --secondary: var(--secondary-color, #111827);
-  --secondary-foreground: oklch(1 0 0);
-
-  --muted: var(--muted-color, oklch(0.92 0.004 286.32));
-  --muted-foreground: var(--muted-fg-color, oklch(0.552 0.016 285.938));
-
-  --accent: var(--accent-color, oklch(0.795 0.178 86));
-  --accent-foreground: oklch(1 0 0);
-
-  --destructive: oklch(0.606 0.237 25.331);
-  --destructive-foreground: oklch(1 0 0);
-
-  --border: var(--border-color, oklch(0.92 0.004 286.32));
-  --input: var(--input-color, oklch(0.92 0.004 286.32));
-  --ring: var(--primary);
-
+/* ─── Design Tokens ─── */
+/* All runtime CSS variables live here. .dark and [data-theme] override these directly. */
+:root {
+  /* Shape */
   --radius: 1rem;
 
-  --app-shadow-light: var(--clay-light, rgba(255, 255, 255, 1));
-  --app-shadow-dark: var(--clay-dark, rgba(245, 158, 11, 0.35));
-  --app-shadow-dark-strong: var(--clay-dark-strong, rgba(245, 158, 11, 0.5));
-  --app-glow-primary: var(--app-glow, rgba(245, 158, 11, 0.2));
-  --app-glow-red: var(--app-glow-r, rgba(244, 63, 94, 0.2));
+  /* Color Palette — Light Mode */
+  --background: #f6f7f9;
+  --foreground: oklch(0.145 0.01 285.938);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0.01 285.938);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0.01 285.938);
+  --primary: oklch(79.508% 0.15938 91.254);
+  --primary-foreground: #000000;
+  --secondary: #111827;
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.92 0.004 286.32);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.795 0.178 86);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.606 0.237 25.331);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: var(--primary);
+
+  /* App-specific glow & shadow effects */
+  --app-shadow-light: rgba(255, 255, 255, 1);
+  --app-shadow-dark: rgba(245, 158, 11, 0.35);
+  --app-shadow-dark-strong: rgba(245, 158, 11, 0.5);
+  --app-glow-primary: rgba(245, 158, 11, 0.2);
+  --app-glow-red: rgba(244, 63, 94, 0.2);
 }
 
-/* Dark Mode Overrides */
+/* ─── Dark Mode ─── */
 .dark {
-  --bg-color: oklch(0.248 0 0);
-  /* Main chat background (#202020) */
-  --fg-color: #dbdee1;
-  /* Text */
-  --card-color: oklch(0.234 0 0);
-  /* Sidebar / Info cards (#1d1d1d) */
-  --card-fg-color: #dbdee1;
-  --popover-color: oklch(0.234 0 0);
-  /* Lowest level / Nav Rail (#1d1d1d) */
-  --popover-fg-color: #dbdee1;
-  --muted-color: oklch(0.3 0 0);
-  --muted-fg-color: #949ba4;
-  --border-color: rgba(255, 255, 255, 0.06);
-  --input-color: oklch(0.234 0 0);
-  --secondary-color: oklch(0.234 0 0);
+  --background: oklch(0.248 0 0);       /* #202020 main chat bg */
+  --foreground: #dbdee1;
+  --card: oklch(0.234 0 0);             /* #1d1d1d sidebar / info cards */
+  --card-foreground: #dbdee1;
+  --popover: oklch(0.234 0 0);          /* #1d1d1d nav rail */
+  --popover-foreground: #dbdee1;
+  --muted: oklch(0.3 0 0);
+  --muted-foreground: #949ba4;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: oklch(0.234 0 0);
+  --secondary: oklch(0.234 0 0);
 
-  /* Remove heavy clay neon effects for a clean minimal dark mode */
-  --clay-light: transparent;
-  --clay-dark: rgba(0, 0, 0, 0.2);
-  --clay-dark-strong: rgba(0, 0, 0, 0.4);
-  --app-glow: transparent;
-  --app-glow-r: transparent;
+  /* Minimal dark mode effects — no heavy neon */
+  --app-shadow-light: transparent;
+  --app-shadow-dark: rgba(0, 0, 0, 0.2);
+  --app-shadow-dark-strong: rgba(0, 0, 0, 0.4);
+  --app-glow-primary: transparent;
+  --app-glow-red: transparent;
 }
 
-/* Theme Color Overrides */
+/* ─── Theme Color Overrides ─── */
 [data-theme="indigo"] {
-  --theme-primary: #6366f1;
-  /* Indigo 500 */
-  --app-glow: rgba(99, 102, 241, 0.25);
-  --clay-dark: rgba(99, 102, 241, 0.15);
+  --primary: #6366f1;
+  --app-glow-primary: rgba(99, 102, 241, 0.25);
+  --app-shadow-dark: rgba(99, 102, 241, 0.15);
 }
-
 .dark[data-theme="indigo"] {
-  --clay-dark: rgba(0, 0, 0, 0.5);
-  --app-glow: rgba(99, 102, 241, 0.3);
+  --app-shadow-dark: rgba(0, 0, 0, 0.5);
+  --app-glow-primary: rgba(99, 102, 241, 0.3);
 }
 
 [data-theme="emerald"] {
-  --theme-primary: #10b981;
-  /* Emerald 500 */
-  --app-glow: rgba(16, 185, 129, 0.25);
-  --clay-dark: rgba(16, 185, 129, 0.15);
+  --primary: #10b981;
+  --app-glow-primary: rgba(16, 185, 129, 0.25);
+  --app-shadow-dark: rgba(16, 185, 129, 0.15);
 }
-
 .dark[data-theme="emerald"] {
-  --clay-dark: rgba(0, 0, 0, 0.5);
-  --app-glow: rgba(16, 185, 129, 0.3);
+  --app-shadow-dark: rgba(0, 0, 0, 0.5);
+  --app-glow-primary: rgba(16, 185, 129, 0.3);
 }
 
 [data-theme="rose"] {
-  --theme-primary: #f43f5e;
-  /* Rose 500 */
-  --app-glow: rgba(244, 63, 94, 0.25);
-  --clay-dark: rgba(244, 63, 94, 0.15);
+  --primary: #f43f5e;
+  --app-glow-primary: rgba(244, 63, 94, 0.25);
+  --app-shadow-dark: rgba(244, 63, 94, 0.15);
 }
-
 .dark[data-theme="rose"] {
-  --clay-dark: rgba(0, 0, 0, 0.5);
-  --app-glow: rgba(244, 63, 94, 0.3);
+  --app-shadow-dark: rgba(0, 0, 0, 0.5);
+  --app-glow-primary: rgba(244, 63, 94, 0.3);
 }
 
 [data-theme="brand"] {
-  --theme-primary: oklch(79.508% 0.15938 91.254);
-  /* Brand Color */
-  --app-glow: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 25%, transparent);
-  --clay-dark: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 15%, transparent);
+  --primary: oklch(79.508% 0.15938 91.254);
+  --app-glow-primary: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 25%, transparent);
+  --app-shadow-dark: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 15%, transparent);
 }
-
 .dark[data-theme="brand"] {
-  --clay-dark: rgba(0, 0, 0, 0.5);
-  --app-glow: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 30%, transparent);
+  --app-shadow-dark: rgba(0, 0, 0, 0.5);
+  --app-glow-primary: color-mix(in srgb, oklch(79.508% 0.15938 91.254) 30%, transparent);
 }
 
+/* ─── Tailwind Theme ─── */
+/* Maps :root CSS variables to Tailwind utility classes at runtime. */
 @theme inline {
+  /* Typography */
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
+
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Custom brand colors */
   --color-emerald: #10B981;
   --color-rose: #F43F5E;
   --color-soft-clay: #F8FAFC;
   --color-clay-dark: #c7d2fe;
+
+  /* Radius scale */
   --radius-sm: calc(var(--radius) * 0.75);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) * 1.5);
 
+  /* Custom animations */
   --animate-app-bounce: app-bounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-app-press: app-press 0.15s ease-out forwards;
   --animate-app-float: app-float 6s ease-in-out infinite;
@@ -169,103 +156,48 @@
 
 /* ─── Keyframes ─── */
 @keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes app-bounce {
-  0% {
-    transform: scale(0.95);
-  }
-
-  50% {
-    transform: scale(1.03);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  0%   { transform: scale(0.95); }
+  50%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
 }
 
 @keyframes app-press {
-  0% {
-    transform: scale(1);
-  }
-
-  100% {
-    transform: scale(0.96);
-  }
+  0%   { transform: scale(1); }
+  100% { transform: scale(0.96); }
 }
 
 @keyframes app-float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
 
 @keyframes app-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.96);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes app-scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes app-slide-right {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes app-pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px var(--app-glow-primary);
-  }
-
-  50% {
-    box-shadow: 0 0 40px var(--app-glow-primary), 0 0 60px rgba(99, 102, 241, 0.15);
-  }
+  0%, 100% { box-shadow: 0 0 20px var(--app-glow-primary); }
+  50%       { box-shadow: 0 0 40px var(--app-glow-primary), 0 0 60px rgba(99, 102, 241, 0.15); }
 }
 
+/* ─── Base Styles ─── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -275,9 +207,13 @@
     @apply bg-background text-foreground;
   }
 
-  /* Hide system cursor on interactive elements so emoji pointer takes over (desktop only) */
-  @media (hover: hover) and (pointer: fine) {
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
 
+  /* Hide system cursor on interactive elements so the custom emoji cursor takes over (desktop only) */
+  @media (hover: hover) and (pointer: fine) {
     button,
     a,
     [role="button"],
@@ -288,109 +224,71 @@
       cursor: none !important;
     }
   }
-
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-  }
 }
 
-/* ─── Minimal Component Utilities ─── */
+/* ─── Component Utilities ─── */
 @layer components {
 
-  /* Card: Standard minimal elevation */
+  /* ── Cards ── */
   .app-card {
-    @apply bg-card rounded-3xl border border-border;
+    @apply bg-card rounded-2xl border border-border;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
-
   .app-card:hover {
     @apply shadow-sm;
   }
 
-  /* Card: Elevated variant for stat cards */
   .app-card-elevated {
-    @apply bg-card rounded-3xl border border-border shadow-sm;
+    @apply bg-card rounded-2xl border border-border shadow-sm;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
-
   .app-card-elevated:hover {
     transform: translateY(-2px);
     @apply shadow-md;
   }
 
-  /* Card: Pressed/inset variant */
   .app-card-pressed {
-    @apply bg-muted rounded-3xl border border-border/50;
+    @apply bg-muted rounded-2xl border border-border/50;
   }
 
-
-
-  /* Badge: flat */
+  /* ── Badges ── */
   .app-badge {
     @apply rounded-full px-3 py-1 text-xs font-bold inline-flex items-center gap-1 border border-border/50;
   }
-
   .app-badge-green {
     @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800;
   }
-
   .app-badge-red {
     @apply bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800;
   }
-
   .app-badge-neutral {
     @apply bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700;
   }
 
-  /* Avatar: Minimal border */
+  /* ── Misc ── */
   .app-avatar {
     @apply rounded-full border border-border;
   }
-
-  /* Separator */
   .app-divider {
     @apply h-px w-full bg-border border-0;
   }
-
-  /* Stat number */
   .app-stat-green {
     color: var(--color-emerald);
   }
-
   .app-stat-red {
     color: var(--color-rose);
   }
-
-  /* Nav bar */
   .app-nav {
     @apply bg-background border-b border-border shadow-sm;
   }
 
-  /* Stagger delay utility classes */
-  .stagger-1 {
-    animation-delay: 0.1s;
-  }
-
-  .stagger-2 {
-    animation-delay: 0.2s;
-  }
-
-  .stagger-3 {
-    animation-delay: 0.3s;
-  }
-
-  .stagger-4 {
-    animation-delay: 0.4s;
-  }
-
-  .stagger-5 {
-    animation-delay: 0.5s;
-  }
-
-  .stagger-6 {
-    animation-delay: 0.6s;
-  }
+  /* ── Animation stagger utilities ── */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
 
   /* ─── Chat Shell Layout ─── */
   .chat-shell-wrapper {
@@ -410,36 +308,34 @@
   }
 
   .chat-nav-item {
-    @apply flex flex-col items-center justify-center gap-1 rounded-[1.25rem] cursor-pointer transition-all duration-200 relative;
+    @apply flex flex-col items-center justify-center gap-1 rounded-2xl cursor-pointer transition-all duration-200 relative;
     width: 56px;
     height: 56px;
     color: #6C6C75;
   }
-
   .chat-nav-item:hover {
-    color: var(--fg-color);
-    background: var(--muted-color);
+    color: var(--foreground);
+    background: var(--muted);
   }
-
   .chat-nav-item-active {
-    color: var(--fg-color);
-    background: var(--muted-color);
+    color: var(--foreground);
+    background: var(--muted);
     box-shadow: none;
   }
 
   .chat-nav-badge {
     @apply absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1;
-    background: #F59E0B;
-    color: white;
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 2px 6px var(--app-glow-primary);
   }
 
   .chat-middle-container {
     @apply flex-1 flex bg-background overflow-hidden;
     /* Mobile: fill space above bottom bar */
-    @apply rounded-t-3xl rounded-b-none mt-4 mb-[60px] mx-0;
+    @apply rounded-t-2xl rounded-b-none mt-4 mb-[60px] mx-0;
     /* Desktop: rounded box with margins */
-    @apply md:rounded-[24px] md:my-4 md:mr-0 md:mb-4;
+    @apply md:rounded-2xl md:my-4 md:mr-0 md:mb-4;
   }
 
   .chat-list-panel {
@@ -448,36 +344,31 @@
   }
 
   .chat-list-search {
-    @apply rounded-[1.25rem] px-4 py-2.5 text-sm outline-none border-0;
-    background: var(--muted-color);
-    color: var(--fg-color);
+    @apply rounded-2xl px-4 py-2.5 text-sm outline-none border-0;
+    background: var(--muted);
+    color: var(--foreground);
     box-shadow: none;
   }
 
   .chat-list-item {
     @apply flex items-center gap-3 px-4 py-3 mx-2 rounded-2xl cursor-pointer transition-all duration-200;
   }
-
   .chat-list-item:hover {
-    background: var(--muted-color);
+    background: var(--muted);
   }
-
   .chat-list-item-active {
-    background: var(--muted-color);
-    color: var(--fg-color);
+    background: var(--muted);
+    color: var(--foreground);
     box-shadow: none;
   }
 
-  .chat-list-item-active .text-foreground {
-    color: var(--fg-color) !important;
-  }
-
-  .chat-list-item-active .text-muted-foreground {
-    color: var(--theme-primary) !important;
-  }
-
+  /* Override Tailwind utility colors when a chat item is active */
+  .chat-list-item-active .text-foreground,
   .chat-list-item-active .font-bold {
-    color: var(--fg-color) !important;
+    color: var(--foreground) !important;
+  }
+  .chat-list-item-active .text-muted-foreground {
+    color: var(--primary) !important;
   }
 
   .chat-main-panel {
@@ -500,26 +391,26 @@
   }
 
   .chat-info-card {
-    @apply rounded-3xl p-5;
-    background: var(--card-color);
+    @apply rounded-2xl p-5;
+    background: var(--card);
     box-shadow: none;
   }
 
   .chat-bubble-incoming {
     @apply rounded-3xl rounded-tl-lg px-4 py-3 max-w-[75%];
-    background: var(--card-color);
+    background: var(--card);
   }
 
   .chat-bubble-outgoing {
     @apply rounded-3xl rounded-tr-lg px-4 py-3 max-w-[75%] ml-auto;
-    background: var(--theme-primary);
-    color: white;
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
 
   .chat-bubble-system {
     @apply rounded-2xl px-4 py-2 mx-auto max-w-[85%] text-center text-xs;
-    background: var(--muted-color);
-    color: var(--muted-fg-color);
+    background: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .chat-input-bar {
@@ -528,32 +419,24 @@
 
   .chat-input-field {
     @apply flex-1 rounded-full px-5 py-3 text-sm outline-none border border-border;
-    background: var(--muted-color);
-    color: var(--fg-color);
+    background: var(--muted);
+    color: var(--foreground);
   }
 
   .chat-send-btn {
     @apply size-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer border-0 transition-transform;
-    background: var(--theme-primary);
-    color: white;
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
-
-  .chat-send-btn:hover {
-    transform: scale(1.05);
-  }
-
-  .chat-send-btn:active {
-    transform: scale(0.95);
-  }
+  .chat-send-btn:hover  { transform: scale(1.05); }
+  .chat-send-btn:active { transform: scale(0.95); }
 
   .chat-date-divider {
     @apply flex items-center gap-3 my-4;
   }
-
   .chat-date-divider span {
     @apply text-[11px] font-bold uppercase tracking-widest text-muted-foreground shrink-0;
   }
-
   .chat-date-divider::after {
     content: "";
     @apply flex-1 h-px bg-border/60;
