@@ -42,17 +42,17 @@
 
 /* ─── Dark Mode ─── */
 .dark {
-  --background: oklch(0.248 0 0);       /* #202020 main chat bg */
-  --foreground: #dbdee1;
-  --card: oklch(0.234 0 0);             /* #1d1d1d sidebar / info cards */
-  --card-foreground: #dbdee1;
-  --popover: oklch(0.234 0 0);          /* #1d1d1d nav rail */
-  --popover-foreground: #dbdee1;
-  --muted: oklch(0.3 0 0);
-  --muted-foreground: #949ba4;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: oklch(0.234 0 0);
-  --secondary: oklch(0.234 0 0);
+  --background: #171717;
+  --foreground: #ededed;
+  --card:#0f0f0f;;
+  --card-foreground: #ededed;
+  --popover: #111111;;
+  --popover-foreground: #ededed;
+  --muted: #1c1c1c;
+  --muted-foreground: #a1a1aa;
+  --border: rgba(255, 255, 255, 0.12); 
+  --input: #111111;
+  --secondary: #262626;
 
   /* Minimal dark mode effects — no heavy neon */
   --app-shadow-light: transparent;
@@ -333,7 +333,7 @@
   .chat-middle-container {
     @apply flex-1 flex bg-background overflow-hidden;
     /* Mobile: fill space above bottom bar */
-    @apply rounded-t-2xl rounded-b-none mt-4 mb-[60px] mx-0;
+    @apply rounded-t-2xl rounded-b-none mt-4 mb-15 mx-0;
     /* Desktop: rounded box with margins */
     @apply md:rounded-2xl md:my-4 md:mr-0 md:mb-4;
   }

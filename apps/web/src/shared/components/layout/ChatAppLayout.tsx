@@ -23,7 +23,6 @@ import {
   PlusIcon,
   LinkIcon,
 } from "@/shared/components/ui/icons";
-import { OnboardingModal } from "@/features/auth/components/OnboardingModal";
 
 const CATEGORIES = [
   { label: "Travel", value: "TRIP" },
@@ -258,8 +257,6 @@ export function ChatAppLayout() {
           inviteCode={activeGroup.inviteCode}
         />
       )}
-
-      {user && !user.isOnboarded && <OnboardingModal />}
     </div>
   );
 }

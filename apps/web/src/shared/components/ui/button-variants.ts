@@ -2,7 +2,7 @@ import { cva } from "class-variance-authority"
 
 export const buttonVariants = cva(
   // Base
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[12px] text-sm font-[300] tracking-[-0.2px] whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/50 focus-visible:border-[#f59e0b] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] text-sm font-[300] tracking-[-0.2px] whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/50 focus-visible:border-[#f59e0b] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {

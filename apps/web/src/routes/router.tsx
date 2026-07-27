@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const GroupDetailsPage = lazy(() => import("@/pages/GroupDetailsPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 
 
 
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      { path: "onboarding", element: withSuspense(OnboardingPage) },
       {
         element: (
           <SocketProvider>

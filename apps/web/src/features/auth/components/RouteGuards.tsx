@@ -1,9 +1,11 @@
 import { useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { Loader2 } from "lucide-react";
+
 export function ProtectedRoute() {
   const { data: user, isLoading, isError } = useUserProfile();
+  const location = useLocation();
 
   useEffect(() => {
     // Prevent Back/Forward Cache (bfcache) from showing stale protected pages
@@ -26,6 +28,16 @@ export function ProtectedRoute() {
 
   if (isError || !user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Redirect non-onboarded users to the onboarding page
+  if (!user.isOnboarded && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Redirect already-onboarded users away from the onboarding page
+  if (user.isOnboarded && location.pathname === "/onboarding") {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
