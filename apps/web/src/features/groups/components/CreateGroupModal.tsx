@@ -185,10 +185,10 @@ export function CreateGroupModal({
 
   return (
     <Dialog open={open} onOpenChange={isCreating ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border shadow-xl">
-        {/* STEP 1: Details */}
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-[2rem]">
+        {/* STEP 1: Details & Category */}
         {step === 1 && (
-          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300">
+          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300 min-h-[540px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-semibold">
                 Create a group
@@ -206,6 +206,7 @@ export function CreateGroupModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Weekend trip"
+                  className="rounded-2xl"
                   autoFocus
                 />
               </div>
@@ -218,6 +219,7 @@ export function CreateGroupModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What's this group about?"
+                  className="rounded-2xl"
                 />
               </div>
               <div className="space-y-2 pt-2">
@@ -229,7 +231,7 @@ export function CreateGroupModal({
                       type="button"
                       onClick={() => setCategory(cat.id)}
                       className={cn(
-                        "relative flex items-center gap-2 p-2 rounded-xl border bg-card transition-all hover:border-primary/50 group text-left",
+                        "relative flex items-center gap-2 p-2 rounded-2xl border bg-card transition-all hover:border-primary/50 group text-left",
                         category === cat.id
                           ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary"
                           : "border-border",
@@ -250,7 +252,7 @@ export function CreateGroupModal({
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex justify-end gap-3 mt-auto pt-4">
               <Button variant="ghost" onClick={handleClose}>
                 Cancel
               </Button>
@@ -263,7 +265,7 @@ export function CreateGroupModal({
 
         {/* STEP 2: Members */}
         {step === 2 && (
-          <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 max-h-[85vh]">
+          <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 min-h-[540px] max-h-[85vh]">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Button
@@ -281,11 +283,11 @@ export function CreateGroupModal({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="relative">
+            <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by email..."
-                className="pl-9 bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-border"
+                className="pl-9 bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-border rounded-2xl"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -294,22 +296,18 @@ export function CreateGroupModal({
               )}
             </div>
 
-            {/* Selected Members List */}
-            <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto mb-2 bg-muted/30 p-3 rounded-2xl border border-border shadow-inner">
+            {/* Selected Chips */}
+            <div className="flex flex-wrap gap-2">
               {/* Current User (Always first, no delete) */}
               {currentUser && (
-                <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <IconStack className="h-8 w-8 rounded-xl overflow-hidden p-0 border-none">
-                      <Avatar className="h-full w-full rounded-none">
-                        <AvatarImage src={currentUser.avatarUrl || undefined} />
-                        <AvatarFallback className="rounded-none">
-                          {currentUser.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </IconStack>
-                    <span className="text-sm font-semibold">{currentUser.name} (You)</span>
-                  </div>
+                <div className="flex items-center gap-2 bg-muted rounded-full pl-1 pr-3 py-1 text-sm border border-border">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={currentUser.avatarUrl || undefined} />
+                    <AvatarFallback>{currentUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium truncate max-w-[120px]">
+                    {currentUser.name.split(" ")[0]} (You)
+                  </span>
                 </div>
               )}
 
@@ -317,30 +315,22 @@ export function CreateGroupModal({
               {Array.from(selectedMembers.values()).map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-card border border-border shadow-sm animate-in fade-in slide-in-from-bottom-2"
+                  className="flex items-center gap-2 bg-muted rounded-full pl-1 pr-3 py-1 text-sm border border-border animate-in fade-in zoom-in-95 duration-200"
                 >
-                  <div className="flex items-center gap-3">
-                    <IconStack className="h-8 w-8 rounded-xl overflow-hidden p-0 border-none">
-                      <Avatar className="h-full w-full rounded-none">
-                        <AvatarImage src={user.avatarUrl || undefined} />
-                        <AvatarFallback className="rounded-none">
-                          {user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </IconStack>
-                    <span className="text-sm font-medium truncate max-w-[140px]">
-                      {user.name}
-                    </span>
-                  </div>
-                  <Button
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.avatarUrl || undefined} />
+                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium truncate max-w-[120px]">
+                    {user.name.split(" ")[0]}
+                  </span>
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
                     onClick={() => toggleMember(user)}
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 rounded-full p-0.5"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -359,19 +349,18 @@ export function CreateGroupModal({
                       return (
                         <div
                           key={user.id}
-                          className="flex items-center justify-between p-3 rounded-xl border border-border bg-card"
+                          className="flex items-center justify-between p-2 rounded-2xl hover:bg-muted/50 transition-colors group cursor-pointer"
+                          onClick={() => toggleMember(user)}
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <IconStack className="h-10 w-10 rounded-xl overflow-hidden p-0 border-none shadow-none">
-                              <Avatar className="h-full w-full rounded-none">
-                                <AvatarImage src={user.avatarUrl || undefined} />
-                                <AvatarFallback className="rounded-none">
-                                  {user.name.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            </IconStack>
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.avatarUrl || undefined} />
+                              <AvatarFallback>
+                                {user.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="overflow-hidden">
-                              <p className="text-sm font-medium truncate">
+                              <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                                 {user.name}
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
@@ -381,9 +370,15 @@ export function CreateGroupModal({
                           </div>
                           <Button
                             size="sm"
-                            variant={isSelected ? "secondary" : "default"}
-                            onClick={() => toggleMember(user)}
-                            className="shrink-0"
+                            variant={isSelected ? "ghost" : "secondary"}
+                            className={cn(
+                              "shrink-0 rounded-full h-8 px-3",
+                              isSelected ? "text-primary" : ""
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMember(user);
+                            }}
                           >
                             {isSelected ? (
                               <>
@@ -412,21 +407,19 @@ export function CreateGroupModal({
                         return (
                           <div
                             key={contact.id}
-                            className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer"
+                            className="flex items-center justify-between p-2 rounded-2xl hover:bg-muted/50 transition-colors group cursor-pointer"
                             onClick={() => toggleMember(contact)}
                           >
                             <div className="flex items-center gap-3 overflow-hidden">
-                            <IconStack className="h-10 w-10 rounded-xl overflow-hidden p-0 border-none shadow-none group-hover:scale-105 transition-transform">
-                              <Avatar className="h-full w-full rounded-none">
+                              <Avatar className="h-9 w-9">
                                 <AvatarImage
                                   src={contact.avatarUrl || undefined}
                                 />
-                                <AvatarFallback className="rounded-none">
+                                <AvatarFallback>
                                   {contact.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                            </IconStack>
-                            <div className="overflow-hidden">
+                              <div className="overflow-hidden">
                                 <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                                   {contact.name}
                                 </p>
@@ -441,7 +434,7 @@ export function CreateGroupModal({
                               size="sm"
                               variant={isSelected ? "ghost" : "outline"}
                               className={cn(
-                                "shrink-0 h-8",
+                                "shrink-0 h-8 rounded-full px-3",
                                 isSelected
                                   ? "text-primary"
                                   : "opacity-0 group-hover:opacity-100",
@@ -486,7 +479,7 @@ export function CreateGroupModal({
               )}
             </div>
 
-            <div className="flex justify-between pt-4 border-t border-border">
+            <div className="flex justify-between pt-4 border-t border-border mt-auto">
               <Button variant="ghost" onClick={handleSubmit} disabled={isCreating}>
                 Skip for now
               </Button>
@@ -500,7 +493,7 @@ export function CreateGroupModal({
                     Creating...
                   </>
                 ) : (
-                  "Create Group 🚀"
+                  "Create Group"
                 )}
               </Button>
             </div>

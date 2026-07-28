@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/shared/lib/api-client";
+import { apiClient } from "@/shared/lib/apiClient";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { type ContactData } from "./useGroups";
 
