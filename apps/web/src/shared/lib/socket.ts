@@ -21,14 +21,12 @@ let socket: Socket | null = null;
  *   3. If the existing connection is disconnected, it auto-reconnects.
  */
 export function getSocket(): Socket {
-  if (socket?.connected) {
-    return socket;
-  }
-
-  // If a socket exists but is disconnected, clean it up first
   if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
+    // If the socket was manually disconnected but not destroyed, reconnect it.
+    if (socket.disconnected) {
+      socket.connect();
+    }
+    return socket;
   }
 
   socket = io(SOCKET_URL, {
