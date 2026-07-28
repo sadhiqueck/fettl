@@ -6,7 +6,7 @@ import { NavRail, type NavFilter } from "@/shared/components/layout/NavRail";
 import { GroupListSidebar } from "@/shared/components/layout/GroupListSidebar";
 import { ProfileSidebar } from "@/shared/components/layout/ProfileSidebar";
 import { GroupInfoSidebar } from "@/shared/components/layout/GroupInfoSidebar";
-import { useGroups, useCreateGroup, useJoinGroup, useGroup } from "@/features/groups/hooks/useGroups";
+import { useGroups, useJoinGroup, useGroup } from "@/features/groups/hooks/useGroups";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { CreateGroupModal } from "@/features/groups/components/CreateGroupModal";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Button } from "@/shared/components/ui/button";
@@ -24,13 +25,6 @@ import {
   LinkIcon,
 } from "@/shared/components/ui/icons";
 
-const CATEGORIES = [
-  { label: "Travel", value: "TRIP" },
-  { label: "Home", value: "HOME" },
-  { label: "Work", value: "OFFICE" },
-  { label: "Friends", value: "FRIENDS" },
-  { label: "Other", value: "OTHER" },
-];
 
 export function ChatAppLayout() {
   const { id: activeGroupId } = useParams();
@@ -40,7 +34,6 @@ export function ChatAppLayout() {
   const { data: user } = useUserProfile();
   const { data: groups = [], isLoading, isError, error, refetch } = useGroups();
   const { data: activeGroup } = useGroup(activeGroupId);
-  const createGroupMutation = useCreateGroup();
   const joinGroupMutation = useJoinGroup();
 
   const [navFilter, setNavFilter] = useState<NavFilter>("all");
@@ -69,24 +62,6 @@ export function ChatAppLayout() {
       navFilter === "all" || normalizedCategory === navFilter;
     return matchesSearch && matchesFilter;
   });
-
-  const handleCreateGroup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    createGroupMutation.mutate(
-      {
-        name: formData.get("name") as string,
-        category: formData.get("category") as string,
-        description: (formData.get("description") as string) || undefined,
-      },
-      {
-        onSuccess: () => {
-          setCreateOpen(false);
-          (e.target as HTMLFormElement).reset();
-        },
-      },
-    );
-  };
 
   const handleJoinSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -155,60 +130,7 @@ export function ChatAppLayout() {
         )}
       </div>
 
-      {/* Create Group Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="app-card p-2">
-                <PlusIcon size={28} />
-              </div>
-              <div>
-                <DialogTitle className="font-display text-lg font-bold">
-                  Create new group
-                </DialogTitle>
-                <DialogDescription>
-                  Start splitting expenses with your crew.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          <form onSubmit={handleCreateGroup} className="flex flex-col gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="group-name" className="font-display font-semibold text-sm">
-                Group name
-              </Label>
-              <Input id="group-name" name="name" placeholder="Weekend trip" className="clay-input" required disabled={createGroupMutation.isPending} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group-category" className="font-display font-semibold text-sm">
-                Category
-              </Label>
-              <select id="group-category" name="category" className="clay-input text-sm cursor-pointer" required disabled={createGroupMutation.isPending}>
-                <option value="">Select category</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group-description" className="font-display font-semibold text-sm">
-                Description <span className="text-muted-foreground font-normal">(optional)</span>
-              </Label>
-              <textarea id="group-description" name="description" placeholder="What's this group about?" className="clay-input min-h-16 resize-none" rows={2} disabled={createGroupMutation.isPending} />
-            </div>
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="clay-btn-ghost" disabled={createGroupMutation.isPending}>
-                Cancel
-              </Button>
-              <button type="submit" disabled={createGroupMutation.isPending} className="clay-btn-primary px-6 py-2 text-sm font-display font-bold flex items-center gap-2">
-                {createGroupMutation.isPending && <Loader2 className="animate-spin" size={16} />}
-                Create group
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateGroupModal open={createOpen} onOpenChange={setCreateOpen} />
 
       {/* Join Group Dialog */}
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>

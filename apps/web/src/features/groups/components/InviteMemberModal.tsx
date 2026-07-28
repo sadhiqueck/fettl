@@ -6,7 +6,11 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Input } from "@/shared/components/ui/input";
 import {
   Users as GroupIcon,
@@ -25,7 +29,8 @@ import {
   useAddMember,
   useAddMemberByEmail,
 } from "@/features/groups/hooks/useGroups";
-import { apiClient } from "@/shared/lib/apiClient";
+import { useUserSearch } from "@/shared/hooks/useUserSearch";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { AxiosError } from "axios";
 
 interface InviteMemberModalProps {
@@ -52,8 +57,9 @@ export function InviteMemberModal({
 }: InviteMemberModalProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [previewUser, setPreviewUser] = useState<PreviewUser | null>(null);
+  const debouncedEmail = useDebounce(email, 300);
+  const { data: searchResults, isLoading: isSearching } =
+    useUserSearch(debouncedEmail);
 
   const { data: contacts, isLoading: contactsLoading } =
     useGroupContacts(groupId);
@@ -64,54 +70,21 @@ export function InviteMemberModal({
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setEmail("");
-      setPreviewUser(null);
     }
     onOpenChange(open);
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const { data } = await apiClient.get<PreviewUser[]>(
-        `/users/search?q=${encodeURIComponent(email)}`,
-      );
-
-      const exactMatch = data.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase(),
-      );
-
-      if (exactMatch) {
-        setPreviewUser(exactMatch);
-      } else {
-        toast.error("No user found with this registered email.");
-      }
-    } catch {
-      toast.error("Failed to search for user. Please try again.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleConfirmAdd = () => {
-    if (!previewUser) return;
-
+  const handleConfirmAdd = (targetEmail: string, targetName: string) => {
     const toastId = toast.loading("Adding user to group...");
 
     addMemberByEmailMutation.mutate(
-      { groupId, email: previewUser.email },
+      { groupId, email: targetEmail },
       {
         onSuccess: () => {
-          toast.success(`${previewUser.name} added to the group!`, {
+          toast.success(`${targetName} added to the group!`, {
             id: toastId,
           });
           setEmail("");
-          setPreviewUser(null);
         },
         onError: (error: Error) => {
           const err = error as AxiosError<{ message: string }>;
@@ -167,7 +140,7 @@ export function InviteMemberModal({
               try {
                 await navigator.share({
                   title: `Join ${groupName} on Fettl`,
-                  text: `Hey! Join my group on Fettl to split expenses easily. Use this invite link: ${import.meta.env.VITE_BASE_URL}/groups/join/${inviteCode}`,
+                  text: `Hey! Join my group on Fettl to split expenses easily. Use this invite link: ${import.meta.env.VITE_FRONTEND_URL}/groups/join/${inviteCode}`,
                 });
               } catch (error) {
                 console.error("Error sharing", error);
@@ -186,87 +159,60 @@ export function InviteMemberModal({
           Share Invite Code
         </Button>
 
-        {previewUser ? (
-          <div className="w-full mt-6 p-4 bg-soft-clay rounded-2xl border border-border/50 animate-app-fade-up shadow-inner">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
-              Confirm Member
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 border-2 border-background">
-                  {previewUser.avatarUrl && (
-                    <AvatarImage
-                      src={previewUser.avatarUrl}
-                      alt={previewUser.name}
-                      referrerPolicy="no-referrer"
-                    />
-                  )}
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    {previewUser.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col text-left">
-                  <span className="text-sm font-semibold truncate max-w-37.5">
-                    {previewUser.name}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground truncate max-w-37.5">
-                    {previewUser.email}
-                  </span>
+        <div className="w-full mt-6">
+          <div className="relative">
+            <Input
+              name="email"
+              type="text"
+              placeholder="Search users by email..."
+              className="clay-input w-full h-12 text-sm pl-4 pr-10"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground animate-spin" />
+            )}
+          </div>
+
+          {email.length >= 3 && searchResults && searchResults.length > 0 && (
+            <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2 text-left">
+                Search Results
+              </p>
+              {searchResults.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-3 bg-soft-clay rounded-xl border border-border/50"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <Avatar className="size-8">
+                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} />}
+                      <AvatarFallback>
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left overflow-hidden">
+                      <p className="text-sm font-semibold truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="clay-btn-primary px-3 rounded-full h-8"
+                    onClick={() => handleConfirmAdd(user.email, user.name)}
+                    disabled={addMemberByEmailMutation.isPending}
+                  >
+                    Add
+                  </Button>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors"
-                  onClick={() => setPreviewUser(null)}
-                  disabled={addMemberByEmailMutation.isPending}
-                >
-                  <X className="size-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  className="size-8 rounded-full clay-btn-primary"
-                  onClick={handleConfirmAdd}
-                  disabled={addMemberByEmailMutation.isPending}
-                >
-                  {addMemberByEmailMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Check className="size-4" />
-                  )}
-                </Button>
-              </div>
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="w-full mt-6">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <Input
-                name="email"
-                type="email"
-                placeholder="Add by email address..."
-                className="clay-input flex-1 h-12 text-sm"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isSearching}
-              />
-              <Button
-                type="submit"
-                className="clay-btn-secondary h-12 px-4 rounded-xl flex items-center gap-2 transition-all"
-                disabled={isSearching || !email}
-              >
-                {isSearching ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Mail className="size-4" />
-                )}
-                <span className="font-display font-semibold text-sm">Find</span>
-              </Button>
-            </form>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Add Friends Section */}
         <div className="w-full mt-8">

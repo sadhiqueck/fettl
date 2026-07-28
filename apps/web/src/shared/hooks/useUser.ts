@@ -1,5 +1,6 @@
 import { apiClient } from "@/shared/lib/apiClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import type { User, UpdateProfileInput } from "@fettl/shared";
 import { disconnectSocket } from "@/shared/lib/socket";
 import { toast } from "sonner";
@@ -51,13 +52,14 @@ export function useUpdateProfile() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
       disconnectSocket();
       queryClient.clear();
-      window.location.href = "/login";
+      navigate("/login", { replace: true });
     },
     onError: (error) => {
       console.error("Logout failed:", error);
@@ -66,7 +68,7 @@ export function useLogout() {
       disconnectSocket();
       queryClient.clear();
       setTimeout(() => {
-        window.location.href = "/login";
+        navigate("/login", { replace: true });
       }, 100);
     },
   });
