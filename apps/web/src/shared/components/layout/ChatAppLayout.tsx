@@ -111,7 +111,7 @@ export function ChatAppLayout() {
           onCreateGroup={() => setCreateOpen(true)}
         />
 
-        <div className="chat-middle-container bg-red-500">
+        <div className="chat-middle-container">
           {location.pathname === "/profile" ? (
             <ProfileSidebar className={hideGroupList ? "hidden md:flex" : "flex"} />
           ) : (

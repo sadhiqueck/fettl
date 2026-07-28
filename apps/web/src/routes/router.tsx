@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import React, { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "@/features/auth/components/RouteGuards";
 import { ChatAppLayout } from "@/shared/components/layout/ChatAppLayout";

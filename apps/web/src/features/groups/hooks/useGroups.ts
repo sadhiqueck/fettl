@@ -1,12 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/lib/apiClient";
-import type {
-  Group,
-  GroupMember,
-  Expense,
-  ExpenseSplit,
-  Settlement,
-} from "@fettl/shared";
+import type { Group, GroupMember, ExpenseSplit } from "@fettl/shared";
 import { toast } from "sonner";
 import { groupKeys } from "./queryKeys";
 
@@ -133,13 +127,25 @@ export function useCreateGroup() {
 
   return useMutation({
     mutationFn: createGroup,
-    onSuccess: () => {
-      // Invalidate the groups query to refetch the list after creation
+    // 1. BEFORE the API call — instantly add the new group to the cache
+    onMutate: async (newGroup) => {
+      await queryClient.cancelQueries({ queryKey: groupKeys.all });
+      const previous = queryClient.getQueryData(groupKeys.all);
+      queryClient.setQueryData(groupKeys.all, (old: GroupData[] = []) => [
+        ...old,
+        { ...newGroup, id: "temp-" + Date.now(), members: [], userBalance: 0 },
+      ]);
+      return { previous }; // snapshot for rollback
+    },
+    // 2. If API fails — roll back to snapshot
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(groupKeys.all, context?.previous);
+      toast.error("Couldn't create the group. Please try again.");
+    },
+    // 3. Whether success or error — sync with real server data
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
-    onError: () => {
-      toast.error("Couldn't create the group. Please try again.");
-    }
   });
 }
 
@@ -161,14 +167,17 @@ export function useJoinGroup() {
     },
     onError: () => {
       toast.error("Couldn't join the group. Please check the code.");
-    }
+    },
   });
 }
 
 /* ─── Fetch Group Contacts ─── */
 
 async function fetchGroupContacts(groupId: string): Promise<ContactData[]> {
-  const { data } = await apiClient.get<{ message: string; contacts: ContactData[] }>(`/groups/${groupId}/contacts`);
+  const { data } = await apiClient.get<{
+    message: string;
+    contacts: ContactData[];
+  }>(`/groups/${groupId}/contacts`);
   return data.contacts;
 }
 
@@ -182,8 +191,16 @@ export function useGroupContacts(groupId: string | undefined) {
 
 /* ─── Add Member Directly ─── */
 
-async function addMemberDirectly({ groupId, userId }: { groupId: string; userId: string }) {
-  const { data } = await apiClient.post(`/groups/${groupId}/members`, { userId });
+async function addMemberDirectly({
+  groupId,
+  userId,
+}: {
+  groupId: string;
+  userId: string;
+}) {
+  const { data } = await apiClient.post(`/groups/${groupId}/members`, {
+    userId,
+  });
   return data;
 }
 
@@ -194,19 +211,31 @@ export function useAddMember() {
     mutationFn: addMemberDirectly,
     onSuccess: (_, variables) => {
       // Refetch the group details and contacts after adding a member
-      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.contacts(variables.groupId) });
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(variables.groupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.contacts(variables.groupId),
+      });
     },
     onError: () => {
       toast.error("Couldn't add member. Try again.");
-    }
+    },
   });
 }
 
 /* ─── Add Member By Email ─── */
 
-async function addMemberByEmail({ groupId, email }: { groupId: string; email: string }) {
-  const { data } = await apiClient.post(`/groups/${groupId}/members/email`, { email });
+async function addMemberByEmail({
+  groupId,
+  email,
+}: {
+  groupId: string;
+  email: string;
+}) {
+  const { data } = await apiClient.post(`/groups/${groupId}/members/email`, {
+    email,
+  });
   return data;
 }
 
@@ -216,12 +245,16 @@ export function useAddMemberByEmail() {
   return useMutation({
     mutationFn: addMemberByEmail,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.contacts(variables.groupId) });
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(variables.groupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.contacts(variables.groupId),
+      });
     },
     onError: () => {
       toast.error("Couldn't add member by email. Try again.");
-    }
+    },
   });
 }
 
@@ -242,7 +275,7 @@ export function useLeaveGroup() {
     },
     onError: () => {
       toast.error("Couldn't leave the group. Try again.");
-    }
+    },
   });
 }
 
@@ -267,12 +300,13 @@ export function useMarkAsPaid() {
   return useMutation({
     mutationFn: markAsPaid,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: groupKeys.detail(variables.groupId) });
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(variables.groupId),
+      });
       queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
     onError: () => {
       toast.error("Couldn't record the settlement. Try again.");
-    }
+    },
   });
 }
-

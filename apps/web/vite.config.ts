@@ -8,6 +8,7 @@ import { fileURLToPath, URL } from "node:url"
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
+    dedupe: ["react", "react-dom", "react-router-dom"],
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@fettl/shared": fileURLToPath(
