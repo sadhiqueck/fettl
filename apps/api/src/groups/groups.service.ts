@@ -553,7 +553,7 @@ export class GroupsService {
     };
   }
 
-  async getGroupContacts(userId: string, groupId: string) {
+  async getGroupContacts(userId: string, groupId?: string) {
     // 1. Get all group IDs the current user is in
     const userGroups = await this.prisma.groupMember.findMany({
       where: { userId, isActive: true },
@@ -561,13 +561,13 @@ export class GroupsService {
     });
     const groupIds = userGroups.map((g) => g.groupId);
 
-    // 2. Find unique users in these groups, excluding the current user and those already in target group
+    // 2. Find unique users in these groups, excluding the current user and those already in target group (if provided)
     const contacts = await this.prisma.user.findMany({
       where: {
         id: { not: userId },
         groupMemberships: {
           some: { groupId: { in: groupIds }, isActive: true },
-          none: { groupId: groupId, isActive: true },
+          ...(groupId ? { none: { groupId: groupId, isActive: true } } : {}),
         },
       },
       select: {

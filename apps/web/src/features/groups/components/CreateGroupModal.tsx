@@ -18,24 +18,15 @@ import {
   EmptyDescription,
 } from "@/shared/components/ui/empty";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/shared/components/ui/avatar";
-import {
   Search,
   Loader2,
-  Plane,
-  Home,
-  Briefcase,
-  PartyPopper,
-  UtensilsCrossed,
-  Layers,
   Check,
   X,
   ArrowLeft,
   ArrowRight,
+  UserPlus,
 } from "lucide-react";
+import { useUserProfile } from "@/shared/hooks/useUser";
 import {
   useCreateGroup,
   useAddMember,
@@ -52,38 +43,39 @@ import {
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 
 // Category IDs must match the backend GroupCategory enum exactly when uppercased
 const CATEGORIES = [
   {
     id: "TRIP",
     label: "Trip",
-    icon: <Plane className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/travel.png",
   },
   {
     id: "HOME",
     label: "Home",
-    icon: <Home className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/home.png",
   },
   {
     id: "OFFICE",
     label: "Work",
-    icon: <Briefcase className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/office.png",
   },
   {
     id: "FOOD",
     label: "Food",
-    icon: <UtensilsCrossed className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/other.png", // Fallback to other.png since there's no food.png
   },
   {
     id: "ROOMMATES",
     label: "Roommates",
-    icon: <PartyPopper className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/friends.png",
   },
   {
     id: "OTHER",
     label: "Other",
-    icon: <Layers className="h-5 w-5 text-foreground" />,
+    imageUrl: "/icons/other.png",
   },
 ];
 
@@ -96,17 +88,23 @@ export function CreateGroupModal({
   open,
   onOpenChange,
 }: CreateGroupModalProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("TRIP");
 
   // Search & Contacts
+  const { data: currentUser } = useUserProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: searchResults, isLoading: isSearching } =
     useUserSearch(debouncedSearch);
   const { contacts } = useAllContacts();
+
+  // Filter out current user from search results
+  const filteredSearchResults = searchResults?.filter(
+    (u) => u.id !== currentUser?.id && u.email !== currentUser?.email
+  ) || [];
 
   // Selected Members
   const [selectedMembers, setSelectedMembers] = useState<
@@ -222,6 +220,34 @@ export function CreateGroupModal({
                   placeholder="What's this group about?"
                 />
               </div>
+              <div className="space-y-2 pt-2">
+                <Label>Category</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id)}
+                      className={cn(
+                        "relative flex items-center gap-2 p-2 rounded-xl border bg-card transition-all hover:border-primary/50 group text-left",
+                        category === cat.id
+                          ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary"
+                          : "border-border",
+                      )}
+                    >
+                      <IconStack
+                        className={cn(
+                          "h-8 w-8 shrink-0 transition-transform group-hover:scale-105 p-0 overflow-hidden",
+                          category === cat.id && "border-primary/50",
+                        )}
+                      >
+                        <img src={cat.imageUrl} alt={cat.label} className="h-full w-full object-cover" />
+                      </IconStack>
+                      <span className="text-xs sm:text-sm font-medium leading-tight">{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-4">
@@ -235,72 +261,8 @@ export function CreateGroupModal({
           </div>
         )}
 
-        {/* STEP 2: Category */}
+        {/* STEP 2: Members */}
         {step === 2 && (
-          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-right-4 fade-in duration-300">
-            <DialogHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 -ml-2 rounded-full"
-                  onClick={() => setStep(1)}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <DialogTitle className="text-xl">
-                  What type of group?
-                </DialogTitle>
-              </div>
-              <DialogDescription>
-                Pick a category that best fits your expenses.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid grid-cols-3 gap-3 py-4">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategory(cat.id)}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center p-4 rounded-xl border bg-card transition-all hover:border-primary/50 group",
-                    category === cat.id
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border",
-                  )}
-                >
-                  <IconStack
-                    className={cn(
-                      "h-14 w-12 mb-2 transition-transform group-hover:scale-105",
-                      category === cat.id && "border-primary/50",
-                    )}
-                  >
-                    {cat.icon}
-                  </IconStack>
-                  <span className="text-xs font-medium">{cat.label}</span>
-                  {category === cat.id && (
-                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
-                      <Check className="h-3 w-3" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-between mt-4">
-              <Button variant="ghost" onClick={() => setStep(1)}>
-                Back
-              </Button>
-              <Button onClick={() => setStep(3)}>
-                Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: Members */}
-        {step === 3 && (
           <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 max-h-[85vh]">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-2">
@@ -308,7 +270,7 @@ export function CreateGroupModal({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 -ml-2 rounded-full"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(1)}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -332,34 +294,56 @@ export function CreateGroupModal({
               )}
             </div>
 
-            {/* Selected Chips */}
-            {selectedMembers.size > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {Array.from(selectedMembers.values()).map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center gap-2 bg-muted rounded-full pl-1 pr-3 py-1 text-sm border border-border"
-                  >
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={user.avatarUrl || undefined} />
-                      <AvatarFallback>
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium truncate max-w-[120px]">
-                      {user.name.split(" ")[0]}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleMember(user)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+            {/* Selected Members List */}
+            <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto mb-2 bg-muted/30 p-3 rounded-2xl border border-border shadow-inner">
+              {/* Current User (Always first, no delete) */}
+              {currentUser && (
+                <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <IconStack className="h-8 w-8 rounded-xl overflow-hidden p-0 border-none">
+                      <Avatar className="h-full w-full rounded-none">
+                        <AvatarImage src={currentUser.avatarUrl || undefined} />
+                        <AvatarFallback className="rounded-none">
+                          {currentUser.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </IconStack>
+                    <span className="text-sm font-semibold">{currentUser.name} (You)</span>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+
+              {/* Other Selected Contacts */}
+              {Array.from(selectedMembers.values()).map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-2 rounded-xl bg-card border border-border shadow-sm animate-in fade-in slide-in-from-bottom-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <IconStack className="h-8 w-8 rounded-xl overflow-hidden p-0 border-none">
+                      <Avatar className="h-full w-full rounded-none">
+                        <AvatarImage src={user.avatarUrl || undefined} />
+                        <AvatarFallback className="rounded-none">
+                          {user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </IconStack>
+                    <span className="text-sm font-medium truncate max-w-[140px]">
+                      {user.name}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleMember(user)}
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4 max-h-[300px]">
               {/* Search Results */}
@@ -370,7 +354,7 @@ export function CreateGroupModal({
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Search Results
                     </h4>
-                    {searchResults.map((user) => {
+                    {filteredSearchResults.map((user) => {
                       const isSelected = selectedMembers.has(user.id);
                       return (
                         <div
@@ -378,12 +362,14 @@ export function CreateGroupModal({
                           className="flex items-center justify-between p-3 rounded-xl border border-border bg-card"
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={user.avatarUrl || undefined} />
-                              <AvatarFallback>
-                                {user.name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <IconStack className="h-10 w-10 rounded-xl overflow-hidden p-0 border-none shadow-none">
+                              <Avatar className="h-full w-full rounded-none">
+                                <AvatarImage src={user.avatarUrl || undefined} />
+                                <AvatarFallback className="rounded-none">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            </IconStack>
                             <div className="overflow-hidden">
                               <p className="text-sm font-medium truncate">
                                 {user.name}
@@ -430,15 +416,17 @@ export function CreateGroupModal({
                             onClick={() => toggleMember(contact)}
                           >
                             <div className="flex items-center gap-3 overflow-hidden">
-                              <Avatar className="h-9 w-9">
+                            <IconStack className="h-10 w-10 rounded-xl overflow-hidden p-0 border-none shadow-none group-hover:scale-105 transition-transform">
+                              <Avatar className="h-full w-full rounded-none">
                                 <AvatarImage
                                   src={contact.avatarUrl || undefined}
                                 />
-                                <AvatarFallback>
+                                <AvatarFallback className="rounded-none">
                                   {contact.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="overflow-hidden">
+                            </IconStack>
+                            <div className="overflow-hidden">
                                 <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                                   {contact.name}
                                 </p>
@@ -480,28 +468,15 @@ export function CreateGroupModal({
                       <Empty>
                         <EmptyHeader>
                           <EmptyMedia>
-                            <div className="flex -space-x-2">
-                              <Avatar className="h-12 w-12 ring-2 ring-background grayscale">
-                                <AvatarFallback className="bg-muted">
-                                  ?
-                                </AvatarFallback>
-                              </Avatar>
-                              <Avatar className="h-12 w-12 ring-2 ring-background grayscale">
-                                <AvatarFallback className="bg-muted text-muted-foreground">
-                                  👤
-                                </AvatarFallback>
-                              </Avatar>
-                              <Avatar className="h-12 w-12 ring-2 ring-background grayscale">
-                                <AvatarFallback className="bg-muted">
-                                  ?
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
+                            <IconStack className="h-16 w-16 rounded-xl border-border bg-card shadow-sm p-0 flex items-center justify-center">
+                              <UserPlus className="h-7 w-7 text-muted-foreground" />
+                            </IconStack>
                           </EmptyMedia>
-                          <EmptyTitle>No Contacts Yet</EmptyTitle>
-                          <EmptyDescription>
-                            Search by email above to add people to your new
-                            group.
+                          <EmptyTitle className="text-xl font-semibold mt-4">
+                            Invite the first people in
+                          </EmptyTitle>
+                          <EmptyDescription className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                            Bring friends, roommates, and family into the group with a fast email invite.
                           </EmptyDescription>
                         </EmptyHeader>
                       </Empty>

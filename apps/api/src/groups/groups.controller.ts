@@ -56,6 +56,16 @@ export class GroupsController {
     };
   }
 
+  @Get('contacts')
+  @UseGuards(JwtAuthGuard)
+  async getAllContacts(@GetUser('id') userId: string) {
+    const contacts = await this.groupsService.getGroupContacts(userId);
+    return {
+      message: 'All contacts successfully fetched',
+      contacts,
+    };
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, GroupRoleGuard)
   @RequireGroupRoles(GroupRole.OWNER, GroupRole.ADMIN, GroupRole.MEMBER)

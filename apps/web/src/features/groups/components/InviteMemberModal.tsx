@@ -19,9 +19,6 @@ import {
   Share2,
   Loader2,
   Plus,
-  Mail,
-  X,
-  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -41,12 +38,6 @@ interface InviteMemberModalProps {
   inviteCode?: string;
 }
 
-interface PreviewUser {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string | null;
-}
 
 export function InviteMemberModal({
   isOpen,
