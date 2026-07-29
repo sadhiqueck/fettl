@@ -91,7 +91,7 @@ export function CreateGroupModal({
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("TRIP");
+  const [category, setCategory] = useState("");
 
   // Search & Contacts
   const { data: currentUser } = useUserProfile();
@@ -122,7 +122,7 @@ export function CreateGroupModal({
     setStep(1);
     setName("");
     setDescription("");
-    setCategory("TRIP");
+    setCategory("");
     setSearchQuery("");
     setSelectedMembers(new Map());
     onOpenChange(false);
@@ -256,7 +256,7 @@ export function CreateGroupModal({
               <Button variant="ghost" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={() => setStep(2)} disabled={!name.trim()}>
+              <Button onClick={() => setStep(2)} disabled={!name.trim() || !category}>
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
