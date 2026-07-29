@@ -6,6 +6,9 @@ import { ExpenseMessageBubble } from "@/features/chat/components/ExpenseMessageB
 import { ChatImageBubble } from "@/features/chat/components/ChatImageBubble";
 import type { ChatMessage } from "@/features/chat/hooks/useChat";
 import { Button } from "@/shared/components/ui/button";
+import { Bubble, BubbleContent } from "@/shared/components/ui/bubble";
+import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/shared/components/ui/message";
+import { Attachment, AttachmentMedia } from "@/shared/components/ui/attachment";
 
 interface ChatFeedProps {
   group: GroupDetailsData;
@@ -115,67 +118,67 @@ export function ChatFeed({
 
               const msg = item.data;
               const isOwn = msg.user.id === currentUser?.id;
-              const isImageOnly = msg.imageUrl && (!msg.content || !msg.content.trim());
+              const timeString = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
               return (
-                <div key={`chat-${msg.id}`} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+                <Message key={`chat-${msg.id}`} align={isOwn ? "end" : "start"} className="mb-2">
                   {!isOwn && (
-                    <Avatar className="size-6 shrink-0 mb-1">
-                      {msg.user.avatarUrl ? (
-                        <img src={msg.user.avatarUrl} alt={msg.user.name} />
-                      ) : (
+                    <MessageAvatar>
+                      <Avatar>
+                        <img src={msg.user.avatarUrl || undefined} alt={msg.user.name} />
                         <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
                           {msg.user.name.charAt(0)}
                         </AvatarFallback>
-                      )}
-                    </Avatar>
+                      </Avatar>
+                    </MessageAvatar>
                   )}
-                  <div className={`max-w-[75%] relative rounded-2xl ${isImageOnly ? "p-1" : "px-4 py-2"} ${
-                    isOwn 
-                      ? "bg-primary text-primary-foreground rounded-br-sm" 
-                      : "bg-white border text-foreground rounded-bl-sm"
-                  }`}>
-                    {!isOwn && !isImageOnly && <p className="text-[10px] font-bold text-primary mb-0.5">{msg.user.name}</p>}
+                  <MessageContent>
+                    {!isOwn && <span className="text-[10px] font-bold text-primary mb-1 ml-1">{msg.user.name}</span>}
                     
                     {msg.imageUrl && (
-                      <div className={isImageOnly ? "" : "mb-2 -mx-2 -mt-1"}>
-                        <ChatImageBubble
-                          src={msg.imageUrl}
-                          senderName={msg.user.name}
-                        />
-                      </div>
+                      <Attachment className="mb-1" orientation="horizontal">
+                        <AttachmentMedia variant="image" className="w-full max-w-[240px] h-auto aspect-auto rounded-xl">
+                          <ChatImageBubble src={msg.imageUrl} senderName={msg.user.name} />
+                        </AttachmentMedia>
+                      </Attachment>
                     )}
+                    
                     {msg.content && msg.content.trim() && (
-                      <p className="text-sm wrap-break-words">{msg.content}</p>
+                      <Bubble variant={isOwn ? "default" : "muted"}>
+                        <BubbleContent>{msg.content}</BubbleContent>
+                      </Bubble>
                     )}
-                    <span className={`text-[10px] block text-right mt-1 ${isImageOnly ? "absolute bottom-2 right-3 text-white drop-shadow-md z-10 font-medium" : "opacity-70"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
+                    
+                    <MessageFooter>{timeString}</MessageFooter>
+                  </MessageContent>
+                </Message>
               );
             })}
           </div>
         )}
 
         {uploadPreview && (
-          <div className="flex items-end gap-2 justify-end mt-4">
-            <div className="max-w-[75%] rounded-2xl p-1 bg-primary text-primary-foreground rounded-br-sm relative">
-              <div className="relative rounded-xl overflow-hidden">
-                <img
-                  src={uploadPreview}
-                  alt="Uploading..."
-                  className="max-w-full h-auto object-cover opacity-60"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span className="text-xs text-white font-medium drop-shadow-md">Uploading...</span>
+          <Message align="end" className="mb-2">
+            <MessageContent>
+              <Attachment className="mb-1" state="uploading">
+                <AttachmentMedia variant="image" className="w-full max-w-[240px] h-auto aspect-auto rounded-xl">
+                  <div className="relative">
+                    <img
+                      src={uploadPreview}
+                      alt="Uploading..."
+                      className="max-w-full h-auto object-cover opacity-60"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span className="text-xs text-white font-medium drop-shadow-md">Uploading...</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                </AttachmentMedia>
+              </Attachment>
+            </MessageContent>
+          </Message>
         )}
         <div ref={messagesEndRef} />
       </div>
