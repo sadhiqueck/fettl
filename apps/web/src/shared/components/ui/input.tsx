@@ -9,7 +9,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         // Exact computed styles from reference (with light mode fallback)
-        "h-8 w-full min-w-0 rounded-[10px] border border-border dark:border-[#4d4d4d] bg-background dark:bg-[#0f0f0f] px-3 py-2",
+        "h-9 w-full min-w-0 rounded-2xl border border-border dark:border-[#4d4d4d] bg-background dark:bg-[#0f0f0f] px-3 py-2",
         "text-sm font-medium text-foreground dark:text-[#d4d4d4] outline-none transition-all",
         "placeholder:text-muted-foreground",
         // Focus: primary ring matching brand
