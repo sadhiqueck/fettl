@@ -185,10 +185,10 @@ export function CreateGroupModal({
 
   return (
     <Dialog open={open} onOpenChange={isCreating ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-[2rem]">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-2xl">
         {/* STEP 1: Details & Category */}
         {step === 1 && (
-          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300 min-h-[540px]">
+          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300 min-h-135">
             <DialogHeader>
               <DialogTitle className="text-2xl font-semibold">
                 Create a group
