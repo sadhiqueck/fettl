@@ -24,7 +24,7 @@ import {
   PlusIcon,
   LinkIcon,
 } from "@/shared/components/ui/icons";
-
+import { PageSkeleton } from "@/shared/components/layout/PageSkeleton";
 
 export function ChatAppLayout() {
   const { id: activeGroupId } = useParams();
@@ -113,9 +113,7 @@ export function ChatAppLayout() {
                 </button>
               </div>
             ) : isLoading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <Loader2 className="animate-spin text-primary" size={32} />
-              </div>
+              <PageSkeleton />
             ) : (
               <Outlet />
             )}

@@ -36,14 +36,15 @@ import {
   useAllContacts,
   type GroupContact,
 } from "@/features/groups/hooks/useAllContacts";
-import {
-  useUserSearch,
-  type SearchedUser,
-} from "@/shared/hooks/useUserSearch";
+import { useUserSearch, type SearchedUser } from "@/shared/hooks/useUserSearch";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 
 // Category IDs must match the backend GroupCategory enum exactly when uppercased
 const CATEGORIES = [
@@ -102,9 +103,10 @@ export function CreateGroupModal({
   const { contacts } = useAllContacts();
 
   // Filter out current user from search results
-  const filteredSearchResults = searchResults?.filter(
-    (u) => u.id !== currentUser?.id && u.email !== currentUser?.email
-  ) || [];
+  const filteredSearchResults =
+    searchResults?.filter(
+      (u) => u.id !== currentUser?.id && u.email !== currentUser?.email,
+    ) || [];
 
   // Selected Members
   const [selectedMembers, setSelectedMembers] = useState<
@@ -171,9 +173,7 @@ export function CreateGroupModal({
           toast.success("Group created successfully!");
           handleClose();
         },
-        onError: () => {
-          // useCreateGroup already shows a toast in onError
-        },
+        onError: () => {},
       },
     );
   };
@@ -185,7 +185,7 @@ export function CreateGroupModal({
 
   return (
     <Dialog open={open} onOpenChange={isCreating ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-2xl">
+      <DialogContent className="sm:max-w-120 p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-2xl">
         {/* STEP 1: Details & Category */}
         {step === 1 && (
           <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300 min-h-135">
@@ -243,9 +243,15 @@ export function CreateGroupModal({
                           category === cat.id && "border-primary/50",
                         )}
                       >
-                        <img src={cat.imageUrl} alt={cat.label} className="h-full w-full object-cover" />
+                        <img
+                          src={cat.imageUrl}
+                          alt={cat.label}
+                          className="h-full w-full object-cover"
+                        />
                       </IconStack>
-                      <span className="text-xs sm:text-sm font-medium leading-tight">{cat.label}</span>
+                      <span className="text-xs sm:text-sm font-medium leading-tight">
+                        {cat.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -256,7 +262,10 @@ export function CreateGroupModal({
               <Button variant="ghost" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={() => setStep(2)} disabled={!name.trim() || !category}>
+              <Button
+                onClick={() => setStep(2)}
+                disabled={!name.trim() || !category}
+              >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -265,7 +274,7 @@ export function CreateGroupModal({
 
         {/* STEP 2: Members */}
         {step === 2 && (
-          <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 min-h-[540px] max-h-[85vh]">
+          <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 min-h-135 max-h-[85vh]">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Button
@@ -303,9 +312,11 @@ export function CreateGroupModal({
                 <div className="flex items-center gap-2 bg-muted rounded-full pl-1 pr-3 py-1 text-sm border border-border">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={currentUser.avatarUrl || undefined} />
-                    <AvatarFallback>{currentUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium truncate max-w-[120px]">
+                  <span className="font-medium truncate max-w-30">
                     {currentUser.name.split(" ")[0]} (You)
                   </span>
                 </div>
@@ -319,9 +330,11 @@ export function CreateGroupModal({
                 >
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={user.avatarUrl || undefined} />
-                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium truncate max-w-[120px]">
+                  <span className="font-medium truncate max-w-30">
                     {user.name.split(" ")[0]}
                   </span>
                   <button
@@ -335,7 +348,7 @@ export function CreateGroupModal({
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4 max-h-[300px]">
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4 max-h-75">
               {/* Search Results */}
               {debouncedSearch.length >= 3 &&
                 searchResults &&
@@ -373,7 +386,7 @@ export function CreateGroupModal({
                             variant={isSelected ? "ghost" : "secondary"}
                             className={cn(
                               "shrink-0 rounded-full h-8 px-3",
-                              isSelected ? "text-primary" : ""
+                              isSelected ? "text-primary" : "",
                             )}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -469,7 +482,8 @@ export function CreateGroupModal({
                             Invite the first people in
                           </EmptyTitle>
                           <EmptyDescription className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                            Bring friends, roommates, and family into the group with a fast email invite.
+                            Bring friends, roommates, and family into the group
+                            with a fast email invite.
                           </EmptyDescription>
                         </EmptyHeader>
                       </Empty>
@@ -480,13 +494,14 @@ export function CreateGroupModal({
             </div>
 
             <div className="flex justify-between pt-4 border-t border-border mt-auto">
-              <Button variant="ghost" onClick={handleSubmit} disabled={isCreating}>
-                Skip for now
-              </Button>
               <Button
+                variant="ghost"
                 onClick={handleSubmit}
                 disabled={isCreating}
               >
+                Skip for now
+              </Button>
+              <Button onClick={handleSubmit} disabled={isCreating}>
                 {isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}

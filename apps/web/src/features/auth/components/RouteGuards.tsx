@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { Loader2 } from "lucide-react";
+import { FullAppSkeleton } from "@/shared/components/layout/FullAppSkeleton";
 
 export function ProtectedRoute() {
   const { data: user, isLoading, isError } = useUserProfile();
@@ -19,11 +20,7 @@ export function ProtectedRoute() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    );
+    return <FullAppSkeleton />;
   }
 
   if (isError || !user) {
