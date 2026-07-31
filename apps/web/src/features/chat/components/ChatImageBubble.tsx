@@ -49,7 +49,7 @@ function ImageLightbox({ src, isOpen, onClose, senderName }: ImageLightboxProps)
         <DialogTitle className="sr-only">Image from {senderName || "chat"}</DialogTitle>
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-5 md:p-6 bg-gradient-to-b from-black/60 to-transparent">
           <span className="text-white/90 text-sm font-medium truncate">
             {senderName || "Image"}
           </span>
