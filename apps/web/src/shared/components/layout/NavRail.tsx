@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 export type NavFilter = "all" | "TRIP" | "HOME" | "OFFICE" | "FRIENDS" | "OTHER";
 
@@ -54,7 +55,6 @@ export function NavRail({
       <button
         onClick={() => navigate("/dashboard")}
         className="hidden md:flex mb-6 size-10 rounded-xl items-center justify-center cursor-pointer hover:scale-105 transition-transform"
-        title="Fettl"
       >
         <img
           src="/icon-192x192.png"
@@ -70,7 +70,6 @@ export function NavRail({
             key={id}
             onClick={() => onFilterChange(id)}
             className={`chat-nav-item shrink-0 ${activeFilter === id ? "chat-nav-item-active" : ""}`}
-            title={label}
           >
             <Icon size={20} strokeWidth={1.75} />
             <span className="text-[9px] font-semibold leading-none">{label}</span>
@@ -86,20 +85,23 @@ export function NavRail({
         <button
           onClick={() => navigate("/analytics")}
           className={`chat-nav-item shrink-0 ${location.pathname === "/analytics" ? "chat-nav-item-active" : ""}`}
-          title="Analytics"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
           <span className="text-[9px] font-semibold">Charts</span>
         </button>
 
-        <button
-          onClick={onCreateGroup}
-          className="chat-nav-item hover:text-primary shrink-0"
-          title="Create group"
-        >
-          <Plus size={22} strokeWidth={2} />
-          <span className="text-[9px] font-semibold">New</span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onCreateGroup}
+              className="chat-nav-item hover:text-primary shrink-0"
+            >
+              <Plus size={22} strokeWidth={2} />
+              <span className="text-[9px] font-semibold">New</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Create group</TooltipContent>
+        </Tooltip>
       </nav>
 
       {/* Bottom actions */}
@@ -108,7 +110,6 @@ export function NavRail({
         <button
           onClick={() => navigate("/profile")}
           className={`chat-nav-item shrink-0 p-1 ${isProfile ? "chat-nav-item-active" : ""}`}
-          title="Profile"
         >
           <Avatar className="size-8">
             {userProfile?.avatarUrl && (

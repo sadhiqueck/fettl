@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 // ─── Image Lightbox (Full-screen viewer with download) ───
 
@@ -53,20 +54,28 @@ function ImageLightbox({ src, isOpen, onClose, senderName }: ImageLightboxProps)
             {senderName || "Image"}
           </span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownload}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Download image"
-            >
-              <Download size={18} />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Close"
-            >
-              <X size={18} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleDownload}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <Download size={18} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Download image</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Close</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 

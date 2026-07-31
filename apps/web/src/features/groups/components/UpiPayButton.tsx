@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 import { Button } from "@/shared/components/ui/button";
 import { AlertCircle, ExternalLink, Copy, Check, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -76,13 +77,19 @@ export function UpiPayButton({
 
   if (!receiverVpa) {
     return (
-      <button
-        disabled
-        className="clay-btn-secondary text-xs px-4 py-2 shrink-0 opacity-50 cursor-not-allowed"
-        title="Recipient hasn't set up their UPI ID yet"
-      >
-        No UPI ID
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="inline-block">
+            <button
+              disabled
+              className="clay-btn-secondary text-xs px-4 py-2 shrink-0 opacity-50 cursor-not-allowed pointer-events-none"
+            >
+              No UPI ID
+            </button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">Recipient hasn't set up their UPI ID yet</TooltipContent>
+      </Tooltip>
     );
   }
 
@@ -178,17 +185,21 @@ export function UpiPayButton({
                   {receiverVpa}
                 </span>
               </p>
-              <button
-                onClick={handleCopyVpa}
-                className="text-primary hover:scale-110 transition-transform p-1"
-                title="Copy UPI ID"
-              >
-                {copied ? (
-                  <Check size={14} className="text-green-500" />
-                ) : (
-                  <Copy size={14} />
-                )}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleCopyVpa}
+                    className="text-primary hover:scale-110 transition-transform p-1"
+                  >
+                    {copied ? (
+                      <Check size={14} className="text-green-500" />
+                    ) : (
+                      <Copy size={14} />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Copy UPI ID</TooltipContent>
+              </Tooltip>
             </div>
             <p className="text-[11px] text-muted-foreground/70 font-medium">
               Fettl: {groupName}

@@ -6,6 +6,7 @@ import {
   FieldDescription,
 } from "@/shared/components/ui/field";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 import {
   GoogleIcon,
   MicrosoftIcon,
@@ -93,17 +94,20 @@ export function OtpInputStep({
         {providers.length > 0 && (
           <span className="flex flex-wrap justify-center gap-2">
             {providers.map((p) => (
-              <Button
-                key={p.name}
-                type="button"
-                variant="outline"
-                className="h-7 px-3 text-xs rounded-full border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 transition-colors gap-1.5"
-                onClick={() => (p.url ? window.open(p.url, "_blank") : null)}
-                title={`Open ${p.name}`}
-              >
-                <p.Icon size={14} />
-                {providers.length === 1 ? `Open ${p.name}` : p.name}
-              </Button>
+              <Tooltip key={p.name}>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-7 px-3 text-xs rounded-full border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 transition-colors gap-1.5"
+                    onClick={() => (p.url ? window.open(p.url, "_blank") : null)}
+                  >
+                    <p.Icon size={14} />
+                    {providers.length === 1 ? `Open ${p.name}` : p.name}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Open {p.name}</TooltipContent>
+              </Tooltip>
             ))}
           </span>
         )}

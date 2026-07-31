@@ -9,6 +9,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Bubble, BubbleContent } from "@/shared/components/ui/bubble";
 import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/shared/components/ui/message";
 import { Attachment, AttachmentMedia } from "@/shared/components/ui/attachment";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 interface ChatFeedProps {
   group: GroupDetailsData;
@@ -184,13 +185,17 @@ export function ChatFeed({
       </div>
 
       <div className="chat-input-bar">
-        <button
-          onClick={() => setIsAddExpenseOpen(true)}
-          className="text-primary hover:text-primary/80 p-2 rounded-full hover:bg-soft-clay transition-colors shrink-0"
-          title="Add expense manually"
-        >
-          <Plus size={22} />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsAddExpenseOpen(true)}
+              className="text-primary hover:text-primary/80 p-2 rounded-full hover:bg-soft-clay transition-colors shrink-0"
+            >
+              <Plus size={22} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Add expense manually</TooltipContent>
+        </Tooltip>
         <input
           type="text"
           placeholder="Type a message..."
@@ -212,14 +217,18 @@ export function ChatFeed({
             accept="image/*" 
             className="hidden" 
           />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="text-primary bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50"
-            title="Send image"
-          >
-            {isUploading ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="text-primary bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50"
+              >
+                {isUploading ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Send image</TooltipContent>
+          </Tooltip>
           <button
             onClick={() => {
               if (chatInput.trim()) {

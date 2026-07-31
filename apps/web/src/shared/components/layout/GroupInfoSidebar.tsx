@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, Users, Receipt, Wallet, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 import type { GroupDetailsData } from "@/features/groups/hooks/useGroups";
 import { formatCurrency } from "@/shared/lib/format";
 
@@ -77,13 +78,17 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
             <Users size={16} className="text-primary" />
             {group.memberCount} members
           </h3>
-          <button
-            onClick={onInvite}
-            className="size-7 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-            title="Invite member"
-          >
-            <Plus size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onInvite}
+                className="size-7 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Plus size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Invite member</TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 -mx-1 px-1">

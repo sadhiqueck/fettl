@@ -1,6 +1,7 @@
 import { Check, Moon, Sun, Monitor } from "lucide-react";
 import { useTheme, type ThemeColor } from "@/context/ThemeContext";
 import { Button } from "@/shared/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 const COLORS: { name: string; value: ThemeColor; className: string }[] = [
   { name: "Indigo", value: "indigo", className: "bg-indigo-500" },
@@ -56,20 +57,23 @@ export function ThemeToggle() {
         <label className="text-sm font-medium text-foreground">Color Theme</label>
         <div className="flex flex-wrap gap-3">
           {COLORS.map((color) => (
-            <button
-              key={color.value}
-              onClick={() => setThemeColor(color.value)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${
-                themeColor === color.value
-                  ? "border-primary shadow-sm"
-                  : "border-transparent"
-              } ${color.className}`}
-              title={color.name}
-            >
-              {themeColor === color.value && (
-                <Check className="h-5 w-5 text-white" />
-              )}
-            </button>
+            <Tooltip key={color.value}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setThemeColor(color.value)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${
+                    themeColor === color.value
+                      ? "border-primary shadow-sm"
+                      : "border-transparent"
+                  } ${color.className}`}
+                >
+                  {themeColor === color.value && (
+                    <Check className="h-5 w-5 text-white" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{color.name}</TooltipContent>
+            </Tooltip>
           ))}
         </div>
       </div>
