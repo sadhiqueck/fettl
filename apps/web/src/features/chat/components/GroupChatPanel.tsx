@@ -362,12 +362,15 @@ export function GroupChatEmpty() {
   return (
     <div className="chat-main-panel flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-500">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-6 border border-border/50 shadow-sm">
-        <MessageSquareDashed className="size-10 text-muted-foreground/70" strokeWidth={1.5} />
+        <MessageSquareDashed
+          className="size-10 text-muted-foreground/70"
+          strokeWidth={1.5}
+        />
       </div>
       <h2 className="font-display text-2xl font-semibold text-foreground tracking-tight mb-2">
         Welcome to Fettl
       </h2>
-      <p className="text-muted-foreground max-w-[280px] text-sm leading-relaxed">
+      <p className="text-muted-foreground max-w-70 text-sm leading-relaxed">
         Select a group from the sidebar to view expenses, balances, and
         settlements in a unified conversation feed.
       </p>
