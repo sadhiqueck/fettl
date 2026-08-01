@@ -8,6 +8,7 @@ import {
   Info,
   ArrowLeft,
   MessageCircle,
+  MessageSquareDashed,
 } from "lucide-react";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -359,22 +360,16 @@ export function GroupChatLoading() {
 
 export function GroupChatEmpty() {
   return (
-    <div className="chat-main-panel flex flex-col items-center justify-center text-center px-8">
-      <div
-        className="size-24 rounded-3xl flex items-center justify-center mb-6 font-display font-extrabold text-3xl text-white"
-        style={{
-          background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
-          boxShadow: "0 8px 32px rgba(0, 199, 0, 0.3)",
-        }}
-      >
-        SU
+    <div className="chat-main-panel flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-500">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-6 border border-border/50 shadow-sm">
+        <MessageSquareDashed className="size-10 text-muted-foreground/70" strokeWidth={1.5} />
       </div>
-      <h2 className="font-display text-2xl font-extrabold text-foreground mb-2">
-        Settle<span className="text-emerald-500">Up</span>
+      <h2 className="font-display text-2xl font-semibold text-foreground tracking-tight mb-2">
+        Welcome to Fettl
       </h2>
-      <p className="text-muted-foreground max-w-sm text-sm">
+      <p className="text-muted-foreground max-w-[280px] text-sm leading-relaxed">
         Select a group from the sidebar to view expenses, balances, and
-        settlements — all in one conversation-style feed.
+        settlements in a unified conversation feed.
       </p>
     </div>
   );
