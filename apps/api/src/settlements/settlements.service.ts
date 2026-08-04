@@ -20,6 +20,30 @@ export class SettlementsService {
       throw new BadRequestException('Payer and receiver cannot be the same');
     }
 
+    // Enforce that the caller is the payer
+    if (data.payerId !== userId) {
+      throw new BadRequestException('You can only record payments you made yourself');
+    }
+
+    // Verify both payer and receiver are active members of the group
+    const [payerMember, receiverMember] = await Promise.all([
+      this.prisma.groupMember.findFirst({
+        where: { userId: data.payerId, groupId, isActive: true },
+        select: { id: true },
+      }),
+      this.prisma.groupMember.findFirst({
+        where: { userId: data.receiverId, groupId, isActive: true },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!payerMember) {
+      throw new BadRequestException('Payer is not an active member of this group');
+    }
+    if (!receiverMember) {
+      throw new BadRequestException('Receiver is not an active member of this group');
+    }
+
     try {
       return await this.prisma.$transaction(async (tx) => {
         // 1. Create the Settlement record as CONFIRMED (manual payment)

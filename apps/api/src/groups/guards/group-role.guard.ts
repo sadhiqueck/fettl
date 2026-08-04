@@ -48,8 +48,8 @@ export class GroupRoleGuard implements CanActivate {
       },
     });
 
-    if (!groupMembership) {
-      throw new ForbiddenException('You are not a member of this group');
+    if (!groupMembership || !groupMembership.isActive) {
+      throw new ForbiddenException('You are not an active member of this group');
     }
 
     if (!requiredRoles.includes(groupMembership.role)) {
