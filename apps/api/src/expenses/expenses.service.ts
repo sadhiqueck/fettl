@@ -27,6 +27,38 @@ export class ExpensesService {
   }
 
   async addExpense(userId: string, groupId: string, data: CreateExpenseInput) {
+    // Verify the caller is an active member of the group
+    const callerMember = await this.prisma.groupMember.findFirst({
+      where: { userId, groupId, isActive: true },
+      select: { id: true },
+    });
+    if (!callerMember) {
+      throw new BadRequestException('You are not an active member of this group');
+    }
+
+    // Verify paidById is an active member
+    const payerMember = await this.prisma.groupMember.findFirst({
+      where: { userId: data.paidById, groupId, isActive: true },
+      select: { id: true },
+    });
+    if (!payerMember) {
+      throw new BadRequestException('The specified payer is not an active member of this group');
+    }
+
+    // Verify every split user is an active group member
+    const splitUserIds = [...new Set(data.splits.map((s) => s.userId))];
+    const activeMembers = await this.prisma.groupMember.findMany({
+      where: { groupId, isActive: true, userId: { in: splitUserIds } },
+      select: { userId: true },
+    });
+    const activeMemberIds = new Set(activeMembers.map((m) => m.userId));
+    const invalidSplitUsers = splitUserIds.filter((id) => !activeMemberIds.has(id));
+    if (invalidSplitUsers.length > 0) {
+      throw new BadRequestException(
+        `Split includes users who are not active members of this group`,
+      );
+    }
+
     // Validate split amounts equal total amount
     const totalSplitAmount = data.splits.reduce(
       (sum, split) => sum + (split.amount || 0),
