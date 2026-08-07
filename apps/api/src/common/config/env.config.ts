@@ -6,6 +6,8 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1),
   JWT_ACCESS_EXPIRES_IN: z.string().min(1),
   JWT_REFRESH_EXPIRES_IN: z.string().min(1),
+  API_URL: z.string().url().optional(),
+  GOOGLE_CALLBACK_URL: z.string().url().optional(),
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   S3_ENDPOINT: z.string().url().optional(),
@@ -23,6 +25,47 @@ export const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   VAPID_SUBJECT: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
+}).superRefine((config, context) => {
+  if (config.NODE_ENV === 'production') {
+    for (const key of [
+      'API_URL',
+      'GOOGLE_CALLBACK_URL',
+      'RESEND_API_KEY',
+      'VPA_ENCRYPTION_KEY',
+      'S3_ENDPOINT',
+      'S3_REGION',
+      'S3_ACCESS_KEY_ID',
+      'S3_SECRET_ACCESS_KEY',
+      'S3_BUCKET_NAME',
+    ] as const) {
+      if (!config[key]) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: 'Required in production',
+        });
+      }
+    }
+  }
+
+  if (
+    config.VPA_ENCRYPTION_KEY &&
+    !/^[a-fA-F0-9]{64}$/.test(config.VPA_ENCRYPTION_KEY)
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['VPA_ENCRYPTION_KEY'],
+      message: 'Must be a 64-character hexadecimal AES-256 key',
+    });
+  }
+
+  if (Boolean(config.GOOGLE_CLIENT_ID) !== Boolean(config.GOOGLE_CLIENT_SECRET)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['GOOGLE_CLIENT_SECRET'],
+      message: 'Google client ID and secret must be configured together',
+    });
+  }
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
