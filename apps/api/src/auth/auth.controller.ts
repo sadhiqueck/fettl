@@ -18,10 +18,19 @@ import { passwordlessStartSchema, verifyOtpSchema } from '@fettl/shared';
 import type { PasswordlessStartInput, VerifyOtpInput } from '@fettl/shared';
 import type { Response, Request } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private getFrontendUrl() {
+    return (this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173').replace(/\/$/, '');
+  }
 
   private setCookies(
     res: Response,
@@ -51,6 +60,7 @@ export class AuthController {
 
   @Post('passwordless/start')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(passwordlessStartSchema))
   passwordlessStart(@Body() dto: PasswordlessStartInput) {
     return this.authService.passwordlessStart(dto);
@@ -58,6 +68,7 @@ export class AuthController {
 
   @Post('passwordless/verify')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(verifyOtpSchema))
   async passwordlessVerify(
     @Body() dto: VerifyOtpInput,
@@ -75,9 +86,7 @@ export class AuthController {
       await this.authService.verifyMagicLink(token);
     this.setCookies(res, access_token, refresh_token);
 
-    const frontendUrl =
-      process.env.VITE_FRONTEND_URL ?? 'http://localhost:5173';
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${this.getFrontendUrl()}/dashboard`);
   }
 
   // ─── Google OAuth ──────────────────────────────────────
@@ -96,9 +105,7 @@ export class AuthController {
     );
     this.setCookies(res, access_token, refresh_token);
 
-    const frontendUrl =
-      process.env.VITE_FRONTEND_URL ?? 'http://localhost:5173';
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${this.getFrontendUrl()}/dashboard`);
   }
 
   // ─── Session Management ────────────────────────────────
