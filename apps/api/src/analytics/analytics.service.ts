@@ -38,10 +38,13 @@ export class AnalyticsService {
       }),
     ]);
 
-    const totalSpent = spentResult._sum.amount || 0;
-    const totalPaid = paidResult._sum.amount || 0;
-    const totalSettled = settledResult._sum.amount || 0;
-    const netBalance = balanceResult._sum.balance || 0;
+    // All monetary amounts are stored in paise; convert to rupees for the API response
+    const toRupees = (paise: number) => paise / 100;
+
+    const totalSpent = toRupees(spentResult._sum.amount || 0);
+    const totalPaid = toRupees(paidResult._sum.amount || 0);
+    const totalSettled = toRupees(settledResult._sum.amount || 0);
+    const netBalance = toRupees(balanceResult._sum.balance || 0);
 
     const categoryQuery = await this.prisma.$queryRaw<
       Array<{
@@ -57,12 +60,15 @@ export class AnalyticsService {
       GROUP BY e.category
     `;
 
-    const categoryBreakdown = categoryQuery.map((row) => ({
-      category: row.category,
-      amount: Number(row.amount),
-      count: Number(row.count),
-      percentage: totalSpent > 0 ? (Number(row.amount) / totalSpent) * 100 : 0,
-    }));
+    const categoryBreakdown = categoryQuery.map((row) => {
+      const amountRupees = toRupees(Number(row.amount));
+      return {
+        category: row.category,
+        amount: amountRupees,
+        count: Number(row.count),
+        percentage: totalSpent > 0 ? (amountRupees / totalSpent) * 100 : 0,
+      };
+    });
 
     const monthlyTrendQuery = await this.prisma.$queryRaw<
       Array<{ month: string; amount: bigint | number; count: bigint | number }>
@@ -79,7 +85,7 @@ export class AnalyticsService {
 
     const monthlyTrend = monthlyTrendQuery.map((row) => ({
       month: row.month,
-      amount: Number(row.amount),
+      amount: toRupees(Number(row.amount)),
       count: Number(row.count),
     }));
 
@@ -108,8 +114,8 @@ export class AnalyticsService {
     const topGroups = topGroupsQuery.map((row) => ({
       id: row.id,
       name: row.name,
-      totalSpent: Number(row.totalspent),
-      balance: Number(row.balance),
+      totalSpent: toRupees(Number(row.totalspent)),
+      balance: toRupees(Number(row.balance)),
     }));
 
     return {
