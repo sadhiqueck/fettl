@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createExpenseSchema, type CreateExpenseInput } from "@fettl/shared";
-import type { z } from "zod";
+import { z } from "zod";
 
 type Item = {
   id: string;
@@ -11,7 +11,21 @@ type Item = {
   assignedTo: string[];
 };
 
-type ExpenseFormValues = z.input<typeof createExpenseSchema>;
+// Frontend form schema accepts decimal rupees (the submit handler converts
+// to integer paise before sending to the API).
+const expenseFormSchema = createExpenseSchema.extend({
+  amount: z.number().positive("Amount must be greater than 0"),
+  splits: z.array(
+    z.object({
+      userId: z.string(),
+      amount: z.number().positive().optional(),
+      percentage: z.number().min(0).max(100).optional(),
+      shares: z.number().positive().optional(),
+    }),
+  ).min(1),
+});
+
+type ExpenseFormValues = z.input<typeof expenseFormSchema>;
 
 import {
   Dialog,
@@ -80,7 +94,7 @@ export function AddExpenseModal({
     reset,
     formState: { errors },
   } = useForm<ExpenseFormValues>({
-    resolver: zodResolver(createExpenseSchema),
+    resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       title: "",
       amount: 0,
