@@ -108,7 +108,7 @@ export function ChatAppLayout() {
           <div
             className={`flex-1 flex flex-col min-w-0 overflow-hidden ${!hideGroupList && location.pathname !== "/profile" ? "hidden md:flex" : "flex"}`}
           >
-            {isError ? (
+            {isError && !hideGroupList ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
                 <AlertCircle size={48} className="text-coral-red" />
                 <p className="text-muted-foreground text-center max-w-sm">
@@ -122,7 +122,7 @@ export function ChatAppLayout() {
                   Try again
                 </button>
               </div>
-            ) : isLoading ? (
+            ) : isLoading && !hideGroupList ? (
               <PageSkeleton />
             ) : (
               <Outlet />
