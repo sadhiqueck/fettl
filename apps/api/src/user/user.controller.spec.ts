@@ -1,18 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { UserController } from './user.controller';
+import type { UserService } from './user.service';
 
-describe('UserController', () => {
-  let controller: UserController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [UserController],
-    }).compile();
-
-    controller = module.get<UserController>(UserController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
+it('rejects an empty directory search', () => {
+  const users = { searchUsers: jest.fn() };
+  expect(() => new UserController(users as unknown as UserService).searchUsers('')).toThrow(BadRequestException);
+  expect(users.searchUsers).not.toHaveBeenCalled();
 });
