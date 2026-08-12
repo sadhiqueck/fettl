@@ -23,7 +23,7 @@ interface ChatFeedProps {
   isUploading: boolean;
   uploadPreview: string | null;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   setIsAddExpenseOpen: (isOpen: boolean) => void;
   setEditingExpense: (expense: GroupExpense) => void;
   setDeletingExpense: (expense: GroupExpense) => void;
