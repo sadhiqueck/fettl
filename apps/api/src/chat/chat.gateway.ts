@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
   MessageBody,
   ConnectedSocket,
+  WsException,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -136,9 +137,11 @@ export class ChatGateway
     @MessageBody('groupId') groupId: string,
   ) {
     // Verify the user is actually a member of this group
-    const isMember = await this.prisma.groupMember.findUnique({
+    const isMember = await this.prisma.groupMember.findFirst({
       where: {
-        userId_groupId: { userId: client.data.user!.id, groupId },
+        userId: client.data.user!.id,
+        groupId,
+        isActive: true,
       },
     });
 
@@ -154,13 +157,17 @@ export class ChatGateway
     // Fetch recent 50 messages
     const history = await this.prisma.chatMessage.findMany({
       where: { groupId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 51,
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     });
 
     // Send history to the client who just joined
-    client.emit('chatHistory', history.reverse());
+    const hasMore = history.length > 50;
+    client.emit('chatHistory', {
+      history: history.slice(0, 50).reverse(),
+      hasMore,
+    });
 
     return { status: 'success', room: roomName };
   }
@@ -176,6 +183,36 @@ export class ChatGateway
     this.logger.log(`${client.data.user!.name} left room: ${roomName}`);
   }
 
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('loadMoreMessages')
+  async handleLoadMoreMessages(
+    @ConnectedSocket() client: AuthSocket,
+    @MessageBody() payload: { groupId: string; cursor: string },
+  ) {
+    const userId = client.data.user!.id;
+    const member = await this.prisma.groupMember.findFirst({
+      where: { userId, groupId: payload?.groupId, isActive: true },
+      select: { id: true },
+    });
+    if (!member) throw new WsException('Not an active member of this group');
+    if (!payload?.cursor) throw new WsException('A message cursor is required');
+
+    const page = await this.prisma.chatMessage.findMany({
+      where: { groupId: payload.groupId },
+      cursor: { id: payload.cursor },
+      skip: 1,
+      take: 51,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    });
+    const hasMore = page.length > 50;
+    client.emit('olderMessages', {
+      history: page.slice(0, 50).reverse(),
+      hasMore,
+    });
+    return { status: 'success' };
+  }
+
   // ─── Messaging ────────────────────────────────────────
 
   @UseGuards(WsJwtGuard)
@@ -186,6 +223,34 @@ export class ChatGateway
     payload: { groupId: string; content: string; imageUrl?: string },
   ) {
     const user = client.data.user!;
+    if (
+      !payload ||
+      typeof payload.groupId !== 'string' ||
+      !payload.groupId ||
+      typeof payload.content !== 'string' ||
+      payload.content.length > 2000
+    ) {
+      throw new WsException('Invalid message payload');
+    }
+    if (!payload.content.trim() && !payload.imageUrl) {
+      throw new WsException('A message or image is required');
+    }
+    if (payload.imageUrl) {
+      try {
+        const imageUrl = new URL(payload.imageUrl);
+        if (imageUrl.protocol !== 'https:' && imageUrl.protocol !== 'http:') {
+          throw new Error('Unsupported image URL protocol');
+        }
+      } catch {
+        throw new WsException('Invalid image URL');
+      }
+    }
+
+    const membership = await this.prisma.groupMember.findFirst({
+      where: { userId: user.id, groupId: payload.groupId, isActive: true },
+      select: { id: true },
+    });
+    if (!membership) throw new WsException('Not an active member of this group');
 
     // 1. Save message to database
     const message = await this.prisma.chatMessage.create({
