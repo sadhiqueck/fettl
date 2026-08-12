@@ -3,8 +3,8 @@ import { formatCurrency, formatRelativeDate } from "./format";
 
 describe("Formatting Utilities", () => {
   describe("formatCurrency", () => {
-    it("formats standard amounts correctly and rounds to nearest integer", () => {
-      expect(formatCurrency(1234.5)).toBe("₹1,235");
+    it("formats standard amounts correctly and preserves paise", () => {
+      expect(formatCurrency(1234.5)).toBe("₹1,234.5");
     });
     
     it("handles zero correctly", () => {
