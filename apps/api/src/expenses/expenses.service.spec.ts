@@ -1,22 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExpensesService } from './expenses.service';
+import { balanceChanges } from './expenses.service';
 
-describe('ExpensesService', () => {
-  let service: ExpensesService;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [ExpensesService],
-    }).compile();
-
-    service = module.get<ExpensesService>(ExpensesService);
+describe('expense ledger', () => {
+  it('credits a payer who covered the entire bill for others', () => {
+    const changes = balanceChanges({ paidById: 'a', amount: 101, splits: [{ userId: 'b', amount: 51 }, { userId: 'c', amount: 50 }] });
+    expect(Object.fromEntries(changes)).toEqual({ a: 101, b: -51, c: -50 });
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  it('should be an instance of ExpensesService', () => {
-    expect(service).toBeInstanceOf(ExpensesService);
+  it('subtracts the payer’s own share exactly once', () => {
+    const changes = balanceChanges({ paidById: 'a', amount: 101, splits: [{ userId: 'a', amount: 51 }, { userId: 'b', amount: 50 }] });
+    expect(Object.fromEntries(changes)).toEqual({ a: 50, b: -50 });
   });
 });

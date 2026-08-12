@@ -1,266 +1,96 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { CreateExpenseInput, UpdateExpenseInput } from '@fettl/shared';
-import { ActivityType, ExpenseCategory, SplitMethod } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { withGroupLock } from '../groups/group-transaction';
+import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
+
+interface ExpenseAmounts {
+  paidById: string;
+  amount: number;
+  splits: { userId: string; amount?: number }[];
+}
+
+export function balanceChanges(expense: ExpenseAmounts) {
+  const changes = new Map([[expense.paidById, expense.amount]]);
+  for (const split of expense.splits) {
+    changes.set(split.userId, (changes.get(split.userId) ?? 0) - (split.amount ?? 0));
+  }
+  return changes;
+}
+
+async function postBalances(tx: Prisma.TransactionClient, groupId: string, expense: ExpenseAmounts, direction: 1 | -1) {
+  for (const [userId, change] of balanceChanges(expense)) {
+    if (change === 0) continue;
+    const delta = direction * change;
+    await tx.groupMemberBalance.upsert({
+      where: { groupId_userId: { groupId, userId } },
+      create: { groupId, userId, balance: delta },
+      update: { balance: { increment: delta } },
+    });
+  }
+}
 
 @Injectable()
 export class ExpensesService {
-  constructor(
-    private prisma: PrismaService,
-    private pushService: PushService,
-  ) {}
-
-  async getExpenseById(expenseId: string) {
-    return this.prisma.expense.findUnique({
-      where: { id: expenseId, isDeleted: false },
-      include: {
-        paidBy: true,
-        splits: true,
-      },
-    });
-  }
+  private readonly logger = new Logger(ExpensesService.name);
+  constructor(private prisma: PrismaService, private pushService: PushService) {}
 
   async addExpense(userId: string, groupId: string, data: CreateExpenseInput) {
-    // Verify the caller is an active member of the group
-    const callerMember = await this.prisma.groupMember.findFirst({
-      where: { userId, groupId, isActive: true },
-      select: { id: true },
-    });
-    if (!callerMember) {
-      throw new BadRequestException('You are not an active member of this group');
+    const participants = new Set(data.splits.map((split) => split.userId));
+    if (participants.size !== data.splits.length || data.splits.reduce((sum, split) => sum + (split.amount ?? 0), 0) !== data.amount) {
+      throw new BadRequestException('Each participant must appear once and shares must add up to the expense.');
     }
-
-    // Verify paidById is an active member
-    const payerMember = await this.prisma.groupMember.findFirst({
-      where: { userId: data.paidById, groupId, isActive: true },
-      select: { id: true },
-    });
-    if (!payerMember) {
-      throw new BadRequestException('The specified payer is not an active member of this group');
-    }
-
-    // Verify every split user is an active group member
-    const splitUserIds = [...new Set(data.splits.map((s) => s.userId))];
-    const activeMembers = await this.prisma.groupMember.findMany({
-      where: { groupId, isActive: true, userId: { in: splitUserIds } },
-      select: { userId: true },
-    });
-    const activeMemberIds = new Set(activeMembers.map((m) => m.userId));
-    const invalidSplitUsers = splitUserIds.filter((id) => !activeMemberIds.has(id));
-    if (invalidSplitUsers.length > 0) {
-      throw new BadRequestException(
-        `Split includes users who are not active members of this group`,
-      );
-    }
-
-    // Validate split amounts equal total amount
-    const totalSplitAmount = data.splits.reduce(
-      (sum, split) => sum + (split.amount || 0),
-      0,
-    );
-    if (totalSplitAmount !== data.amount) {
-      throw new BadRequestException(
-        `Split amounts (${totalSplitAmount}) do not match total expense amount (${data.amount})`,
-      );
-    }
-
-    try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        // 1. Create the Expense
-        const expense = await tx.expense.create({
-          data: {
-            title: data.title,
-            amount: data.amount,
-            paidById: data.paidById,
-            groupId: groupId,
-            category: data.category as ExpenseCategory,
-            splitMethod: data.splitMethod as SplitMethod,
-            date: new Date(data.date),
-            notes: data.notes,
-            receiptUrl: data.receiptUrl,
-          },
-        });
-
-        // 2. Create the Splits
-        const splitsData = data.splits.map((split) => ({
-          expenseId: expense.id,
-          userId: split.userId,
-          amount: split.amount || 0, // Fallback if 0
-          percentage: split.percentage,
-          shares: split.shares,
-        }));
-
-        await tx.expenseSplit.createMany({
-          data: splitsData,
-        });
-
-        // 3. Update GroupMemberBalances
-        // For the person who paid: their balance goes UP by (Total Amount - Their Own Split)
-        // For everyone else who owes: their balance goes DOWN by Their Split
-        for (const split of splitsData) {
-          if (split.userId === data.paidById) {
-            // Payer
-            const amountOwedToPayer = data.amount - split.amount;
-            await tx.groupMemberBalance.upsert({
-              where: { groupId_userId: { groupId, userId: split.userId } },
-              create: {
-                groupId,
-                userId: split.userId,
-                balance: amountOwedToPayer,
-              },
-              update: { balance: { increment: amountOwedToPayer } },
-            });
-          } else {
-            // Borrower
-            await tx.groupMemberBalance.upsert({
-              where: { groupId_userId: { groupId, userId: split.userId } },
-              create: { groupId, userId: split.userId, balance: -split.amount },
-              update: { balance: { decrement: split.amount } },
-            });
-          }
-        }
-
-        // 4. Log the Activity
-        await tx.activityLog.create({
-          data: {
-            groupId: groupId,
-            userId: userId,
-            expenseId: expense.id,
-            type: ActivityType.EXPENSE_ADDED,
-            metadata: {
-              action: 'added an expense',
-              expenseTitle: expense.title,
-              amount: expense.amount,
-            },
-          },
-        });
-
-        return expense;
+    participants.add(data.paidById);
+    participants.add(userId);
+    const expense = await withGroupLock(this.prisma, groupId, async (tx) => {
+      const active = await tx.groupMember.count({ where: { groupId, userId: { in: [...participants] }, isActive: true } });
+      if (active !== participants.size) throw new ForbiddenException('Expenses can only include active group members.');
+      const { splits, ...fields } = data;
+      const record = await tx.expense.create({
+        data: { ...fields, groupId, splits: { create: splits.map((s) => ({
+          ...s, amount: s.amount ?? 0, percentage: s.percentage === undefined ? undefined : Math.round(s.percentage * 100),
+        })) } },
       });
-
-      // 5. Send Push Notification
-      const group = await this.prisma.group.findUnique({
-        where: { id: groupId },
-        select: { name: true },
-      });
-
-      const payer = await this.prisma.user.findUnique({
-        where: { id: data.paidById },
-        select: { name: true, avatarUrl: true },
-      });
-
-      if (group && payer) {
-        // Run push notification async so it doesn't block response
-        void this.pushService.sendPushToGroupMembers(groupId, userId, {
-          title: `New expense in ${group.name}`,
-          body: `${payer.name} added "${data.title}" for ₹${(data.amount / 100).toFixed(2)}`,
-          icon: payer.avatarUrl || '/icon-192x192.png',
-          url: `/groups/${groupId}`,
-        });
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Error adding expense:', error);
-      throw new InternalServerErrorException('Failed to add expense');
-    }
+      await postBalances(tx, groupId, data, 1);
+      await tx.activityLog.create({ data: { groupId, userId, expenseId: record.id, type: 'EXPENSE_ADDED',
+        metadata: { action: 'added an expense', expenseTitle: record.title, amount: record.amount } } });
+      return record;
+    });
+    void this.pushService.sendPushToGroupMembers(groupId, userId, {
+      title: 'New group expense', body: expense.title, url: `/groups/${groupId}`,
+    }).catch(() => this.logger.warn('Expense notification delivery failed'));
+    return expense;
   }
 
-  async updateExpense(expenseId: string, data: UpdateExpenseInput) {
-    // Updating an expense is extremely complex in a split-payment system
-    // because you have to reverse the old balances and apply the new ones.
-    // For now, we will update the basic metadata of the expense.
-
-    // TODO: Implement full balance-reversal and recalculation if amount or splits change
-    if (data.amount || data.splits) {
-      throw new BadRequestException(
-        'Updating expense amount or splits is not fully supported yet. Please delete and recreate the expense.',
-      );
-    }
-
-    try {
-      return await this.prisma.expense.update({
-        where: { id: expenseId },
-        data: {
-          title: data.title,
-          category: data.category as ExpenseCategory,
-          date: data.date ? new Date(data.date) : undefined,
-          notes: data.notes,
-          receiptUrl: data.receiptUrl,
-        },
-      });
-    } catch (error) {
-      console.error('Error updating expense:', error);
-      throw new InternalServerErrorException(
-        'Failed to update expense metadata',
-      );
-    }
-  }
-
-  async deleteExpense(expenseId: string) {
-    const expense = await this.getExpenseById(expenseId);
+  private async ownedExpense(tx: Prisma.TransactionClient, groupId: string, id: string, userId: string) {
+    const expense = await tx.expense.findFirst({
+      where: { id, groupId, isDeleted: false, group: { members: { some: { userId, isActive: true } } } },
+      include: { splits: true },
+    });
     if (!expense) throw new NotFoundException('Expense not found');
+    if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can change this expense.');
+    return expense;
+  }
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        // 1. Mark as deleted (Soft Delete)
-        const deletedExpense = await tx.expense.update({
-          where: { id: expenseId },
-          data: { isDeleted: true },
-        });
+  updateExpense(userId: string, groupId: string, id: string, data: UpdateExpenseInput) {
+    return withGroupLock(this.prisma, groupId, async (tx) => {
+      await this.ownedExpense(tx, groupId, id, userId);
+      const updated = await tx.expense.update({ where: { id }, data });
+      await tx.activityLog.create({ data: { groupId, userId, expenseId: id, type: 'EXPENSE_UPDATED',
+        metadata: { action: 'edited an expense', expenseTitle: updated.title } } });
+      return updated;
+    });
+  }
 
-        // 2. Reverse the balances
-        for (const split of expense.splits) {
-          if (split.userId === expense.paidById) {
-            // Reverse Payer
-            const amountOwedToPayer = expense.amount - split.amount;
-            await tx.groupMemberBalance.update({
-              where: {
-                groupId_userId: {
-                  groupId: expense.groupId,
-                  userId: split.userId,
-                },
-              },
-              data: { balance: { decrement: amountOwedToPayer } },
-            });
-          } else {
-            // Reverse Borrower
-            await tx.groupMemberBalance.update({
-              where: {
-                groupId_userId: {
-                  groupId: expense.groupId,
-                  userId: split.userId,
-                },
-              },
-              data: { balance: { increment: split.amount } },
-            });
-          }
-        }
-
-        // 3. Log the deletion
-        await tx.activityLog.create({
-          data: {
-            groupId: expense.groupId,
-            userId: expense.paidById, // Or the user who performed the action
-            type: ActivityType.EXPENSE_DELETED,
-            metadata: {
-              action: 'deleted an expense',
-              expenseTitle: expense.title,
-            },
-          },
-        });
-
-        return deletedExpense;
-      });
-    } catch (error) {
-      console.error('Error deleting expense:', error);
-      throw new InternalServerErrorException('Failed to delete expense');
-    }
+  deleteExpense(userId: string, groupId: string, id: string) {
+    return withGroupLock(this.prisma, groupId, async (tx) => {
+      const expense = await this.ownedExpense(tx, groupId, id, userId);
+      const deleted = await tx.expense.update({ where: { id }, data: { isDeleted: true } });
+      await postBalances(tx, groupId, expense, -1);
+      await tx.activityLog.create({ data: { groupId, userId, expenseId: id, type: 'EXPENSE_DELETED',
+        metadata: { action: 'deleted an expense', expenseTitle: expense.title } } });
+      return deleted;
+    });
   }
 }

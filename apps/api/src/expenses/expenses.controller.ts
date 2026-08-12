@@ -6,8 +6,6 @@ import {
   Patch,
   Delete,
   Param,
-  ForbiddenException,
-  NotFoundException,
   UsePipes,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
@@ -51,16 +49,7 @@ export class ExpensesController {
     @GetUser('id') userId: string,
     @Body() body: UpdateExpenseInput,
   ) {
-    // Authorization check: Ensure user is part of the group and is the payer
-    const expense = await this.expensesService.getExpenseById(expenseId);
-    if (!expense || expense.groupId !== groupId) {
-      throw new NotFoundException('Expense not found');
-    }
-    if (expense.paidBy.id !== userId) {
-      throw new ForbiddenException('You can only edit your own expenses');
-    }
-
-    const result = await this.expensesService.updateExpense(expenseId, body);
+    const result = await this.expensesService.updateExpense(userId, groupId, expenseId, body);
 
     // Broadcast update to all connected group members
     this.chatGateway.server
@@ -76,16 +65,7 @@ export class ExpensesController {
     @Param('expenseId') expenseId: string,
     @GetUser('id') userId: string,
   ) {
-    // Authorization check
-    const expense = await this.expensesService.getExpenseById(expenseId);
-    if (!expense || expense.groupId !== groupId) {
-      throw new NotFoundException('Expense not found');
-    }
-    if (expense.paidBy.id !== userId) {
-      throw new ForbiddenException('You can only delete your own expenses');
-    }
-
-    const result = await this.expensesService.deleteExpense(expenseId);
+    const result = await this.expensesService.deleteExpense(userId, groupId, expenseId);
 
     // Broadcast deletion to all connected group members
     this.chatGateway.server
