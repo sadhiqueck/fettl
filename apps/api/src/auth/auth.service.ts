@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
@@ -28,6 +34,20 @@ export class AuthService {
   // ─── Passwordless Auth ─────────────────────────────────
 
   async passwordlessStart(dto: PasswordlessStartInput) {
+    const recentRequest = await this.prisma.passwordlessRequest.findFirst({
+      where: {
+        email: dto.email,
+        createdAt: { gt: new Date(Date.now() - 60_000) },
+      },
+      select: { id: true },
+    });
+    if (recentRequest) {
+      throw new HttpException(
+        'Please wait before requesting another code',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     let user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -38,7 +58,7 @@ export class AuthService {
         data: {
           email: dto.email,
           name: dto.email.split('@')[0],
-          isEmailVerified: true,
+          isEmailVerified: false,
         },
       });
     }
@@ -55,14 +75,18 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-    const apiUrl =
+    const apiUrl = (
       this.configService.get<string>('API_URL') ||
-      `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
+      `http://localhost:${this.configService.get<number>('PORT') || 3000}`
+    ).replace(/\/$/, '');
     const magicLink = `${apiUrl}/auth/magic-link/verify?token=${magicToken}`;
 
-    await this.prisma.passwordlessRequest.create({
-      data: { email: dto.email, otpHash, tokenHash, expiresAt },
-    });
+    await this.prisma.$transaction([
+      this.prisma.passwordlessRequest.deleteMany({ where: { email: dto.email } }),
+      this.prisma.passwordlessRequest.create({
+        data: { email: dto.email, otpHash, tokenHash, expiresAt },
+      }),
+    ]);
 
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     const resend = new Resend(apiKey);
@@ -82,22 +106,36 @@ export class AuthService {
     const request = await this.prisma.passwordlessRequest.findFirst({
       where: {
         email: dto.email,
-        otpHash,
         expiresAt: { gt: new Date() },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (!request) {
+    if (!request || request.attempts >= 5) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
 
-    // One-time use — delete immediately after verification
-    await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
+    if (request.otpHash !== otpHash) {
+      const attempt = await this.prisma.passwordlessRequest.updateMany({
+        where: { id: request.id, attempts: { lt: 5 } },
+        data: { attempts: { increment: 1 } },
+      });
+      if (attempt.count && request.attempts >= 4) {
+        await this.prisma.passwordlessRequest.deleteMany({ where: { id: request.id } });
+      }
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    // Consume exactly once, including when two verification requests race.
+    const consumed = await this.prisma.passwordlessRequest.deleteMany({
+      where: { id: request.id, attempts: { lt: 5 } },
     });
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!consumed.count) throw new UnauthorizedException('Invalid or expired OTP');
+
+    const user = await this.prisma.user.update({
+      where: { email: dto.email },
+      data: { isEmailVerified: true },
+    });
 
     return this.generateTokens(user);
   }
@@ -116,13 +154,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired login link');
     }
 
-    // One-time use — delete immediately after verification
-    await this.prisma.passwordlessRequest.delete({ where: { id: request.id } });
-
-    const user = await this.prisma.user.findUnique({
-      where: { email: request.email },
+    // Consume exactly once, including when two verification requests race.
+    const consumed = await this.prisma.passwordlessRequest.deleteMany({
+      where: { id: request.id },
     });
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!consumed.count) throw new UnauthorizedException('Invalid or expired login link');
+
+    const user = await this.prisma.user.update({
+      where: { email: request.email },
+      data: { isEmailVerified: true },
+    });
 
     return this.generateTokens(user);
   }
