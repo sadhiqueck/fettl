@@ -59,6 +59,7 @@ export interface GroupDetailsData extends GroupData {
   expenses: GroupExpense[];
   balances: GroupBalance[];
   settlements: GroupSettlement[];
+  pendingPayments: { id: string; payerId: string; receiverId: string; amount: number; note: string | null }[];
   activity: GroupActivity[];
 }
 
@@ -128,22 +129,7 @@ export function useCreateGroup() {
 
   return useMutation({
     mutationFn: createGroup,
-    // 1. BEFORE the API call — instantly add the new group to the cache
-    onMutate: async (newGroup) => {
-      await queryClient.cancelQueries({ queryKey: groupKeys.all });
-      const previous = queryClient.getQueryData(groupKeys.all);
-      queryClient.setQueryData(groupKeys.all, (old: GroupData[] = []) => [
-        ...old,
-        { ...newGroup, id: "temp-" + Date.now(), members: [], userBalance: 0 },
-      ]);
-      return { previous }; // snapshot for rollback
-    },
-    // 2. If API fails — roll back to snapshot
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(groupKeys.all, context?.previous);
-      toast.error("Couldn't create the group. Please try again.");
-    },
-    // 3. Whether success or error — sync with real server data
+    onError: () => toast.error("Couldn't create the group. Please try again."),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: groupKeys.all });
     },
@@ -309,5 +295,17 @@ export function useMarkAsPaid() {
     onError: () => {
       toast.error("Couldn't record the settlement. Try again.");
     },
+  });
+}
+
+
+export function useReviewPayment(groupId: string) {
+  const cache = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: "CONFIRMED" | "REJECTED" }) =>
+      apiClient.patch(`/groups/${groupId}/settlements/${id}`, { status }),
+    onSuccess: () => toast.success("Payment reviewed"),
+    onError: () => toast.error("Couldn't review this payment. Check the current balances."),
+    onSettled: () => Promise.all([cache.invalidateQueries({ queryKey: groupKeys.all }), cache.invalidateQueries({ queryKey: ["analytics"] })]),
   });
 }

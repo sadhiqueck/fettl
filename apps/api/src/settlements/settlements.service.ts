@@ -1,120 +1,53 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type { CreateSettlementInput } from '@fettl/shared';
-import { ActivityType, SettlementStatus } from '@prisma/client';
+import { withGroupLock } from '../groups/group-transaction';
+import { PrismaService } from '../prisma/prisma.service';
+
+type Parties = Pick<CreateSettlementInput, 'payerId' | 'receiverId' | 'amount'>;
+
+async function checkOutstanding(tx: Prisma.TransactionClient, groupId: string, payment: Parties) {
+  const balances = await tx.groupMemberBalance.findMany({ where: { groupId, userId: { in: [payment.payerId, payment.receiverId] } } });
+  const debt = -(balances.find((row) => row.userId === payment.payerId)?.balance ?? 0);
+  const credit = balances.find((row) => row.userId === payment.receiverId)?.balance ?? 0;
+  if (payment.amount > Math.min(debt, credit)) throw new ConflictException('Group balances have changed. Review the current amount before recording payment.');
+}
 
 @Injectable()
 export class SettlementsService {
   constructor(private prisma: PrismaService) {}
 
-  async createSettlement(
-    userId: string,
-    groupId: string,
-    data: CreateSettlementInput,
-  ) {
-    if (data.payerId === data.receiverId) {
-      throw new BadRequestException('Payer and receiver cannot be the same');
-    }
+  createSettlement(userId: string, groupId: string, data: CreateSettlementInput) {
+    if (data.payerId !== userId) throw new ForbiddenException('Only the payer can record this payment.');
+    if (userId === data.receiverId) throw new BadRequestException('Choose a different receiver.');
+    return withGroupLock(this.prisma, groupId, async (tx) => {
+      const active = await tx.groupMember.count({ where: { groupId, isActive: true, userId: { in: [userId, data.receiverId] } } });
+      if (active !== 2) throw new ForbiddenException('Both parties must be active members.');
+      await checkOutstanding(tx, groupId, data);
+      const pending = await tx.settlement.findFirst({ where: { groupId, payerId: userId, receiverId: data.receiverId, status: 'PENDING', isDeleted: false } });
+      if (pending) throw new ConflictException('A payment to this member is already awaiting confirmation.');
+      const payment = await tx.settlement.create({ data: { ...data, groupId, status: 'PENDING' } });
+      await tx.activityLog.create({ data: { groupId, userId, type: 'SETTLEMENT_CREATED', metadata: { action: 'reported a payment', amount: data.amount } } });
+      return payment;
+    });
+  }
 
-    // Enforce that the caller is the payer
-    if (data.payerId !== userId) {
-      throw new BadRequestException('You can only record payments you made yourself');
-    }
-
-    // Verify both payer and receiver are active members of the group
-    const [payerMember, receiverMember] = await Promise.all([
-      this.prisma.groupMember.findFirst({
-        where: { userId: data.payerId, groupId, isActive: true },
-        select: { id: true },
-      }),
-      this.prisma.groupMember.findFirst({
-        where: { userId: data.receiverId, groupId, isActive: true },
-        select: { id: true },
-      }),
-    ]);
-
-    if (!payerMember) {
-      throw new BadRequestException('Payer is not an active member of this group');
-    }
-    if (!receiverMember) {
-      throw new BadRequestException('Receiver is not an active member of this group');
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        // 1. Create the Settlement record as CONFIRMED (manual payment)
-        const settlement = await tx.settlement.create({
-          data: {
-            groupId,
-            payerId: data.payerId,
-            receiverId: data.receiverId,
-            amount: data.amount,
-            status: SettlementStatus.CONFIRMED,
-            note: data.note,
-          },
-          include: {
-            payer: { select: { id: true, name: true } },
-            receiver: { select: { id: true, name: true } },
-          },
-        });
-
-        // 2. Update GroupMemberBalances
-        // The payer had a negative balance (owed money), so increment it
-        await tx.groupMemberBalance.upsert({
-          where: {
-            groupId_userId: { groupId, userId: data.payerId },
-          },
-          create: {
-            groupId,
-            userId: data.payerId,
-            balance: data.amount,
-          },
-          update: {
-            balance: { increment: data.amount },
-          },
-        });
-
-        // The receiver had a positive balance (was owed money), so decrement it
-        await tx.groupMemberBalance.upsert({
-          where: {
-            groupId_userId: { groupId, userId: data.receiverId },
-          },
-          create: {
-            groupId,
-            userId: data.receiverId,
-            balance: -data.amount,
-          },
-          update: {
-            balance: { decrement: data.amount },
-          },
-        });
-
-        // 3. Log the activity
-        await tx.activityLog.create({
-          data: {
-            groupId,
-            userId,
-            type: ActivityType.SETTLEMENT_CONFIRMED,
-            metadata: {
-              action: 'recorded a payment',
-              payerName: settlement.payer.name,
-              receiverName: settlement.receiver.name,
-              amount: settlement.amount,
-              note: data.note || null,
-            },
-          },
-        });
-
-        return settlement;
-      });
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      console.error('Error creating settlement:', error);
-      throw new InternalServerErrorException('Failed to record settlement');
-    }
+  review(userId: string, groupId: string, id: string, status: 'CONFIRMED' | 'REJECTED') {
+    return withGroupLock(this.prisma, groupId, async (tx) => {
+      const payment = await tx.settlement.findFirst({ where: { id, groupId, isDeleted: false } });
+      if (!payment) throw new NotFoundException('Payment not found');
+      if (payment.receiverId !== userId) throw new ForbiddenException('Only the receiver can review this payment.');
+      if (payment.status === status) return payment;
+      if (payment.status !== 'PENDING') throw new ConflictException('This payment has already been reviewed.');
+      if (status === 'CONFIRMED') {
+        await checkOutstanding(tx, groupId, payment);
+        for (const [member, delta] of [[payment.payerId, payment.amount], [userId, -payment.amount]] as const) {
+          await tx.groupMemberBalance.update({ where: { groupId_userId: { groupId, userId: member } }, data: { balance: { increment: delta } } });
+        }
+      }
+      await tx.activityLog.create({ data: { groupId, userId, type: status === 'CONFIRMED' ? 'SETTLEMENT_CONFIRMED' : 'SETTLEMENT_REJECTED',
+        metadata: { action: status === 'CONFIRMED' ? 'confirmed a payment' : 'declined a payment', amount: payment.amount } } });
+      return tx.settlement.update({ where: { id }, data: { status } });
+    });
   }
 }

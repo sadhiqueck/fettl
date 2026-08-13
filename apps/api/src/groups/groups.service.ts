@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateGroupInput } from '@fettl/shared';
 import { GroupRole, ActivityType, GroupCategory } from '@prisma/client';
 import type { Group } from '@prisma/client';
+import { withGroupLock } from './group-transaction';
 import { randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { decryptVpaSafe } from '../common/utils/encryption';
@@ -170,7 +171,7 @@ export class GroupsService {
             include: {
               members: {
                 where: { isActive: true },
-                include: { user: true },
+                select: { userId: true, user: { select: { name: true, avatarUrl: true } } },
               },
               balances: {
                 where: { userId },
@@ -262,6 +263,11 @@ export class GroupsService {
         },
         balances: {
           include: { user: { select: { id: true, name: true, vpa: true } } },
+        },
+        settlements: {
+          where: { status: 'PENDING', isDeleted: false },
+          select: { id: true, payerId: true, receiverId: true, amount: true, note: true },
+          orderBy: { createdAt: 'asc' },
         },
         expenses: {
           where: { isDeleted: false },
@@ -404,6 +410,7 @@ export class GroupsService {
       expenses,
       balances,
       settlements,
+      pendingPayments: group.settlements.map((payment) => ({ ...payment, amount: payment.amount / 100 })),
       activity,
     };
   }
@@ -477,7 +484,8 @@ export class GroupsService {
     groupId: string,
     actionLogText: string,
   ) {
-    const existingMembership = await this.prisma.groupMember.findUnique({
+    await withGroupLock(this.prisma, groupId, async (tx) => {
+    const existingMembership = await tx.groupMember.findUnique({
       where: { userId_groupId: { userId, groupId } },
     });
 
@@ -485,7 +493,7 @@ export class GroupsService {
       throw new ConflictException('User is already a member');
     }
 
-    const memberCount = await this.prisma.groupMember.count({
+    const memberCount = await tx.groupMember.count({
       where: { groupId, isActive: true },
     });
     const maxMembers = this.configService.get<number>('MAX_GROUP_MEMBERS', 50);
@@ -495,7 +503,7 @@ export class GroupsService {
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
+
       await tx.groupMember.upsert({
         where: { userId_groupId: { userId, groupId } },
         create: {
@@ -611,12 +619,8 @@ export class GroupsService {
   }
 
   async leaveGroup(userId: string, groupId: string) {
-    const group = await this.prisma.group.findUnique({
-      where: { id: groupId },
-    });
-    if (!group) throw new NotFoundException('Group not found');
-
-    const membership = await this.prisma.groupMember.findUnique({
+    await withGroupLock(this.prisma, groupId, async (tx) => {
+    const membership = await tx.groupMember.findUnique({
       where: { userId_groupId: { userId, groupId } },
     });
 
@@ -624,17 +628,19 @@ export class GroupsService {
       throw new ConflictException('You are not an active member of this group');
     }
 
-    const balance = await this.prisma.groupMemberBalance.findUnique({
+    const balance = await tx.groupMemberBalance.findUnique({
       where: { groupId_userId: { userId, groupId } },
     });
 
+    const pending = await tx.settlement.count({ where: { groupId, status: 'PENDING', isDeleted: false, OR: [{ payerId: userId }, { receiverId: userId }] } });
+    if (pending) throw new ConflictException('Review pending payments before leaving.');
     if (balance && balance.balance !== 0) {
       throw new ForbiddenException(
         'You cannot leave the group until your balances are settled (balance must be 0).',
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
+
       await tx.groupMember.update({
         where: { userId_groupId: { userId, groupId } },
         data: { isActive: false },

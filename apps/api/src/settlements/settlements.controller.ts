@@ -1,4 +1,5 @@
 import {
+  Patch,
   Controller,
   Post,
   Body,
@@ -6,6 +7,7 @@ import {
   Param,
   UsePipes,
 } from '@nestjs/common';
+import { z } from 'zod';
 import { SettlementsService } from './settlements.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -48,5 +50,17 @@ export class SettlementsController {
       message: 'Settlement recorded successfully',
       settlement,
     };
+  }
+  @Patch(':paymentId')
+  async review(
+    @Param('id') groupId: string,
+    @Param('paymentId') paymentId: string,
+    @GetUser('id') userId: string,
+    @Body(new ZodValidationPipe(z.object({ status: z.enum(['CONFIRMED', 'REJECTED']) })))
+    body: { status: 'CONFIRMED' | 'REJECTED' },
+  ) {
+    const settlement = await this.settlementsService.review(userId, groupId, paymentId, body.status);
+    this.chatGateway.server.to(`group_${groupId}`).emit('settlement:updated', { groupId });
+    return { settlement };
   }
 }

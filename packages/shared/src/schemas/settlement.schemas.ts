@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const createSettlementSchema = z.object({
   payerId: z.string().min(1),
   receiverId: z.string().min(1),
-  amount: z.number().int("Amount must be in paise (integer)").positive(),
+  amount: z.number().int("Amount must be in paise (integer)").positive().max(2147483647),
   note: z.string().max(200).optional(),
 })
 

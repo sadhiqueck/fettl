@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/shared/lib/format";
 import { useState } from "react";
 import {
   Dialog,
@@ -25,14 +26,6 @@ interface MarkAsPaidDialogProps {
   amount: number; // In display currency (e.g. ₹500, not paise)
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(Math.abs(amount));
-}
-
 export function MarkAsPaidDialog({
   isOpen,
   onClose,
@@ -57,7 +50,7 @@ export function MarkAsPaidDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Payment recorded successfully!", {
+          toast.success("Payment sent for confirmation", {
             description: `${fromName} → ${toName}: ${formatCurrency(amount)}`,
           });
           onClose();
@@ -97,14 +90,14 @@ export function MarkAsPaidDialog({
             {formatCurrency(amount)}
           </p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="font-display font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm">
+            <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
               {fromName}
             </span>
             <ArrowRightIcon
               size={16}
               className="text-muted-foreground mx-1"
             />
-            <span className="font-display font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm">
+            <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
               {toName}
             </span>
           </div>
@@ -132,8 +125,7 @@ export function MarkAsPaidDialog({
             className="text-primary shrink-0 mt-0.5"
           />
           <p className="text-xs text-foreground/70 leading-relaxed">
-            This will update the group balances immediately. Both parties'
-            balances will be adjusted to reflect this payment.
+            The receiver will confirm the payment before your group balances change.
           </p>
         </div>
 
@@ -156,7 +148,7 @@ export function MarkAsPaidDialog({
             }`}
           >
             {isPending && <Loader2 className="animate-spin" size={16} />}
-            {isPending ? "Recording..." : "Confirm Payment"}
+            {isPending ? "Recording..." : "Report payment"}
           </button>
         </DialogFooter>
       </DialogContent>
