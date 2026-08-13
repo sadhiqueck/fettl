@@ -40,7 +40,7 @@ export function LoginForm({
       sendOtp.mutate(email, {
         onSuccess: () => {
           setStep("otp");
-          if (cooldown === 0) setCooldown(5);
+          if (cooldown === 0) setCooldown(60);
         }
       });
     } else {

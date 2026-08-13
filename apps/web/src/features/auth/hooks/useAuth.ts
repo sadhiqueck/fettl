@@ -35,7 +35,7 @@ export function useAuth() {
     // The backend will handle the Google redirect, and then redirect back to the frontend with the token.
     const googleAuthUrl = import.meta.env.VITE_API_URL 
       ? `${import.meta.env.VITE_API_URL}/auth/google` 
-      : "http://localhost:3000/api/auth/google"; // Fallback for local dev
+      : "http://localhost:3000/auth/google"; // Fallback for local dev
     
     window.location.href = googleAuthUrl;
   };
