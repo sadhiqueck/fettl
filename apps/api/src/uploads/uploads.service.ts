@@ -57,7 +57,7 @@ export class UploadsService {
 
       // Return a URL pointing to our OWN backend, which will redirect to S3
       const apiUrl =
-        this.configService.get<string>('API_URL') || 'http://localhost:3000';
+        (this.configService.get<string>('API_URL') || 'http://localhost:3000').replace(/\/$/, '');
       return {
         fileUrl: `${apiUrl}/uploads/${key}`,
       };

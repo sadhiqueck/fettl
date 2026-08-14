@@ -15,7 +15,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         'dummy-client-secret',
       callbackURL:
         configService.get<string>('GOOGLE_CALLBACK_URL') ||
-        'http://localhost:3000/auth/google/callback',
+        `${(configService.get<string>('API_URL') || 'http://localhost:3000').replace(/\/$/, '')}/auth/google/callback`,
       scope: ['email', 'profile'],
     });
   }

@@ -24,6 +24,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/fettl?schema=public
       - FRONTEND_URL=https://app.sqck.online
+      - API_URL=https://api.sqck.online
     depends_on:
       postgres:
         condition: service_healthy
