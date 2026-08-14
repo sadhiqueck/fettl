@@ -94,6 +94,7 @@ model User {
   notifications       Notification[]
   refreshTokens       RefreshToken[]
   chatMessages        ChatMessage[]
+  uploads UploadAccess[]
   pushSubscriptions   PushSubscription[]
 
   @@map("users")
@@ -143,6 +144,7 @@ model Group {
   settlements Settlement[]
   balances    GroupMemberBalance[]
   activities  ActivityLog[]
+  uploads UploadAccess[]
   chatMessages ChatMessage[]
 
   @@map("groups")
@@ -324,4 +326,16 @@ model PasswordlessRequest {
 
   @@index([email])
   @@map("passwordless_requests")
+}
+
+model UploadAccess {
+  id      String @id @default(cuid())
+  key     String
+  ownerId String?
+  groupId String?
+  owner   User?  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  group   Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@map("upload_access")
 }

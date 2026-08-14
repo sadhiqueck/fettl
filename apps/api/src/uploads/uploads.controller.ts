@@ -1,5 +1,6 @@
 import {
   Controller,
+  Query,
   Post,
   UseGuards,
   UseInterceptors,
@@ -12,6 +13,7 @@ import {
   Param,
   Res,
 } from '@nestjs/common';
+import { GetUser } from '../common/decorators/get-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -43,6 +45,8 @@ export class UploadsController {
       }),
     )
     file: UploadedFileData,
+    @GetUser('id') userId: string,
+    @Query('groupId') groupId?: string,
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
@@ -50,20 +54,25 @@ export class UploadsController {
 
     return this.uploadsService.uploadFile(
       file.buffer,
-      file.originalname,
+      userId,
+      groupId,
       file.mimetype,
     );
   }
 
   @Get(':key')
   @UseGuards(JwtAuthGuard)
-  async getFile(@Param('key') key: string, @Res() res: Response) {
+  async getFile(
+    @Param('key') key: string,
+    @GetUser('id') userId: string,
+    @Res() res: Response,
+  ) {
     if (!key) {
       throw new BadRequestException('File key is required');
     }
 
     // Generate a temporary presigned URL for this private file
-    const url = await this.uploadsService.getPresignedDownloadUrl(key);
+    const url = await this.uploadsService.getPresignedDownloadUrl(key, userId);
 
     // Redirect the browser to the secure B2 URL
     return res.redirect(302, url);
