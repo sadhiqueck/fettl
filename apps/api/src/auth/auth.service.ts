@@ -4,6 +4,7 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -17,7 +18,7 @@ import { ConfigService } from '@nestjs/config';
 export interface GoogleProfile {
   id: string;
   displayName: string;
-  emails?: { value: string }[];
+  emails?: { value: string; verified?: boolean }[];
   photos?: { value: string }[];
 }
 
@@ -48,23 +49,8 @@ export class AuthService {
       );
     }
 
-    let user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    // Auto-create user on first sign-in
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          name: dto.email.split('@')[0],
-          isEmailVerified: false,
-        },
-      });
-    }
-
     const otp = crypto.randomInt(100000, 1000000).toString();
-    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const otpHash = this.hashOtp(dto.email, otp);
 
     const magicToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto
@@ -82,26 +68,40 @@ export class AuthService {
     const magicLink = `${apiUrl}/auth/magic-link/verify?token=${magicToken}`;
 
     await this.prisma.$transaction([
-      this.prisma.passwordlessRequest.deleteMany({ where: { email: dto.email } }),
+      this.prisma.passwordlessRequest.deleteMany({
+        where: { email: dto.email },
+      }),
       this.prisma.passwordlessRequest.create({
         data: { email: dto.email, otpHash, tokenHash, expiresAt },
       }),
     ]);
 
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (!apiKey)
+      throw new ServiceUnavailableException('Email sign-in is unavailable.');
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
-      from: 'Fettl <noreply@sqck.online>',
+    const { error } = await resend.emails.send({
+      from:
+        this.configService.get<string>('EMAIL_FROM') ||
+        'Fettl <noreply@sqck.online>',
       to: dto.email,
       subject: 'Your Fettl login code',
       html: getMagicLinkEmailTemplate(otp, magicLink),
     });
+    if (error) {
+      await this.prisma.passwordlessRequest.deleteMany({
+        where: { email: dto.email, tokenHash },
+      });
+      throw new ServiceUnavailableException(
+        'Email delivery failed. Please try again.',
+      );
+    }
     return { message: 'Verification sent' };
   }
 
   async verifyOtp(dto: VerifyOtpInput) {
-    const otpHash = crypto.createHash('sha256').update(dto.otp).digest('hex');
+    const otpHash = this.hashOtp(dto.email, dto.otp);
 
     const request = await this.prisma.passwordlessRequest.findFirst({
       where: {
@@ -121,7 +121,9 @@ export class AuthService {
         data: { attempts: { increment: 1 } },
       });
       if (attempt.count && request.attempts >= 4) {
-        await this.prisma.passwordlessRequest.deleteMany({ where: { id: request.id } });
+        await this.prisma.passwordlessRequest.deleteMany({
+          where: { id: request.id },
+        });
       }
       throw new UnauthorizedException('Invalid or expired OTP');
     }
@@ -130,17 +132,25 @@ export class AuthService {
     const consumed = await this.prisma.passwordlessRequest.deleteMany({
       where: { id: request.id, attempts: { lt: 5 } },
     });
-    if (!consumed.count) throw new UnauthorizedException('Invalid or expired OTP');
+    if (!consumed.count)
+      throw new UnauthorizedException('Invalid or expired OTP');
 
-    const user = await this.prisma.user.update({
+    const user = await this.prisma.user.upsert({
       where: { email: dto.email },
-      data: { isEmailVerified: true },
+      create: {
+        email: dto.email,
+        name: dto.email.split('@')[0],
+        isEmailVerified: true,
+      },
+      update: { isEmailVerified: true },
     });
 
     return this.generateTokens(user);
   }
 
   async verifyMagicLink(token: string) {
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token))
+      throw new UnauthorizedException('Invalid login link');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     const request = await this.prisma.passwordlessRequest.findFirst({
@@ -158,11 +168,17 @@ export class AuthService {
     const consumed = await this.prisma.passwordlessRequest.deleteMany({
       where: { id: request.id },
     });
-    if (!consumed.count) throw new UnauthorizedException('Invalid or expired login link');
+    if (!consumed.count)
+      throw new UnauthorizedException('Invalid or expired login link');
 
-    const user = await this.prisma.user.update({
+    const user = await this.prisma.user.upsert({
       where: { email: request.email },
-      data: { isEmailVerified: true },
+      create: {
+        email: request.email,
+        name: request.email.split('@')[0],
+        isEmailVerified: true,
+      },
+      update: { isEmailVerified: true },
     });
 
     return this.generateTokens(user);
@@ -180,7 +196,7 @@ export class AuthService {
     const googleId = profile.id;
     const avatarUrl = profile.photos?.[0]?.value;
 
-    if (!email) {
+    if (!email || profile.emails?.[0]?.verified !== true) {
       throw new UnauthorizedException('Google profile missing email');
     }
 
@@ -192,6 +208,8 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: { email, name, googleId, avatarUrl, isEmailVerified: true },
       });
+    } else if (user.googleId && user.googleId !== googleId) {
+      throw new UnauthorizedException('Google account does not match.');
     } else if (!user.googleId) {
       user = await this.prisma.user.update({
         where: { id: user.id },
@@ -217,30 +235,23 @@ export class AuthService {
       .update(refreshToken)
       .digest('hex');
 
-    const savedToken = await this.prisma.refreshToken.findUnique({
-      where: { token: hashedToken },
-      include: { user: true },
+    return this.prisma.$transaction(async (tx) => {
+      const saved = await tx.refreshToken.findUnique({
+        where: { token: hashedToken },
+        include: { user: true },
+      });
+      if (!saved) throw new UnauthorizedException('Invalid refresh token');
+      const consumed = await tx.refreshToken.deleteMany({
+        where: {
+          id: saved.id,
+          isRevoked: false,
+          expiresAt: { gt: new Date() },
+        },
+      });
+      if (!consumed.count)
+        throw new UnauthorizedException('Invalid refresh token');
+      return this.generateTokens(saved.user, tx);
     });
-
-    if (
-      !savedToken ||
-      savedToken.isRevoked ||
-      savedToken.expiresAt < new Date()
-    ) {
-      if (savedToken) {
-        // Token reuse detected — revoke immediately
-        await this.prisma.refreshToken.update({
-          where: { id: savedToken.id },
-          data: { isRevoked: true },
-        });
-      }
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    // Token Rotation — revoke old, issue new
-    await this.prisma.refreshToken.delete({ where: { id: savedToken.id } });
-
-    return this.generateTokens(savedToken.user);
   }
 
   async logout(refreshToken: string) {
@@ -256,12 +267,27 @@ export class AuthService {
 
   // ─── Helpers ───────────────────────────────────────────
 
-  private async generateTokens(user: {
-    id: string;
-    email: string;
-    name: string;
-    vpa?: string | null;
-  }) {
+  private hashOtp(email: string, otp: string) {
+    return crypto
+      .createHmac(
+        'sha256',
+        this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      )
+      .update(email)
+      .update(':')
+      .update(otp)
+      .digest('hex');
+  }
+
+  private async generateTokens(
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      vpa?: string | null;
+    },
+    tx: Pick<PrismaService, 'refreshToken'> = this.prisma,
+  ) {
     const payload = { sub: user.id, email: user.email };
     const access_token = this.jwtService.sign(payload);
 
@@ -274,7 +300,7 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    await this.prisma.refreshToken.create({
+    await tx.refreshToken.create({
       data: { token: hashedToken, userId: user.id, expiresAt },
     });
 

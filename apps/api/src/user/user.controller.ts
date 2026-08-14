@@ -37,10 +37,14 @@ export class UserController {
   }
 
   @Get('search')
-  searchUsers(@Query('q') query: string) {
-    if (!query) {
+  searchUsers(@Query('q') query: string, @GetUser('id') userId: string) {
+    if (
+      typeof query !== 'string' ||
+      query.trim().length < 2 ||
+      query.length > 254
+    ) {
       throw new BadRequestException('Search query is required');
     }
-    return this.userService.searchUsers(query);
+    return this.userService.searchUsers(query.trim(), userId);
   }
 }

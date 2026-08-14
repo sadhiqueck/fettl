@@ -14,24 +14,18 @@ import { SettlementsModule } from './settlements/settlements.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ChatModule } from './chat/chat.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { PushModule } from './push/push.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
       validate: validateEnv,
     }),
     ThrottlerModule.forRoot([
       {
-        name: 'global',
-        ttl: 60000,
-        limit: 100, // 100 requests per minute (default for all routes)
-      },
-      {
-        name: 'auth',
-        ttl: 60000,
-        limit: 10, // 10 requests per minute for auth endpoints
+        ttl: 60_000,
+        limit: 100,
       },
     ]),
     PrismaModule,

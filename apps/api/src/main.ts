@@ -1,40 +1,37 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
-
 import type { Request, Response, NextFunction } from 'express';
+import { trustedBrowserOrigin } from './common/config/browser-origin';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
-  });
-
-  const allowedOrigins = ['http://localhost:5173'];
-  if (process.env.FRONTEND_URL) {
-    allowedOrigins.push(process.env.FRONTEND_URL);
-  }
-
+  const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow: boolean) => void,
+    ) => callback(null, !origin || trustedBrowserOrigin(origin)),
     credentials: true,
   });
   app.use(cookieParser());
-
-  // Global middleware to prevent browser caching of API responses (security best practice)
   app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader(
-      'Cache-Control',
-      'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Content-Security-Policy',
+      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
     );
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    if (
+      !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+      ((req.headers.origin && !trustedBrowserOrigin(req.headers.origin)) ||
+        (!req.headers.origin && req.headers['sec-fetch-site'] === 'cross-site'))
+    ) {
+      return res.status(403).json({ message: 'Untrusted request origin' });
+    }
     next();
   });
-
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
-  console.log(`🚀 API running on http://localhost:${process.env.PORT ?? 3000}`);
-  console.log(
-    `💬 WebSocket available on ws://localhost:${process.env.PORT ?? 3000}`,
-  );
+  await app.listen(process.env.PORT ?? 3000, process.env.HOST ?? '0.0.0.0');
 }
 void bootstrap();

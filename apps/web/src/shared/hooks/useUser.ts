@@ -64,12 +64,6 @@ export function useLogout() {
     onError: (error) => {
       console.error("Logout failed:", error);
       toast.error("Failed to log out. Please try clearing your cookies.");
-      // Fallback: force clear cache anyway
-      disconnectSocket();
-      queryClient.clear();
-      setTimeout(() => {
-        navigate("/login", { replace: true });
-      }, 100);
     },
   });
 }

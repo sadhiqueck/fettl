@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { encryptVpa, decryptVpaSafe } from '../common/utils/encryption';
 import { Prisma } from '@prisma/client';
@@ -33,12 +37,20 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string; vpa?: string; phone?: string | null; isOnboarded?: boolean },
+    data: {
+      name?: string;
+      avatarUrl?: string;
+      vpa?: string | null;
+      phone?: string | null;
+      isOnboarded?: boolean;
+    },
   ) {
     // Encrypt VPA before storing in the database
     const dbData = {
       ...data,
-      ...(data.vpa !== undefined ? { vpa: encryptVpa(data.vpa) } : {}),
+      ...(data.vpa !== undefined
+        ? { vpa: data.vpa ? encryptVpa(data.vpa) : null }
+        : {}),
     };
 
     try {
@@ -67,18 +79,28 @@ export class UserService {
         error.meta?.target &&
         (error.meta.target as string[]).includes('phone')
       ) {
-        throw new ConflictException('This phone number is already in use by another account');
+        throw new ConflictException(
+          'This phone number is already in use by another account',
+        );
       }
       throw error;
     }
   }
 
-  async searchUsers(query: string) {
+  async searchUsers(query: string, userId: string) {
     return this.prisma.user.findMany({
       where: {
         OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
+          {
+            name: { contains: query, mode: 'insensitive' },
+            groupMemberships: {
+              some: {
+                isActive: true,
+                group: { members: { some: { userId, isActive: true } } },
+              },
+            },
+          },
+          { email: { equals: query, mode: 'insensitive' } },
         ],
       },
       select: {

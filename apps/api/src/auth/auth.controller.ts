@@ -28,8 +28,17 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  private get secureCookies() {
+    return (
+      process.env.NODE_ENV === 'production' ||
+      this.configService.get<string>('API_URL')?.startsWith('https://') === true
+    );
+  }
+
   private getFrontendUrl() {
-    return (this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173').replace(/\/$/, '');
+    return (
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173'
+    ).replace(/\/$/, '');
   }
 
   private setCookies(
@@ -40,8 +49,8 @@ export class AuthController {
     // 15 minutes
     res.cookie('auth_token', access_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: this.secureCookies,
+      sameSite: this.secureCookies ? 'none' : 'lax',
       path: '/',
       maxAge: 15 * 60 * 1000,
     });
@@ -49,8 +58,8 @@ export class AuthController {
     // 7 days
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: this.secureCookies,
+      sameSite: this.secureCookies ? 'none' : 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -60,7 +69,7 @@ export class AuthController {
 
   @Post('passwordless/start')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ auth: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(passwordlessStartSchema))
   passwordlessStart(@Body() dto: PasswordlessStartInput) {
     return this.authService.passwordlessStart(dto);
@@ -68,7 +77,7 @@ export class AuthController {
 
   @Post('passwordless/verify')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ auth: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(verifyOtpSchema))
   async passwordlessVerify(
     @Body() dto: VerifyOtpInput,
@@ -137,8 +146,8 @@ export class AuthController {
 
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none' as const,
+      secure: this.secureCookies,
+      sameSite: this.secureCookies ? ('none' as const) : ('lax' as const),
       path: '/',
     };
 
