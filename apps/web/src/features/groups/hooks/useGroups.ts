@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/shared/lib/apiClient";
 import type { Group, GroupMember, ExpenseSplit } from "@fettl/shared";
+export type { Group, GroupMember, ExpenseSplit } from "@fettl/shared";
 import { toast } from "sonner";
 import { groupKeys } from "./queryKeys";
 

@@ -109,11 +109,8 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
                       referrerPolicy="no-referrer"
                     />
                   )}
-                  <AvatarFallback
-                    className="text-[10px] font-bold text-white"
-                    style={{ backgroundColor: member.color }}
-                  >
-                    {member.initial}
+                  <AvatarFallback className="text-[10px] font-bold bg-primary text-primary-foreground">
+                    {member.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">

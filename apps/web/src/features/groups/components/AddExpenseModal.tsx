@@ -651,11 +651,8 @@ export function AddExpenseModal({
                                     referrerPolicy="no-referrer"
                                   />
                                 )}
-                                <AvatarFallback
-                                  style={{ backgroundColor: m.color }}
-                                  className="text-[10px] text-white font-bold"
-                                >
-                                  {m.initial}
+                                <AvatarFallback className="text-[10px] bg-primary text-primary-foreground font-bold">
+                                  {m.name.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                             );
@@ -825,11 +822,8 @@ export function AddExpenseModal({
                                 referrerPolicy="no-referrer"
                               />
                             )}
-                            <AvatarFallback
-                              className="text-xs font-bold text-white"
-                              style={{ backgroundColor: member.color }}
-                            >
-                              {member.initial}
+                            <AvatarFallback className="text-xs font-bold bg-primary text-primary-foreground">
+                              {member.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
 

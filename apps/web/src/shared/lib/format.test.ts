@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatRelativeDate, formatMessageTime } from "./format";
+import { formatCurrency, formatRelativeDate } from "./format";
 
 describe("Formatting Utilities", () => {
   describe("formatCurrency", () => {
