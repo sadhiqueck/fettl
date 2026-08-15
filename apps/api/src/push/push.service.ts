@@ -1,7 +1,30 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as webPush from 'web-push';
+
+function isPushEndpoint(value: string) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      !url.port &&
+      /^(fcm\.googleapis\.com|(?:[a-z0-9-]+\.)*push\.services\.mozilla\.com|(?:[a-z0-9-]+\.)*push\.apple\.com|(?:[a-z0-9-]+\.)*notify\.windows\.com)$/.test(
+        url.hostname,
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+type PushPayload = { title: string; body: string; icon?: string; url: string };
 
 @Injectable()
 export class PushService implements OnModuleInit {
@@ -15,13 +38,18 @@ export class PushService implements OnModuleInit {
   onModuleInit() {
     const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
     const privateKey = this.configService.get<string>('VAPID_PRIVATE_KEY');
-    const subject = this.configService.get<string>('VAPID_SUBJECT', 'mailto:admin@fettl.app');
+    const subject = this.configService.get<string>(
+      'VAPID_SUBJECT',
+      'mailto:admin@fettl.app',
+    );
 
     if (publicKey && privateKey) {
       webPush.setVapidDetails(subject, publicKey, privateKey);
       this.logger.log('Web Push VAPID details configured');
     } else {
-      this.logger.warn('Web Push VAPID keys are missing from environment variables');
+      this.logger.warn(
+        'Web Push VAPID keys are missing from environment variables',
+      );
     }
   }
 
@@ -33,7 +61,16 @@ export class PushService implements OnModuleInit {
     userId: string,
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   ) {
-    // Save or update subscription
+    if (
+      !subscription ||
+      typeof subscription.endpoint !== 'string' ||
+      subscription.endpoint.length > 4096 ||
+      !isPushEndpoint(subscription.endpoint) ||
+      !/^[A-Za-z0-9_-]{87}=?$/.test(subscription.keys?.p256dh ?? '') ||
+      !/^[A-Za-z0-9_-]{22}={0,2}$/.test(subscription.keys?.auth ?? '')
+    ) {
+      throw new BadRequestException('Unsupported push subscription');
+    }
     await this.prisma.pushSubscription.upsert({
       where: { endpoint: subscription.endpoint },
       update: {
@@ -51,7 +88,8 @@ export class PushService implements OnModuleInit {
     this.logger.log(`Saved push subscription for user ${userId}`);
   }
 
-  async sendPushToUser(userId: string, payload: any) {
+  async sendPushToUser(userId: string, payload: PushPayload) {
+    if (!this.getVapidPublicKey()) return;
     const subscriptions = await this.prisma.pushSubscription.findMany({
       where: { userId },
     });
@@ -59,6 +97,7 @@ export class PushService implements OnModuleInit {
     if (subscriptions.length === 0) return;
 
     const promises = subscriptions.map(async (sub) => {
+      if (!isPushEndpoint(sub.endpoint)) return;
       try {
         await webPush.sendNotification(
           {
@@ -67,13 +106,21 @@ export class PushService implements OnModuleInit {
           },
           JSON.stringify(payload),
         );
-      } catch (error: any) {
-        if (error.statusCode === 410 || error.statusCode === 404) {
+      } catch (error: unknown) {
+        if (
+          error instanceof Error &&
+          'statusCode' in error &&
+          (error.statusCode === 410 || error.statusCode === 404)
+        ) {
           // Subscription expired or is invalid
-          this.logger.log(`Removing invalid push subscription for user ${userId}`);
-          await this.prisma.pushSubscription.delete({ where: { id: sub.id } });
+          this.logger.log(
+            `Removing invalid push subscription for user ${userId}`,
+          );
+          await this.prisma.pushSubscription.deleteMany({
+            where: { id: sub.id },
+          });
         } else {
-          this.logger.error(`Error sending push notification: ${error.message}`);
+          this.logger.warn('Push delivery failed');
         }
       }
     });
@@ -84,7 +131,7 @@ export class PushService implements OnModuleInit {
   async sendPushToGroupMembers(
     groupId: string,
     excludeUserId: string,
-    payload: any,
+    payload: PushPayload,
   ) {
     // Find all active members in the group except the sender
     const groupMembers = await this.prisma.groupMember.findMany({

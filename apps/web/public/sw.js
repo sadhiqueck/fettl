@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fettl-pwa-v1';
+const CACHE_NAME = 'fettl-pwa-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName.startsWith('fettl-pwa-') && cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
@@ -31,65 +31,21 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Pass-through for API requests, WebSocket, and non-GET requests
-  const isApiRequest = 
-    url.port === '3000' || 
-    url.hostname.includes('api') || 
-    event.request.headers.get('Accept')?.includes('application/json');
-
-  if (
-    event.request.method !== 'GET' ||
-    isApiRequest ||
-    url.pathname.includes('/api/') ||
-    url.pathname.includes('/auth/') ||
-    url.hostname.includes('socket.io') ||
-    url.protocol.startsWith('chrome-extension')
-  ) {
-    return;
-  }
-
-  // Network-first strategy for HTML pages (so we always get the latest Vite hashes)
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-          return response;
-        })
-        .catch((error) => {
-          console.error('Fetch failed for navigate:', event.request.url, error);
-          return caches.match(event.request).then((response) => {
-            return response || caches.match('/index.html') || new Response('Offline', { status: 503 });
-          });
-        })
-    );
+    event.respondWith(fetch(event.request).catch(async () => (await caches.match('/index.html')) || Response.error()));
     return;
   }
-
-  // Stale-while-revalidate for static assets (JS, CSS, Images)
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return networkResponse;
-      }).catch((error) => {
-        console.error('Fetch failed for static asset:', event.request.url, error);
-        // Fallback to a 503 response so event.respondWith doesn't crash
-        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-      });
-
-      // Return cached response immediately if available, or wait for fetchPromise
-      return cachedResponse || fetchPromise;
-    })
-  );
+  // Only compiled, content-addressed application assets are safe to retain between accounts.
+  if (!url.pathname.startsWith('/assets/') || url.search) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const saved = await cache.match(event.request);
+    if (saved) return saved;
+    const response = await fetch(event.request);
+    if (response.ok && response.type === 'basic') await cache.put(event.request, response.clone());
+    return response;
+  })());
 });
 
 self.addEventListener('push', (event) => {
@@ -120,7 +76,8 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const urlToOpen = event.notification.data.url;
+  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  const urlToOpen = target.origin === self.location.origin ? target.href : self.location.origin;
 
   // This looks to see if the current is already open and focuses if it is
   event.waitUntil(
@@ -134,7 +91,7 @@ self.addEventListener('notificationclick', (event) => {
 
         for (let i = 0; i < windowClients.length; i++) {
           const windowClient = windowClients[i];
-          if (windowClient.url.includes(urlToOpen)) {
+          if (windowClient.url === urlToOpen) {
             matchingClient = windowClient;
             break;
           }
