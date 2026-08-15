@@ -35,8 +35,14 @@ exports.AppModule = AppModule = __decorate([
             }),
             throttler_1.ThrottlerModule.forRoot([
                 {
+                    name: 'global',
                     ttl: 60000,
                     limit: 100,
+                },
+                {
+                    name: 'auth',
+                    ttl: 60000,
+                    limit: 10,
                 },
             ]),
             prisma_module_1.PrismaModule,
