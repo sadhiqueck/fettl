@@ -3,11 +3,13 @@ import {
   Controller,
   Post,
   Get,
+  Query,
   UsePipes,
   UseGuards,
   Param,
   BadRequestException,
 } from '@nestjs/common';
+import { ChatGateway } from '../chat/chat.gateway';
 import { GroupsService } from './groups.service';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createGroupSchema } from '@fettl/shared';
@@ -26,7 +28,10 @@ type CreateGroupResponse = {
 
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    private readonly chat: ChatGateway,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -77,16 +82,35 @@ export class GroupsController {
     };
   }
 
+  @Get(':id/expenses')
+  @UseGuards(JwtAuthGuard, GroupRoleGuard)
+  @RequireGroupRoles(GroupRole.OWNER, GroupRole.ADMIN, GroupRole.MEMBER)
+  expensePage(
+    @Param('id') groupId: string,
+    @GetUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    if (cursor !== undefined && typeof cursor !== 'string')
+      throw new BadRequestException('Invalid expense cursor');
+    return this.groupsService.getExpensePage(groupId, userId, cursor);
+  }
+
   @Post('join')
   @UseGuards(JwtAuthGuard)
   async joinGroup(
     @Body('inviteCode') inviteCode: string,
     @GetUser('id') userId: string,
   ) {
-    if (!inviteCode) {
+    if (
+      typeof inviteCode !== 'string' ||
+      !/^[A-Z1-9]{6}$/i.test(inviteCode.trim())
+    ) {
       throw new BadRequestException('Invite code is required');
     }
-    return this.groupsService.joinGroupUsingCode(userId, inviteCode);
+    return this.groupsService.joinGroupUsingCode(
+      userId,
+      inviteCode.trim().toUpperCase(),
+    );
   }
 
   @Get(':id/contacts')
@@ -111,7 +135,7 @@ export class GroupsController {
     @Body('userId') memberId: string,
     @GetUser('id') adminId: string,
   ) {
-    if (!memberId) {
+    if (typeof memberId !== 'string' || !memberId) {
       throw new BadRequestException('User ID is required');
     }
     return this.groupsService.addMemberDirectly(adminId, groupId, memberId);
@@ -125,7 +149,7 @@ export class GroupsController {
     @Body('email') email: string,
     @GetUser('id') adminId: string,
   ) {
-    if (!email) {
+    if (typeof email !== 'string' || !email) {
       throw new BadRequestException('Email is required');
     }
     return this.groupsService.addMemberByEmail(adminId, groupId, email);
@@ -138,6 +162,8 @@ export class GroupsController {
     @Param('id') groupId: string,
     @GetUser('id') userId: string,
   ) {
-    return this.groupsService.leaveGroup(userId, groupId);
+    const result = await this.groupsService.leaveGroup(userId, groupId);
+    this.chat.server.in(`user_${userId}`).socketsLeave(`group_${groupId}`);
+    return result;
   }
 }

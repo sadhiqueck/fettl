@@ -1,18 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
   OnGatewayInit,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   MessageBody,
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { trustedBrowserOrigin } from '../common/config/browser-origin';
+import type { IncomingMessage } from 'node:http';
 import { Server, Socket } from 'socket.io';
 
 export interface AuthSocket extends Socket {
@@ -25,110 +24,59 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 
 @WebSocketGateway({
+  maxHttpBufferSize: 32_768,
   cors: {
     origin: (
       origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      const allowedOrigins = ['http://localhost:5173'];
-      if (process.env.FRONTEND_URL) {
-        allowedOrigins.push(process.env.FRONTEND_URL);
-      }
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
-    },
+      next: (err: Error | null, allow: boolean) => void,
+    ) => next(null, !origin || trustedBrowserOrigin(origin)),
     credentials: true,
   },
+  allowRequest: (
+    req: IncomingMessage,
+    next: (error: string | null, success: boolean) => void,
+  ) =>
+    next(null, !req.headers.origin || trustedBrowserOrigin(req.headers.origin)),
 })
-export class ChatGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class ChatGateway implements OnGatewayInit {
+  @WebSocketServer() server!: Server;
   private readonly logger = new Logger(ChatGateway.name);
-
-  @WebSocketServer()
-  server!: Server;
-
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly prisma: PrismaService,
-    private readonly pushService: PushService,
+    private jwtService: JwtService,
+    private prisma: PrismaService,
+    private pushService: PushService,
   ) {}
 
-  // ─── Lifecycle: Gateway initialized ─────────────────
-  afterInit() {
-    this.logger.log('💬 Chat WebSocket Gateway initialized');
+  afterInit(server: Server) {
+    server.use((socket, next) => {
+      const client = socket as AuthSocket;
+      void this.authenticate(client).then(
+        () => next(),
+        () => next(new Error('Authentication required')),
+      );
+    });
   }
 
-  // ─── Lifecycle: Client connects ─────────────────────
-  async handleConnection(client: AuthSocket) {
-    try {
-      // Extract the token from the handshake
-      const token = this.extractTokenFromHandshake(client);
-
-      if (!token) {
-        this.logger.warn(`Rejected: No token (${client.id})`);
-        client.emit('error', { message: 'Authentication required' });
-        client.disconnect();
-        return;
-      }
-
-      // Verify the JWT
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      });
-
-      // Lookup the user in the database
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, name: true, email: true, avatarUrl: true },
-      });
-
-      if (!user) {
-        this.logger.warn(`Rejected: User not found (${client.id})`);
-        client.emit('error', { message: 'User not found' });
-        client.disconnect();
-        return;
-      }
-
-      // Attach user data to the socket for all future event handlers
-      client.data.user = {
-        ...user,
-        avatarUrl: user.avatarUrl ?? undefined,
-      };
-
-      this.logger.log(`✅ Connected: ${user.name} (${client.id})`);
-    } catch {
-      this.logger.warn(`Rejected: Invalid token (${client.id})`);
-      client.emit('error', { message: 'Invalid or expired token' });
-      client.disconnect();
-    }
+  private async authenticate(client: AuthSocket) {
+    const token = this.extractTokenFromHandshake(client);
+    if (!token) throw new Error('Missing session');
+    const payload = await this.jwtService.verifyAsync<{
+      sub: string;
+      exp: number;
+    }>(token);
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, name: true, email: true, avatarUrl: true },
+    });
+    if (!user || !payload.exp) throw new Error('Invalid session');
+    client.data.user = { ...user, avatarUrl: user.avatarUrl ?? undefined };
+    await client.join(`user_${user.id}`);
+    const timer = setTimeout(
+      () => client.disconnect(true),
+      Math.max(0, payload.exp * 1000 - Date.now()),
+    );
+    client.once('disconnect', () => clearTimeout(timer));
   }
-
-  // ─── Lifecycle: Client disconnects ──────────────────
-  handleDisconnect(client: AuthSocket) {
-    const userName = client.data?.user?.name || 'Unknown';
-    this.logger.log(`❌ Disconnected: ${userName} (${client.id})`);
-  }
-
-  // ─── Test event: Ping/Pong ──────────────────────────
-  @UseGuards(WsJwtGuard)
-  @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: AuthSocket) {
-    const user = client.data.user!;
-    return {
-      event: 'pong',
-      data: {
-        message: `Hello, ${user.name}! WebSocket is working! 🎉`,
-        timestamp: new Date().toISOString(),
-      },
-    };
-  }
-
-  // ─── Room Management ──────────────────────────────────
 
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('joinGroup')
@@ -136,7 +84,8 @@ export class ChatGateway
     @ConnectedSocket() client: AuthSocket,
     @MessageBody('groupId') groupId: string,
   ) {
-    // Verify the user is actually a member of this group
+    if (typeof groupId !== 'string' || !groupId)
+      throw new WsException('Group ID required');
     const isMember = await this.prisma.groupMember.findFirst({
       where: {
         userId: client.data.user!.id,
@@ -156,7 +105,7 @@ export class ChatGateway
 
     // Fetch recent 50 messages
     const history = await this.prisma.chatMessage.findMany({
-      where: { groupId },
+      where: { groupId, isDeleted: false },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 51,
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
@@ -165,6 +114,7 @@ export class ChatGateway
     // Send history to the client who just joined
     const hasMore = history.length > 50;
     client.emit('chatHistory', {
+      groupId,
       history: history.slice(0, 50).reverse(),
       hasMore,
     });
@@ -189,6 +139,13 @@ export class ChatGateway
     @ConnectedSocket() client: AuthSocket,
     @MessageBody() payload: { groupId: string; cursor: string },
   ) {
+    if (
+      typeof payload?.groupId !== 'string' ||
+      !payload.groupId ||
+      typeof payload.cursor !== 'string' ||
+      !payload.cursor
+    )
+      throw new WsException('Group and cursor required');
     const userId = client.data.user!.id;
     const member = await this.prisma.groupMember.findFirst({
       where: { userId, groupId: payload?.groupId, isActive: true },
@@ -198,7 +155,7 @@ export class ChatGateway
     if (!payload?.cursor) throw new WsException('A message cursor is required');
 
     const page = await this.prisma.chatMessage.findMany({
-      where: { groupId: payload.groupId },
+      where: { groupId: payload.groupId, isDeleted: false },
       cursor: { id: payload.cursor },
       skip: 1,
       take: 51,
@@ -207,6 +164,7 @@ export class ChatGateway
     });
     const hasMore = page.length > 50;
     client.emit('olderMessages', {
+      groupId: payload.groupId,
       history: page.slice(0, 50).reverse(),
       hasMore,
     });
@@ -250,7 +208,8 @@ export class ChatGateway
       where: { userId: user.id, groupId: payload.groupId, isActive: true },
       select: { id: true },
     });
-    if (!membership) throw new WsException('Not an active member of this group');
+    if (!membership)
+      throw new WsException('Not an active member of this group');
 
     // 1. Save message to database
     const message = await this.prisma.chatMessage.create({
@@ -276,12 +235,14 @@ export class ChatGateway
     });
 
     if (group) {
-      await this.pushService.sendPushToGroupMembers(payload.groupId, user.id, {
-        title: `New message in ${group.name}`,
-        body: `${user.name}: ${payload.imageUrl ? 'sent an image' : payload.content}`,
-        icon: user.avatarUrl || '/icon-192x192.png',
-        url: `/groups/${payload.groupId}`,
-      });
+      void this.pushService
+        .sendPushToGroupMembers(payload.groupId, user.id, {
+          title: `New message in ${group.name}`,
+          body: `${user.name}: ${payload.imageUrl ? 'sent an image' : payload.content}`,
+          icon: user.avatarUrl || '/icon-192x192.png',
+          url: `/groups/${payload.groupId}`,
+        })
+        .catch(() => this.logger.warn('Chat notification delivery failed'));
     }
 
     return { status: 'delivered' };
@@ -305,10 +266,6 @@ export class ChatGateway
         return authCookie.split('=')[1];
       }
     }
-
-    // Method 3: From query parameter (for testing only)
-    const queryToken = client.handshake.query?.token as string;
-    if (queryToken) return queryToken;
 
     return null;
   }

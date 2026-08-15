@@ -33,7 +33,7 @@ export class GroupRoleGuard implements CanActivate {
     const user = request.user as { id: string } | undefined;
     // Support both :groupId (expenses/settlements) and :id (groups)
     const rawGroupId = request.params.groupId || request.params.id;
-    const groupId = Array.isArray(rawGroupId) ? rawGroupId[0] : rawGroupId as string;
+    const groupId = Array.isArray(rawGroupId) ? rawGroupId[0] : rawGroupId;
 
     if (!user || !groupId) {
       throw new ForbiddenException('Invalid user or group context');
@@ -49,7 +49,9 @@ export class GroupRoleGuard implements CanActivate {
     });
 
     if (!groupMembership || !groupMembership.isActive) {
-      throw new ForbiddenException('You are not an active member of this group');
+      throw new ForbiddenException(
+        'You are not an active member of this group',
+      );
     }
 
     if (!requiredRoles.includes(groupMembership.role)) {

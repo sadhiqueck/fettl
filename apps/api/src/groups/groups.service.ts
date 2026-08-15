@@ -8,11 +8,43 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGroupInput } from '@fettl/shared';
 import { GroupRole, ActivityType, GroupCategory } from '@prisma/client';
-import type { Group } from '@prisma/client';
+import type { Prisma, Group } from '@prisma/client';
 import { withGroupLock } from './group-transaction';
 import { randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { decryptVpaSafe } from '../common/utils/encryption';
+
+const expenseRelations = {
+  paidBy: { select: { id: true, name: true, avatarUrl: true } },
+  splits: { include: { user: { select: { id: true, name: true } } } },
+} satisfies Prisma.ExpenseInclude;
+
+function expenseView(
+  exp: Prisma.ExpenseGetPayload<{ include: typeof expenseRelations }>,
+  userId: string,
+) {
+  return {
+    id: exp.id,
+    title: exp.title,
+    amount: exp.amount / 100,
+    category: exp.category,
+    splitMethod: exp.splitMethod,
+    paidBy: exp.paidBy.id === userId ? 'You' : exp.paidBy.name,
+    paidById: exp.paidBy.id,
+    paidByAvatar: exp.paidBy.avatarUrl,
+    date: exp.date.toISOString(),
+    notes: exp.notes,
+    receiptUrl: exp.receiptUrl,
+    splitCount: exp.splits.length,
+    splits: exp.splits.map((s) => ({
+      userId: s.userId,
+      name: s.userId === userId ? 'You' : s.user.name,
+      amount: s.amount / 100,
+      percentage: s.percentage === null ? null : s.percentage / 100,
+      shares: s.shares,
+    })),
+  };
+}
 
 const GROUP_CATEGORY_MAP: Record<CreateGroupInput['category'], GroupCategory> =
   {
@@ -171,7 +203,10 @@ export class GroupsService {
             include: {
               members: {
                 where: { isActive: true },
-                select: { userId: true, user: { select: { name: true, avatarUrl: true } } },
+                select: {
+                  userId: true,
+                  user: { select: { name: true, avatarUrl: true } },
+                },
               },
               balances: {
                 where: { userId },
@@ -249,6 +284,22 @@ export class GroupsService {
     }
   }
 
+  async getExpensePage(groupId: string, userId: string, cursor?: string) {
+    const records = await this.prisma.expense.findMany({
+      where: { groupId, isDeleted: false },
+      include: expenseRelations,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      take: 21,
+    });
+    return {
+      expenses: records
+        .slice(0, 20)
+        .map((expense) => expenseView(expense, userId)),
+      hasOlderExpenses: records.length > 20,
+    };
+  }
+
   async getGroupById(id: string, userId: string) {
     const group = await this.prisma.group.findUnique({
       where: { id },
@@ -266,21 +317,20 @@ export class GroupsService {
         },
         settlements: {
           where: { status: 'PENDING', isDeleted: false },
-          select: { id: true, payerId: true, receiverId: true, amount: true, note: true },
+          select: {
+            id: true,
+            payerId: true,
+            receiverId: true,
+            amount: true,
+            note: true,
+          },
           orderBy: { createdAt: 'asc' },
         },
         expenses: {
           where: { isDeleted: false },
-          include: {
-            paidBy: { select: { id: true, name: true, avatarUrl: true } },
-            splits: {
-              include: {
-                user: { select: { id: true, name: true } },
-              },
-            },
-          },
-          orderBy: { date: 'desc' },
-          take: 20, // Paginate to limit memory load
+          include: expenseRelations,
+          orderBy: [{ date: 'desc' }, { id: 'desc' }],
+          take: 21,
         },
         activities: {
           include: { user: { select: { id: true, name: true } } },
@@ -326,25 +376,9 @@ export class GroupsService {
     });
 
     // --- Expenses ---
-    const expenses = group.expenses.map((exp) => ({
-      id: exp.id,
-      title: exp.title,
-      amount: exp.amount / 100,
-      category: exp.category,
-      splitMethod: exp.splitMethod,
-      paidBy: exp.paidBy.id === userId ? 'You' : exp.paidBy.name,
-      paidById: exp.paidBy.id,
-      paidByAvatar: exp.paidBy.avatarUrl,
-      date: exp.date.toISOString(),
-      notes: exp.notes,
-      splitCount: exp.splits.length,
-      splits: exp.splits.map((s) => ({
-        userId: s.userId,
-        name: s.userId === userId ? 'You' : s.user.name,
-        amount: s.amount / 100,
-      })),
-    }));
-
+    const expenses = group.expenses
+      .slice(0, 20)
+      .map((exp) => expenseView(exp, userId));
     // --- Balances (all members) ---
     const balances = group.balances.map((b) => ({
       memberId: b.userId,
@@ -408,9 +442,13 @@ export class GroupsService {
       userBalance: userBalance / 100,
       inviteCode: group.inviteCode,
       expenses,
+      hasOlderExpenses: group.expenses.length > 20,
       balances,
       settlements,
-      pendingPayments: group.settlements.map((payment) => ({ ...payment, amount: payment.amount / 100 })),
+      pendingPayments: group.settlements.map((payment) => ({
+        ...payment,
+        amount: payment.amount / 100,
+      })),
       activity,
     };
   }
@@ -485,24 +523,26 @@ export class GroupsService {
     actionLogText: string,
   ) {
     await withGroupLock(this.prisma, groupId, async (tx) => {
-    const existingMembership = await tx.groupMember.findUnique({
-      where: { userId_groupId: { userId, groupId } },
-    });
+      const existingMembership = await tx.groupMember.findUnique({
+        where: { userId_groupId: { userId, groupId } },
+      });
 
-    if (existingMembership && existingMembership.isActive) {
-      throw new ConflictException('User is already a member');
-    }
+      if (existingMembership && existingMembership.isActive) {
+        throw new ConflictException('User is already a member');
+      }
 
-    const memberCount = await tx.groupMember.count({
-      where: { groupId, isActive: true },
-    });
-    const maxMembers = this.configService.get<number>('MAX_GROUP_MEMBERS', 50);
-    if (memberCount >= maxMembers) {
-      throw new ForbiddenException(
-        `This group has reached its maximum limit of ${maxMembers} members.`,
+      const memberCount = await tx.groupMember.count({
+        where: { groupId, isActive: true },
+      });
+      const maxMembers = this.configService.get<number>(
+        'MAX_GROUP_MEMBERS',
+        50,
       );
-    }
-
+      if (memberCount >= maxMembers) {
+        throw new ForbiddenException(
+          `This group has reached its maximum limit of ${maxMembers} members.`,
+        );
+      }
 
       await tx.groupMember.upsert({
         where: { userId_groupId: { userId, groupId } },
@@ -620,26 +660,35 @@ export class GroupsService {
 
   async leaveGroup(userId: string, groupId: string) {
     await withGroupLock(this.prisma, groupId, async (tx) => {
-    const membership = await tx.groupMember.findUnique({
-      where: { userId_groupId: { userId, groupId } },
-    });
+      const membership = await tx.groupMember.findUnique({
+        where: { userId_groupId: { userId, groupId } },
+      });
 
-    if (!membership || !membership.isActive) {
-      throw new ConflictException('You are not an active member of this group');
-    }
+      if (!membership || !membership.isActive) {
+        throw new ConflictException(
+          'You are not an active member of this group',
+        );
+      }
 
-    const balance = await tx.groupMemberBalance.findUnique({
-      where: { groupId_userId: { userId, groupId } },
-    });
+      const balance = await tx.groupMemberBalance.findUnique({
+        where: { groupId_userId: { userId, groupId } },
+      });
 
-    const pending = await tx.settlement.count({ where: { groupId, status: 'PENDING', isDeleted: false, OR: [{ payerId: userId }, { receiverId: userId }] } });
-    if (pending) throw new ConflictException('Review pending payments before leaving.');
-    if (balance && balance.balance !== 0) {
-      throw new ForbiddenException(
-        'You cannot leave the group until your balances are settled (balance must be 0).',
-      );
-    }
-
+      const pending = await tx.settlement.count({
+        where: {
+          groupId,
+          status: 'PENDING',
+          isDeleted: false,
+          OR: [{ payerId: userId }, { receiverId: userId }],
+        },
+      });
+      if (pending)
+        throw new ConflictException('Review pending payments before leaving.');
+      if (balance && balance.balance !== 0) {
+        throw new ForbiddenException(
+          'You cannot leave the group until your balances are settled (balance must be 0).',
+        );
+      }
 
       await tx.groupMember.update({
         where: { userId_groupId: { userId, groupId } },

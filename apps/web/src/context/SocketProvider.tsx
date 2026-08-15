@@ -1,57 +1,46 @@
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
-  type ReactNode,
-} from "react";
-import { Socket } from "socket.io-client";
-import { getSocket, disconnectSocket } from "../shared/lib/socket";
+import { useEffect, useState, type ReactNode } from "react";
+import { getSocket } from "@/shared/lib/socket";
+import { refreshSession } from "@/shared/lib/apiClient";
 import { SocketContext } from "./SocketContext";
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
-
-  const connect = useCallback(() => {
-    try {
-      const newSocket = getSocket();
-      socketRef.current = newSocket;
-      setSocket(newSocket);
-
-      // Clean up any old listeners from this context to prevent memory leaks
-      newSocket.off("connect");
-      newSocket.off("disconnect");
-
-      newSocket.on("connect", () => setIsConnected(true));
-      newSocket.on("disconnect", () => setIsConnected(false));
-
-      // Set initial state (might already be connected)
-      setIsConnected(newSocket.connected);
-    } catch (error) {
-      console.error("Failed to connect WebSocket:", error);
-    }
-  }, []);
-
-  const reconnect = useCallback(() => {
-    disconnectSocket();
-    connect();
-  }, [connect]);
-
+  const [socket] = useState(getSocket);
+  const [isConnected, setConnected] = useState(false);
   useEffect(() => {
-    connect();
-
-    return () => {
-      if (socketRef.current) {
-         socketRef.current.off("connect");
-         socketRef.current.off("disconnect");
-      }
+    let mounted = true;
+    const connected = () => setConnected(true);
+    const renew = () => {
+      void refreshSession()
+        .then(() => {
+          if (mounted) socket.connect();
+        })
+        .catch(() => {});
     };
-  }, [connect]);
-
+    const disconnected = (reason: string) => {
+      setConnected(false);
+      if (reason === "io server disconnect") renew();
+    };
+    const failed = (error: Error) => {
+      if (error.message === "Authentication required") renew();
+    };
+    socket
+      .on("connect", connected)
+      .on("disconnect", disconnected)
+      .on("connect_error", failed);
+    socket.connect();
+    return () => {
+      mounted = false;
+      socket
+        .off("connect", connected)
+        .off("disconnect", disconnected)
+        .off("connect_error", failed);
+      socket.disconnect();
+    };
+  }, [socket]);
   return (
-    <SocketContext.Provider value={{ socket, isConnected, reconnect }}>
+    <SocketContext.Provider
+      value={{ socket, isConnected, reconnect: () => socket.connect() }}
+    >
       {children}
     </SocketContext.Provider>
   );
