@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   Dialog,
@@ -30,7 +31,6 @@ import { useUserProfile } from "@/shared/hooks/useUser";
 import {
   useCreateGroup,
   useAddMember,
-  useAddMemberByEmail,
 } from "@/features/groups/hooks/useGroups";
 import {
   useAllContacts,
@@ -64,13 +64,8 @@ const CATEGORIES = [
     imageUrl: "/icons/office.png",
   },
   {
-    id: "FOOD",
-    label: "Food",
-    imageUrl: "/icons/other.png", // Fallback to other.png since there's no food.png
-  },
-  {
-    id: "ROOMMATES",
-    label: "Roommates",
+    id: "FRIENDS",
+    label: "Friends",
     imageUrl: "/icons/friends.png",
   },
   {
@@ -89,6 +84,7 @@ export function CreateGroupModal({
   open,
   onOpenChange,
 }: CreateGroupModalProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -116,7 +112,6 @@ export function CreateGroupModal({
   // Mutations
   const createGroupMutation = useCreateGroup();
   const addMemberMutation = useAddMember();
-  const addMemberByEmailMutation = useAddMemberByEmail();
 
   const handleClose = () => {
     // Don't reset while a mutation is in flight
@@ -152,26 +147,20 @@ export function CreateGroupModal({
           // response is { message: string, group: { id, ... } }
           const groupId = response?.group?.id;
 
-          if (selectedMembers.size > 0 && groupId) {
-            const members = Array.from(selectedMembers.values());
-
-            // For members with email, use addMemberByEmail; for those with only userId, use addMember
-            const promises = members.map((member) => {
-              if ("email" in member && member.email) {
-                return addMemberByEmailMutation
-                  .mutateAsync({ groupId, email: member.email })
-                  .catch(() => null);
-              }
-              return addMemberMutation
-                .mutateAsync({ groupId, userId: member.id })
-                .catch(() => null);
-            });
-
-            await Promise.all(promises);
+          const results = await Promise.allSettled(
+            Array.from(selectedMembers.keys(), (userId) =>
+              addMemberMutation.mutateAsync({ groupId, userId }),
+            ),
+          );
+          if (results.some((result) => result.status === "rejected")) {
+            toast.warning(
+              "Group created. Some members still need an invitation.",
+            );
+          } else {
+            toast.success("Group created");
           }
-
-          toast.success("Group created successfully!");
-          handleClose();
+          onOpenChange(false);
+          navigate(`/groups/${groupId}`);
         },
         onError: () => {},
       },
@@ -179,9 +168,7 @@ export function CreateGroupModal({
   };
 
   const isCreating =
-    createGroupMutation.isPending ||
-    addMemberMutation.isPending ||
-    addMemberByEmailMutation.isPending;
+    createGroupMutation.isPending || addMemberMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={isCreating ? undefined : handleClose}>
@@ -203,6 +190,7 @@ export function CreateGroupModal({
                 <Label htmlFor="create-group-name">Group Name</Label>
                 <Input
                   id="create-group-name"
+                  maxLength={50}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Weekend trip"
@@ -216,6 +204,7 @@ export function CreateGroupModal({
                 </Label>
                 <Input
                   id="create-group-description"
+                  maxLength={200}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What's this group about?"
@@ -264,7 +253,7 @@ export function CreateGroupModal({
               </Button>
               <Button
                 onClick={() => setStep(2)}
-                disabled={!name.trim() || !category}
+                disabled={name.trim().length < 2 || !category}
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

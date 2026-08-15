@@ -38,7 +38,6 @@ interface InviteMemberModalProps {
   inviteCode?: string;
 }
 
-
 export function InviteMemberModal({
   isOpen,
   onOpenChange,
@@ -131,14 +130,14 @@ export function InviteMemberModal({
               try {
                 await navigator.share({
                   title: `Join ${groupName} on Fettl`,
-                  text: `Hey! Join my group on Fettl to split expenses easily. Use this invite link: ${import.meta.env.VITE_FRONTEND_URL}/groups/join/${inviteCode}`,
+                  text: `Hey! Join my group on Fettl to split expenses easily. Use this invite link: ${window.location.origin}/groups/join/${inviteCode}`,
                 });
               } catch (error) {
                 console.error("Error sharing", error);
               }
             } else if (inviteCode) {
               navigator.clipboard.writeText(
-                `${import.meta.env.VITE_FRONTEND_URL}/groups/join/${inviteCode}`,
+                `${window.location.origin}/groups/join/${inviteCode}`,
               );
               setCopied(true);
               toast.success("Invite link copied to clipboard!");
