@@ -1,7 +1,14 @@
 import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import type { GroupExpense, GroupMember } from "@/features/groups/hooks/useGroups";
+import type {
+  GroupExpense,
+  GroupMember,
+} from "@/features/groups/hooks/useGroups";
 import { formatCurrency, formatMessageTime } from "@/shared/lib/format";
 import { ExpenseDetailsModal } from "./ExpenseDetailsModal";
 
@@ -40,15 +47,22 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
   const visibleSplits = expense.splits.slice(0, 3);
   const remainingSplits = Math.max(0, expense.splits.length - 3);
 
-  const AvatarStack = () => (
+  const avatarStack = (
     <div className="flex items-center mt-2 opacity-90">
       <div className="flex -space-x-2">
         {visibleSplits.map((split) => {
           const member = (members || []).find((m) => m.id === split.userId);
           return (
-            <Avatar key={split.userId} className="size-5 border border-background">
+            <Avatar
+              key={split.userId}
+              className="size-5 border border-background"
+            >
               {member?.avatarUrl && (
-                <AvatarImage src={member.avatarUrl} alt={split.name} referrerPolicy="no-referrer" />
+                <AvatarImage
+                  src={member.avatarUrl}
+                  alt={split.name}
+                  referrerPolicy="no-referrer"
+                />
               )}
               <AvatarFallback className="bg-muted text-[8px] font-bold text-muted-foreground">
                 {split.name.charAt(0)}
@@ -82,20 +96,29 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
             <p className="text-2xl font-bold tracking-tight">
               {formatCurrency(expense.amount)}
             </p>
-            <AvatarStack />
+            {avatarStack}
             <div className="flex items-center justify-between gap-4 mt-2 opacity-70">
               <span className="text-[10px]">
                 {formatMessageTime(expense.date)}
               </span>
-              <ChevronDown size={12} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+              <ChevronDown
+                size={12}
+                className="opacity-70 group-hover:opacity-100 transition-opacity"
+              />
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
-          <button onClick={onEdit} className="p-1 rounded hover:bg-soft-clay text-muted-foreground hover:text-primary">
+          <button
+            onClick={onEdit}
+            className="p-1 rounded hover:bg-soft-clay text-muted-foreground hover:text-primary"
+          >
             <Pencil size={12} />
           </button>
-          <button onClick={onDelete} className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-coral-red">
+          <button
+            onClick={onDelete}
+            className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-coral-red"
+          >
             <Trash2 size={12} />
           </button>
         </div>
@@ -110,7 +133,8 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
     );
   }
 
-  const myShare = expense.splits.find((s) => s.userId === currentUserId)?.amount ?? 0;
+  const myShare =
+    expense.splits.find((s) => s.userId === currentUserId)?.amount ?? 0;
 
   return (
     <div className="flex flex-col items-start gap-1 group">
@@ -120,7 +144,11 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
       <div className="flex items-end gap-2 max-w-[85%]">
         <Avatar className="app-avatar size-8 shrink-0 border border-border/50">
           {expense.paidByAvatar && (
-            <AvatarImage src={expense.paidByAvatar} alt={expense.paidBy} referrerPolicy="no-referrer" />
+            <AvatarImage
+              src={expense.paidByAvatar}
+              alt={expense.paidBy}
+              referrerPolicy="no-referrer"
+            />
           )}
           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
             {expense.paidBy.charAt(0)}
@@ -139,12 +167,12 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
           <p className="text-xl font-bold text-foreground tracking-tight">
             {formatCurrency(expense.amount)}
           </p>
-          
+
           <div className="mt-2 bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-semibold border border-primary/20 inline-block">
             Your share: {formatCurrency(myShare)}
           </div>
-          
-          <AvatarStack />
+
+          {avatarStack}
 
           <div className="flex items-center justify-between gap-4 mt-2">
             <span className="text-[10px] text-muted-foreground">
@@ -183,8 +211,7 @@ export const ActivityBubble = React.memo(function ActivityBubble({
 }: ActivityBubbleProps) {
   return (
     <div className="chat-bubble-system">
-      <span className="font-semibold text-foreground">{user}</span>{" "}
-      {action}{" "}
+      <span className="font-semibold text-foreground">{user}</span> {action}{" "}
       {target && (
         <span className="font-semibold text-foreground">{target}</span>
       )}

@@ -93,10 +93,7 @@ export function MarkAsPaidDialog({
             <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
               {fromName}
             </span>
-            <ArrowRightIcon
-              size={16}
-              className="text-muted-foreground mx-1"
-            />
+            <ArrowRightIcon size={16} className="text-muted-foreground mx-1" />
             <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
               {toName}
             </span>
@@ -120,12 +117,10 @@ export function MarkAsPaidDialog({
 
         {/* Info note */}
         <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3 flex gap-3">
-          <CheckCircle2
-            size={16}
-            className="text-primary shrink-0 mt-0.5"
-          />
+          <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
           <p className="text-xs text-foreground/70 leading-relaxed">
-            The receiver will confirm the payment before your group balances change.
+            The receiver will confirm the payment before your group balances
+            change.
           </p>
         </div>
 

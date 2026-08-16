@@ -1,14 +1,13 @@
+import { GroupInfoSidebar } from "@/shared/components/layout/GroupInfoSidebar";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search,
-  Phone,
+  Plus,
   MoreVertical,
   LogOut,
   Info,
   ArrowLeft,
   MessageCircle,
-  MessageSquareDashed,
 } from "lucide-react";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -23,7 +22,7 @@ import { useLeaveGroup } from "@/features/groups/hooks/useGroups";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { InviteMemberModal } from "@/features/groups/components/InviteMemberModal";
 import { AddExpenseModal } from "@/features/groups/components/AddExpenseModal";
-import { EditExpenseModal } from "@/features/groups/components/EditExpenseModal";
+
 import { DeleteExpenseDialog } from "@/features/groups/components/DeleteExpenseDialog";
 import { MarkAsPaidDialog } from "@/features/groups/components/MarkAsPaidDialog";
 import { useUpload } from "@/shared/hooks/useUpload";
@@ -59,7 +58,7 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
 
   // File Upload
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadFile, isUploading } = useUpload();
+  const { uploadFile, isUploading } = useUpload(group.id);
 
   // Real-time chat integration
   const { messages, hasMore, loadMore, sendMessage } = useChat(group.id);
@@ -77,10 +76,10 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
 
     try {
       const fileUrl = await uploadFile(file);
-      sendMessage("", fileUrl);
+      await sendMessage("", fileUrl);
       toast.success("Image sent");
     } catch {
-      toast.error("Failed to upload image");
+      toast.error("The image could not be sent. Please try again.");
     } finally {
       setUploadPreview(null);
       URL.revokeObjectURL(localPreview);
@@ -89,8 +88,6 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   };
 
   // We moved sorting logic down to the children (ChatFeed and ChatActivity)
-
-  const onlineCount = Math.max(1, Math.floor(group.memberCount * 0.4));
 
   const handleLeaveGroup = () => {
     if (
@@ -109,190 +106,195 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   };
 
   return (
-    <div className="chat-main-panel">
-      {/* Header */}
-      <header className="chat-header">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="md:hidden size-9 rounded-full flex items-center justify-center hover:bg-soft-clay transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="font-display text-lg font-extrabold text-foreground">
-              {group.name}
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {group.memberCount} members · {onlineCount} active
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full size-9 text-muted-foreground"
-          >
-            <Search size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full size-9 text-muted-foreground"
-          >
-            <Phone size={18} />
-          </Button>
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full size-9 text-muted-foreground"
-              onClick={() => setShowMenu(!showMenu)}
+    <div className="flex min-h-0 flex-1">
+      <div className="chat-main-panel">
+        {/* Header */}
+        <header className="chat-header">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              aria-label="Back to overview"
+              className="size-9 rounded-full flex items-center justify-center hover:bg-soft-clay transition-colors"
             >
-              <MoreVertical size={18} />
-            </Button>
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute right-0 top-full mt-1 z-50 app-card py-1 min-w-40 animate-app-scale-in">
-                  <button
-                    onClick={() => {
-                      setIsInviteModalOpen(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm text-left hover:bg-soft-clay font-medium"
-                  >
-                    Invite members
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleLeaveGroup();
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm text-left hover:bg-red-50 text-rose-500 font-medium flex items-center gap-2"
-                  >
-                    <LogOut size={14} />
-                    Leave group
-                  </button>
-                </div>
-              </>
-            )}
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="font-display text-lg font-extrabold text-foreground">
+                {group.name}
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {group.memberCount}{" "}
+                {group.memberCount === 1 ? "member" : "members"} ·{" "}
+                {group.category}
+              </p>
+            </div>
           </div>
+          <div className="flex items-center gap-1">
+            <Button size="sm" onClick={() => setIsAddExpenseOpen(true)}>
+              <Plus /> Add expense
+            </Button>
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full size-9 text-muted-foreground"
+                aria-label="Group options"
+                aria-expanded={showMenu}
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                <MoreVertical size={18} />
+              </Button>
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 z-50 app-card py-1 min-w-40 animate-app-scale-in">
+                    <button
+                      onClick={() => {
+                        setIsInviteModalOpen(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-soft-clay font-medium"
+                    >
+                      Invite members
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleLeaveGroup();
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-red-50 text-rose-500 font-medium flex items-center gap-2"
+                    >
+                      <LogOut size={14} />
+                      Leave group
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* View tabs */}
+        <div className="shrink-0 flex gap-1 px-6 py-2 border-b border-border/20 bg-muted/20">
+          {(
+            [
+              { id: "feed" as const, label: "Feed", icon: MessageCircle },
+              {
+                id: "balances" as const,
+                label: "Balances",
+                icon: WalletIcon,
+              },
+              { id: "activity" as const, label: "Activity", icon: Info },
+            ] as const
+          ).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setChatView(id)}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-display font-bold transition-all ${
+                chatView === id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
         </div>
-      </header>
 
-      {/* View tabs */}
-      <div className="shrink-0 flex gap-1 px-6 py-2 border-b border-border/20 bg-muted/20">
-        {(
-          [
-            { id: "feed" as const, label: "Feed", icon: MessageCircle },
-            {
-              id: "balances" as const,
-              label: "Balances",
-              icon: WalletIcon,
-            },
-            { id: "activity" as const, label: "Activity", icon: Info },
-          ] as const
-        ).map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setChatView(id)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-display font-bold transition-all ${
-              chatView === id
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <Icon size={14} />
-            {label}
-          </button>
-        ))}
-      </div>
+        <div className="chat-messages p-0 md:p-0 overflow-hidden flex flex-col flex-1">
+          {chatView === "feed" && (
+            <ChatFeed
+              group={group}
+              currentUser={currentUser}
+              messages={messages}
+              hasMore={hasMore}
+              loadMore={loadMore}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              sendMessage={sendMessage}
+              isUploading={isUploading}
+              uploadPreview={uploadPreview}
+              handleImageUpload={handleImageUpload}
+              fileInputRef={fileInputRef}
+              setIsAddExpenseOpen={setIsAddExpenseOpen}
+              setEditingExpense={setEditingExpense}
+              setDeletingExpense={setDeletingExpense}
+            />
+          )}
 
-      <div className="chat-messages p-0 md:p-0 overflow-hidden flex flex-col flex-1">
-        {chatView === "feed" && (
-          <ChatFeed
-            group={group}
-            currentUser={currentUser}
-            messages={messages}
-            hasMore={hasMore}
-            loadMore={loadMore}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            sendMessage={sendMessage}
-            isUploading={isUploading}
-            uploadPreview={uploadPreview}
-            handleImageUpload={handleImageUpload}
-            fileInputRef={fileInputRef}
-            setIsAddExpenseOpen={setIsAddExpenseOpen}
-            setEditingExpense={setEditingExpense}
-            setDeletingExpense={setDeletingExpense}
+          {chatView === "balances" && (
+            <div className="p-4 md:p-6 overflow-y-auto flex-1">
+              <ChatBalances
+                group={group}
+                onSettlePayment={setSettlingPayment}
+              />
+            </div>
+          )}
+
+          {chatView === "activity" && (
+            <div className="p-4 md:p-6 overflow-y-auto flex-1">
+              <ChatActivity group={group} />
+            </div>
+          )}
+        </div>
+
+        {/* Modals */}
+        <AddExpenseModal
+          key={isAddExpenseOpen ? "open" : "closed"}
+          isOpen={isAddExpenseOpen}
+          onClose={() => setIsAddExpenseOpen(false)}
+          groupId={group.id}
+          groupName={group.name}
+          members={group.members}
+        />
+        <InviteMemberModal
+          isOpen={isInviteModalOpen}
+          onOpenChange={setIsInviteModalOpen}
+          groupId={group.id}
+          groupName={group.name}
+          inviteCode={group.inviteCode}
+        />
+        {editingExpense && (
+          <AddExpenseModal
+            groupName={group.name}
+            members={group.members}
+            isOpen
+            onClose={() => setEditingExpense(null)}
+            groupId={group.id}
+            expense={editingExpense}
           />
         )}
-
-        {chatView === "balances" && (
-          <div className="p-4 md:p-6 overflow-y-auto flex-1">
-            <ChatBalances group={group} onSettlePayment={setSettlingPayment} />
-          </div>
+        {deletingExpense && (
+          <DeleteExpenseDialog
+            isOpen
+            onClose={() => setDeletingExpense(null)}
+            groupId={group.id}
+            expenseId={deletingExpense.id}
+            expenseTitle={deletingExpense.title}
+            expenseAmount={deletingExpense.amount}
+          />
         )}
-
-        {chatView === "activity" && (
-          <div className="p-4 md:p-6 overflow-y-auto flex-1">
-            <ChatActivity group={group} />
-          </div>
+        {settlingPayment && (
+          <MarkAsPaidDialog
+            isOpen
+            onClose={() => setSettlingPayment(null)}
+            groupId={group.id}
+            fromName={settlingPayment.from}
+            fromId={settlingPayment.fromId}
+            toName={settlingPayment.to}
+            toId={settlingPayment.toId}
+            amount={settlingPayment.amount}
+          />
         )}
       </div>
-
-      {/* Modals */}
-      <AddExpenseModal
-        key={isAddExpenseOpen ? "open" : "closed"}
-        isOpen={isAddExpenseOpen}
-        onClose={() => setIsAddExpenseOpen(false)}
-        groupId={group.id}
-        groupName={group.name}
-        members={group.members}
+      <GroupInfoSidebar
+        group={group}
+        onInvite={() => setIsInviteModalOpen(true)}
       />
-      <InviteMemberModal
-        isOpen={isInviteModalOpen}
-        onOpenChange={setIsInviteModalOpen}
-        groupId={group.id}
-        groupName={group.name}
-        inviteCode={group.inviteCode}
-      />
-      {editingExpense && (
-        <EditExpenseModal
-          isOpen
-          onClose={() => setEditingExpense(null)}
-          groupId={group.id}
-          expense={editingExpense}
-        />
-      )}
-      {deletingExpense && (
-        <DeleteExpenseDialog
-          isOpen
-          onClose={() => setDeletingExpense(null)}
-          groupId={group.id}
-          expenseId={deletingExpense.id}
-          expenseTitle={deletingExpense.title}
-          expenseAmount={deletingExpense.amount}
-        />
-      )}
-      {settlingPayment && (
-        <MarkAsPaidDialog
-          isOpen
-          onClose={() => setSettlingPayment(null)}
-          groupId={group.id}
-          fromName={settlingPayment.from}
-          fromId={settlingPayment.fromId}
-          toName={settlingPayment.to}
-          toId={settlingPayment.toId}
-          amount={settlingPayment.amount}
-        />
-      )}
     </div>
   );
 }
@@ -303,7 +305,10 @@ export function GroupChatLoading() {
       {/* Header Skeleton */}
       <header className="chat-header flex items-center justify-between border-b border-border/10">
         <div className="flex items-center gap-3">
-          <Skeleton className="md:hidden size-9 rounded-full" />
+          <Skeleton
+            aria-label="Back to overview"
+            className="size-9 rounded-full"
+          />
           <div className="space-y-2">
             <Skeleton className="h-5 w-28" />
             <Skeleton className="h-3 w-20" />
@@ -354,26 +359,6 @@ export function GroupChatLoading() {
           <Skeleton className="size-10 rounded-full" />
         </div>
       </div>
-    </div>
-  );
-}
-
-export function GroupChatEmpty() {
-  return (
-    <div className="chat-main-panel flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-500">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-6 border border-border/50 shadow-sm">
-        <MessageSquareDashed
-          className="size-10 text-muted-foreground/70"
-          strokeWidth={1.5}
-        />
-      </div>
-      <h2 className="font-display text-2xl font-semibold text-foreground tracking-tight mb-2">
-        Welcome to Fettl
-      </h2>
-      <p className="text-muted-foreground max-w-70 text-sm leading-relaxed">
-        Select a group from the sidebar to view expenses, balances, and
-        settlements in a unified conversation feed.
-      </p>
     </div>
   );
 }

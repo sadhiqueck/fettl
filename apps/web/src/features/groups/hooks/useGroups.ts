@@ -1,14 +1,28 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { apiClient } from "@/shared/lib/apiClient";
-import type { Group, GroupMember, ExpenseSplit } from "@fettl/shared";
-export type { Group, GroupMember, ExpenseSplit } from "@fettl/shared";
+import type { ExpenseSplit } from "@fettl/shared";
+export interface GroupMember {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  initial: string;
+  color: string;
+}
 import { toast } from "sonner";
 import { groupKeys } from "./queryKeys";
 
 /* ─── View Models ─── */
 
-/** Extends the shared Group type with UI-specific fields the API returns */
-export interface GroupData extends Group {
+export interface GroupData {
+  id: string;
+  name: string;
+  category: string;
+  memberCount: number;
   totalExpense: number;
   members: GroupMember[];
   lastActivity: string;
@@ -26,8 +40,12 @@ export interface GroupExpense {
   paidByAvatar?: string | null;
   date: string;
   notes?: string | null;
+  receiptUrl?: string | null;
   splitCount: number;
-  splits: ExpenseSplit[];
+  splits: (ExpenseSplit & {
+    percentage?: number | null;
+    shares?: number | null;
+  })[];
 }
 
 export interface GroupBalance {
@@ -56,10 +74,18 @@ export interface GroupActivity {
 }
 
 export interface GroupDetailsData extends GroupData {
+  inviteCode: string;
+  hasOlderExpenses: boolean;
   expenses: GroupExpense[];
   balances: GroupBalance[];
   settlements: GroupSettlement[];
-  pendingPayments: { id: string; payerId: string; receiverId: string; amount: number; note: string | null }[];
+  pendingPayments: {
+    id: string;
+    payerId: string;
+    receiverId: string;
+    amount: number;
+    note: string | null;
+  }[];
   activity: GroupActivity[];
 }
 
@@ -298,14 +324,45 @@ export function useMarkAsPaid() {
   });
 }
 
-
 export function useReviewPayment(groupId: string) {
   const cache = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "CONFIRMED" | "REJECTED" }) =>
-      apiClient.patch(`/groups/${groupId}/settlements/${id}`, { status }),
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: "CONFIRMED" | "REJECTED";
+    }) => apiClient.patch(`/groups/${groupId}/settlements/${id}`, { status }),
     onSuccess: () => toast.success("Payment reviewed"),
-    onError: () => toast.error("Couldn't review this payment. Check the current balances."),
-    onSettled: () => Promise.all([cache.invalidateQueries({ queryKey: groupKeys.all }), cache.invalidateQueries({ queryKey: ["analytics"] })]),
+    onError: () =>
+      toast.error("Couldn't review this payment. Check the current balances."),
+    onSettled: () =>
+      Promise.all([
+        cache.invalidateQueries({ queryKey: groupKeys.all }),
+        cache.invalidateQueries({ queryKey: ["analytics"] }),
+      ]),
+  });
+}
+
+export function useExpensePages(group: GroupDetailsData) {
+  type Page = Pick<GroupDetailsData, "expenses" | "hasOlderExpenses">;
+  return useInfiniteQuery({
+    queryKey: [...groupKeys.detail(group.id), "expenses"],
+    initialPageParam: "",
+    initialData: {
+      pages: [
+        { expenses: group.expenses, hasOlderExpenses: group.hasOlderExpenses },
+      ],
+      pageParams: [""],
+    },
+    queryFn: async ({ pageParam }) =>
+      (
+        await apiClient.get<Page>(`/groups/${group.id}/expenses`, {
+          params: { cursor: pageParam || undefined },
+        })
+      ).data,
+    getNextPageParam: (last) =>
+      last.hasOlderExpenses ? last.expenses.at(-1)?.id : undefined,
   });
 }

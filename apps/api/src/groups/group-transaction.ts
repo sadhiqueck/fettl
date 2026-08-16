@@ -9,7 +9,9 @@ export function withGroupLock<T>(
   work: (tx: Prisma.TransactionClient) => Promise<T>,
 ) {
   return prisma.$transaction(async (tx) => {
-    const group = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`;
+    const group = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`;
     if (!group.length) throw new NotFoundException('Group not found');
     return work(tx);
   });

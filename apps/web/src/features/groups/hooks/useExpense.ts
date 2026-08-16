@@ -11,19 +11,20 @@ export const useAddExpense = (groupId: string) => {
     mutationFn: async (expenseData: CreateExpenseInput) => {
       const { data } = await apiClient.post(
         `/groups/${groupId}/expenses`,
-        expenseData
+        expenseData,
       );
       return data;
     },
     onSuccess: () => {
       toast.success("Expense added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (error: unknown) => {
       if (axios.isAxiosError(error)) {
         toast.error(
           error.response?.data?.message ||
-            "Failed to add expense. Please try again."
+            "Failed to add expense. Please try again.",
         );
       } else {
         toast.error("An unexpected error occurred.");

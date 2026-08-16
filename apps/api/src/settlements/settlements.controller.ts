@@ -56,11 +56,22 @@ export class SettlementsController {
     @Param('id') groupId: string,
     @Param('paymentId') paymentId: string,
     @GetUser('id') userId: string,
-    @Body(new ZodValidationPipe(z.object({ status: z.enum(['CONFIRMED', 'REJECTED']) })))
+    @Body(
+      new ZodValidationPipe(
+        z.object({ status: z.enum(['CONFIRMED', 'REJECTED']) }),
+      ),
+    )
     body: { status: 'CONFIRMED' | 'REJECTED' },
   ) {
-    const settlement = await this.settlementsService.review(userId, groupId, paymentId, body.status);
-    this.chatGateway.server.to(`group_${groupId}`).emit('settlement:updated', { groupId });
+    const settlement = await this.settlementsService.review(
+      userId,
+      groupId,
+      paymentId,
+      body.status,
+    );
+    this.chatGateway.server
+      .to(`group_${groupId}`)
+      .emit('settlement:updated', { groupId });
     return { settlement };
   }
 }

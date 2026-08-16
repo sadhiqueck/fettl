@@ -21,5 +21,5 @@ export default function GroupDetailsPage() {
     );
   }
 
-  return <GroupChatPanel group={group} />;
+  return <GroupChatPanel key={group.id} group={group} />;
 }

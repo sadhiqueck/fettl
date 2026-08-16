@@ -6,7 +6,7 @@ describe("Formatting Utilities", () => {
     it("formats standard amounts correctly and preserves paise", () => {
       expect(formatCurrency(1234.5)).toBe("₹1,234.5");
     });
-    
+
     it("handles zero correctly", () => {
       expect(formatCurrency(0)).toBe("₹0");
     });

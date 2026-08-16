@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { ChevronDown, Users, Receipt, Wallet, Plus } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/components/ui/tooltip";
 import type { GroupDetailsData } from "@/features/groups/hooks/useGroups";
 import { formatCurrency } from "@/shared/lib/format";
 
@@ -47,21 +55,25 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground flex items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-500" />
-                {expenseCount} total expenses
+                {expenseCount} recent expenses
               </span>
             </div>
-            {Object.entries(categoryCounts).slice(0, 4).map(([cat, count]) => (
-              <div
-                key={cat}
-                className="flex items-center justify-between text-xs text-muted-foreground"
-              >
-                <span className="capitalize">{cat.toLowerCase()}</span>
-                <span className="font-semibold text-foreground">{count}</span>
-              </div>
-            ))}
+            {Object.entries(categoryCounts)
+              .slice(0, 4)
+              .map(([cat, count]) => (
+                <div
+                  key={cat}
+                  className="flex items-center justify-between text-xs text-muted-foreground"
+                >
+                  <span className="capitalize">{cat.toLowerCase()}</span>
+                  <span className="font-semibold text-foreground">{count}</span>
+                </div>
+              ))}
             <div className="pt-2 border-t border-border/40">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Total spent</span>
+                <span className="text-xs text-muted-foreground">
+                  Total spent
+                </span>
                 <span className="text-sm font-bold">
                   {formatCurrency(group.totalExpense)}
                 </span>
@@ -81,6 +93,7 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                aria-label="Invite member"
                 onClick={onInvite}
                 className="size-7 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
@@ -114,7 +127,9 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{member.name}</p>
+                  <p className="text-sm font-semibold truncate">
+                    {member.name}
+                  </p>
                   {balance && balance.balance !== 0 && (
                     <p
                       className={`text-[10px] font-medium ${balance.balance > 0 ? "text-emerald-500" : "text-rose-500"}`}
@@ -136,7 +151,7 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
         <div className="chat-info-card">
           <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2">
             <Wallet size={16} className="text-primary" />
-            Pending settlements
+            Suggested payments
           </h3>
           <p className="text-xs text-muted-foreground">
             {group.settlements.length} payment

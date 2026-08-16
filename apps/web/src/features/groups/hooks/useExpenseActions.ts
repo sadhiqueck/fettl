@@ -25,7 +25,8 @@ export const useUpdateExpense = (groupId: string) => {
     },
     onSuccess: () => {
       toast.success("Expense updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (error: unknown) => {
       if (axios.isAxiosError(error)) {
@@ -54,7 +55,8 @@ export const useDeleteExpense = (groupId: string) => {
     },
     onSuccess: () => {
       toast.success("Expense deleted. Balances have been updated.");
-      queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (error: unknown) => {
       if (axios.isAxiosError(error)) {

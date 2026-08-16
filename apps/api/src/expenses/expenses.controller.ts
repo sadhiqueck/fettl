@@ -49,7 +49,12 @@ export class ExpensesController {
     @GetUser('id') userId: string,
     @Body() body: UpdateExpenseInput,
   ) {
-    const result = await this.expensesService.updateExpense(userId, groupId, expenseId, body);
+    const result = await this.expensesService.updateExpense(
+      userId,
+      groupId,
+      expenseId,
+      body,
+    );
 
     // Broadcast update to all connected group members
     this.chatGateway.server
@@ -65,7 +70,11 @@ export class ExpensesController {
     @Param('expenseId') expenseId: string,
     @GetUser('id') userId: string,
   ) {
-    const result = await this.expensesService.deleteExpense(userId, groupId, expenseId);
+    const result = await this.expensesService.deleteExpense(
+      userId,
+      groupId,
+      expenseId,
+    );
 
     // Broadcast deletion to all connected group members
     this.chatGateway.server
