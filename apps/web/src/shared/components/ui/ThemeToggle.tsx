@@ -1,7 +1,11 @@
 import { Check, Moon, Sun, Monitor } from "lucide-react";
 import { useTheme, type ThemeColor } from "@/context/ThemeContext";
 import { Button } from "@/shared/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/components/ui/tooltip";
 
 const COLORS: { name: string; value: ThemeColor; className: string }[] = [
   { name: "Indigo", value: "indigo", className: "bg-indigo-500" },
@@ -17,12 +21,16 @@ export function ThemeToggle() {
     <div className="space-y-6">
       {/* Mode Selection */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">Appearance</label>
+        <label className="text-sm font-medium text-foreground">
+          Appearance
+        </label>
         <div className="grid grid-cols-3 gap-2">
           <Button
             variant={themeMode === "light" ? "default" : "outline"}
             className={`w-full justify-start ${
-              themeMode === "light" ? "border-primary" : "border-border text-muted-foreground hover:text-foreground"
+              themeMode === "light"
+                ? "border-primary"
+                : "border-border text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setThemeMode("light")}
           >
@@ -32,7 +40,9 @@ export function ThemeToggle() {
           <Button
             variant={themeMode === "dark" ? "default" : "outline"}
             className={`w-full justify-start ${
-              themeMode === "dark" ? "border-primary" : "border-border text-muted-foreground hover:text-foreground"
+              themeMode === "dark"
+                ? "border-primary"
+                : "border-border text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setThemeMode("dark")}
           >
@@ -42,7 +52,9 @@ export function ThemeToggle() {
           <Button
             variant={themeMode === "system" ? "default" : "outline"}
             className={`w-full justify-start ${
-              themeMode === "system" ? "border-primary" : "border-border text-muted-foreground hover:text-foreground"
+              themeMode === "system"
+                ? "border-primary"
+                : "border-border text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setThemeMode("system")}
           >
@@ -54,12 +66,16 @@ export function ThemeToggle() {
 
       {/* Color Theme Selection */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">Color Theme</label>
+        <label className="text-sm font-medium text-foreground">
+          Color Theme
+        </label>
         <div className="flex flex-wrap gap-3">
           {COLORS.map((color) => (
             <Tooltip key={color.value}>
               <TooltipTrigger asChild>
                 <button
+                  aria-label={color.name}
+                  aria-pressed={themeColor === color.value}
                   onClick={() => setThemeColor(color.value)}
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${
                     themeColor === color.value

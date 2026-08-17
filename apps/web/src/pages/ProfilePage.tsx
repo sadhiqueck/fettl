@@ -1,3 +1,5 @@
+import { ThemeToggle } from "@/shared/components/ui/ThemeToggle";
+import { toast } from "sonner";
 import { useState } from "react";
 import { VPA_REGEX } from "@fettl/shared";
 import { Input } from "@/shared/components/ui/input";
@@ -17,7 +19,11 @@ import {
   Bell,
   User as UserIcon,
 } from "lucide-react";
-import { useUpdateProfile, useUserProfile, useLogout } from "@/shared/hooks/useUser";
+import {
+  useUpdateProfile,
+  useUserProfile,
+  useLogout,
+} from "@/shared/hooks/useUser";
 import { usePushNotifications } from "@/shared/hooks/usePushNotifications";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
@@ -33,6 +39,7 @@ export default function ProfilePage() {
 
   const {
     isSupported,
+    subscription,
     permission,
     loading: pushLoading,
     subscribe,
@@ -48,10 +55,17 @@ export default function ProfilePage() {
   const isVpaValid = vpa.length === 0 || VPA_REGEX.test(vpa);
 
   const handleSaveChanges = () => {
-    updateProfileMutation.mutate({
-      name,
-      ...(vpa && isVpaValid ? { vpa } : {}),
-    });
+    updateProfileMutation.mutate(
+      {
+        name,
+        vpa: vpa.trim() || null,
+      },
+      {
+        onSuccess: () => toast.success("Profile saved"),
+        onError: () =>
+          toast.error("Could not save your profile. Check your details."),
+      },
+    );
   };
 
   const getInitials = (fullname: string) => {
@@ -159,23 +173,39 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="px-6 pb-6 space-y-5">
               <div className="space-y-2">
-                <Label className="font-display font-bold text-sm">
+                <Label
+                  htmlFor="profile-name"
+                  className="font-display font-bold text-sm"
+                >
                   Full name
                 </Label>
                 <Input
+                  id="profile-name"
+                  maxLength={80}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="clay-input"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-display font-bold text-sm">
+                <Label
+                  htmlFor="profile-email"
+                  className="font-display font-bold text-sm"
+                >
                   Email address
                 </Label>
-                <Input value={email} className="clay-input" disabled />
+                <Input
+                  id="profile-email"
+                  value={email}
+                  className="clay-input"
+                  disabled
+                />
               </div>
               <div className="space-y-2">
-                <Label className="font-display font-bold text-sm flex items-center gap-2">
+                <Label
+                  htmlFor="profile-vpa"
+                  className="font-display font-bold text-sm flex items-center gap-2"
+                >
                   UPI ID (VPA)
                   {vpa && isVpaValid && (
                     <span className="app-badge app-badge-green text-[10px] px-2 py-0 flex items-center gap-1">
@@ -190,6 +220,7 @@ export default function ProfilePage() {
                     size={18}
                   />
                   <Input
+                    id="profile-vpa"
                     value={vpa}
                     onChange={(e) => setVpa(e.target.value.trim())}
                     placeholder="yourname@upi"
@@ -235,6 +266,9 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
+          <section className="app-card p-6">
+            <ThemeToggle />
+          </section>
           {/* Notifications Card */}
           <Card className="chat-info-card border-0 ring-0 p-0 shadow-none">
             <CardHeader className="pb-4 pt-6 px-6">
@@ -251,7 +285,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">
                   Push notifications are not supported on your current browser.
                 </p>
-              ) : permission === "granted" ? (
+              ) : subscription ? (
                 <div className="flex items-center gap-2 text-green-600 font-medium">
                   <CheckCircle2 size={18} />
                   Notifications are enabled
@@ -263,7 +297,10 @@ export default function ProfilePage() {
                 </p>
               ) : (
                 <button
-                  onClick={() => subscribe()}
+                  onClick={async () => {
+                    if (!(await subscribe()))
+                      toast.error("Could not enable notifications.");
+                  }}
                   disabled={pushLoading}
                   className={`clay-btn-primary px-6 text-sm ${pushLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
