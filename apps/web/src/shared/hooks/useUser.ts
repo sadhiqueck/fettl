@@ -2,7 +2,6 @@ import { apiClient } from "@/shared/lib/apiClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import type { User, UpdateProfileInput } from "@fettl/shared";
-import { disconnectSocket } from "@/shared/lib/socket";
 import { toast } from "sonner";
 
 const userKeys = {
@@ -57,7 +56,6 @@ export function useLogout() {
   return useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
-      disconnectSocket();
       queryClient.clear();
       navigate("/login", { replace: true });
     },

@@ -5,7 +5,6 @@ import {
   PublicRoute,
 } from "@/features/auth/components/RouteGuards";
 import { ChatAppLayout } from "@/shared/components/layout/ChatAppLayout";
-import { SocketProvider } from "@/context/SocketProvider";
 import { withSuspense } from "@/shared/components/layout/withSuspense";
 import { RouteThemeMode } from "./RouteThemeMode";
 
@@ -51,11 +50,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "onboarding", element: withSuspense(OnboardingPage) },
           {
-            element: (
-              <SocketProvider>
-                <ChatAppLayout />
-              </SocketProvider>
-            ),
+            element: <ChatAppLayout />,
             children: [
               { path: "dashboard", element: withSuspense(DashboardPage) },
               { path: "groups/:id", element: withSuspense(GroupDetailsPage) },

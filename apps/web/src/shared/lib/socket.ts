@@ -9,6 +9,3 @@ export function getSocket() {
   });
   return socket;
 }
-export function disconnectSocket() {
-  socket?.disconnect();
-}

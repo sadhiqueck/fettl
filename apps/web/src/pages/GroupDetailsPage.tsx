@@ -1,3 +1,4 @@
+import { SocketProvider } from "@/context/SocketProvider";
 import { useParams } from "react-router-dom";
 import { useGroup } from "@/features/groups/hooks/useGroups";
 import {
@@ -21,5 +22,9 @@ export default function GroupDetailsPage() {
     );
   }
 
-  return <GroupChatPanel key={group.id} group={group} />;
+  return (
+    <SocketProvider>
+      <GroupChatPanel key={group.id} group={group} />
+    </SocketProvider>
+  );
 }
