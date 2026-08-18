@@ -15,8 +15,11 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('identifies the running service', () => {
+      expect(appController.status()).toEqual({
+        service: 'fettl-api',
+        status: 'ok',
+      });
     });
   });
 });

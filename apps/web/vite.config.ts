@@ -16,14 +16,13 @@ export default defineConfig({
       ),
     },
   },
-  server: {
-    allowedHosts: true,
-  },
   optimizeDeps: {
     include: ["@fettl/shared"],
   },
   test: {
-    environment: "jsdom",
+    environment: "node",
+    maxWorkers: 2,
+    pool: "threads",
     globals: true,
   }
 })
