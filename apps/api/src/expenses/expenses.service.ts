@@ -35,7 +35,20 @@ async function postBalances(
   expense: ExpenseAmounts,
   direction: 1 | -1,
 ) {
-  for (const [userId, change] of balanceChanges(expense)) {
+  const changes = balanceChanges(expense);
+  if (direction === -1) {
+    const affected = [...changes]
+      .filter(([, delta]) => delta !== 0)
+      .map(([id]) => id);
+    const active = await tx.groupMember.count({
+      where: { groupId, isActive: true, userId: { in: affected } },
+    });
+    if (active !== affected.length)
+      throw new BadRequestException(
+        'This change would reopen a balance for a member who has left the group.',
+      );
+  }
+  for (const [userId, change] of changes) {
     if (change === 0) continue;
     const delta = direction * change;
     await tx.groupMemberBalance.upsert({

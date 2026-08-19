@@ -570,7 +570,7 @@ export class GroupsService {
         data: {
           groupId,
           userId,
-          type: ActivityType.GROUP_UPDATED,
+          type: ActivityType.MEMBER_JOINED,
           metadata: { action: actionLogText },
         },
       });
@@ -699,7 +699,7 @@ export class GroupsService {
         data: {
           groupId,
           userId,
-          type: ActivityType.GROUP_UPDATED,
+          type: ActivityType.MEMBER_LEFT,
           metadata: { action: 'left the group' },
         },
       });

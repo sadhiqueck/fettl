@@ -117,6 +117,13 @@ describe('group ledger over HTTP', () => {
       ),
     );
     expect(await balance()).toBe(0);
+    await guest.session.post(path + '/leave').expect(201);
+    await payer.session.delete(expense).expect(400);
+    expect(await balance()).toBe(0);
+    await guest.session
+      .post('/groups/join')
+      .send({ inviteCode: group.inviteCode })
+      .expect(201);
     const results = await Promise.all(
       [1, 2].map(() => payer.session.delete(expense)),
     );
