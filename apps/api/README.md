@@ -1,98 +1,19 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Running Fettl
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Fettl uses React and Vite, a NestJS API, and PostgreSQL. Use Node 22.12 or later and pnpm 10. Run commands from the repository root.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Local development
 
-## Description
+1. Copy `apps/api/.env.example` to `apps/api/.env`. Set a unique JWT signing secret and a 64-character hexadecimal VPA encryption key. Keep the encryption key stable across restarts. Set `RESEND_API_KEY` and a verified `EMAIL_FROM` for email sign-in, or configure Google OAuth credentials and callback. Image uploads require the S3-compatible bucket settings.
+2. Run `docker compose up --build`. The development stack serves the app at `http://localhost:5173` and the API at `http://localhost:3000`. Compose runs versioned migrations before starting the API.
+3. For native development, start PostgreSQL with `docker compose up -d postgres`, run `pnpm install --frozen-lockfile`, then `pnpm --filter @fettl/api exec prisma migrate deploy` and `pnpm dev`.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Existing databases
 
-## Project setup
+For an installation originally created with `prisma db push`, back up PostgreSQL and verify that its schema matches the baseline migration before marking `20260812000000_baseline` applied with `prisma migrate resolve --applied 20260812000000_baseline`. Use the API workspace for Prisma commands. On an empty database, run migrate deploy directly. The following migrations reconstruct balances from recorded expenses and confirmed payments and grant access to existing receipt, chat, and avatar files. Schedule the balance migration during a quiet period because it locks ledger writes.
 
-```bash
-$ pnpm install
-```
+## Verification and release
 
-## Compile and run the project
+Run `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`. Run `pnpm --filter @fettl/api test:e2e --runInBand` with an isolated migrated database and the required test environment variables. The integration test creates two temporary accounts and exercises the HTTP ledger.
 
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Serve `apps/web/dist` with SPA fallback to index.html. Set `VITE_API_URL` before building. Run the API with `NODE_ENV=production`, HTTPS frontend and API URLs, and the configured secrets. Use `pnpm --filter @fettl/api start:prod` after migrations and build. WebSocket rooms currently run in one API process. Sign-in delivery, Google redirect URIs, private object storage, and optional push delivery need an acceptance check using the deployment's provider accounts.

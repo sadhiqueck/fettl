@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: fettl
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -20,41 +20,36 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+    env_file: ./apps/api/.env
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/fettl?schema=public
-      - FRONTEND_URL=https://app.sqck.online
-      - API_URL=https://api.sqck.online
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - API_URL=${API_URL:-http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy
-    # volumes: # 
-    #   - .:/app
-    #   - /app/node_modules # (Keeps the container's node_modules safe)
-
-    # We override the CMD to ensure the database is seeded/pushed before starting the NestJS server.
-    command: sh -c "pnpm --filter @fettl/api exec prisma db push && pnpm --filter @fettl/api dev"
+    command: sh -c "pnpm --filter @fettl/api exec prisma migrate deploy && pnpm --filter @fettl/api dev"
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile.dev
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     environment:
-      - VITE_API_URL=https://api.sqck.online/
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=${WEB_HOST:-localhost}
+      - VITE_API_URL=${API_URL:-http://localhost:3000}
     depends_on:
       - api
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
 
   cloudflared:
+    profiles: [tunnel]
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-}
     depends_on:
       - web
       - api

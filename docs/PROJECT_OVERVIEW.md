@@ -2,6 +2,8 @@
 
 > A modern, collaborative expense management system designed to seamlessly track group expenses, optimize debts, and facilitate transparent settlements.
 
+The V1 implementation uses email codes and Google sign-in. Expenses and confirmed payments update integer balances under a per-group database lock. Payers report payments and receivers confirm or decline them from the group’s Balances tab. The API runbook documents setup, migrations and verification. The architecture review below records earlier planning assumptions.
+
 ---
 
 ## Table of Contents
@@ -658,7 +660,7 @@ Step 5: ✅ Real-time expense & chat notifications
 - [x] WebSocket setup & authentication
 - [x] Real-time group chat
 - [x] Receipt image upload (Cloudflare R2)
-- [x] AI receipt parsing (Gemini Pro Vision)
+- [ ] AI receipt parsing (planned; receipts currently support image attachment)
 - [x] Real-time expense broadcast
 - [x] Web Push API background notifications
 - [x] PWA (Progressive Web App) mobile installation
