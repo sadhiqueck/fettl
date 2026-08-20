@@ -25,11 +25,6 @@ export const router = createBrowserRouter([
   {
     element: <RouteThemeMode />,
     children: [
-      {
-        path: "/",
-        element: <Navigate to="/dashboard" replace />,
-      },
-
       // Public static pages (no auth required)
       { path: "terms", element: withSuspense(TermsPage) },
       { path: "privacy", element: withSuspense(PrivacyPage) },
@@ -40,6 +35,7 @@ export const router = createBrowserRouter([
       {
         element: <PublicRoute />,
         children: [
+          { index: true, element: <Navigate to="/login" replace /> },
           { path: "login", element: <AuthPage /> },
           { path: "signup", element: <AuthPage /> },
         ],
