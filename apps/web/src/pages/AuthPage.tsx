@@ -152,12 +152,6 @@ export default function AuthPage() {
           <Link to="/privacy">Privacy</Link>
         </footer>
       </section>
-      <aside className="auth-art" aria-label="About Fettl">
-        <div>
-          <h2>Shared expenses</h2>
-          <p>Track what everyone paid and see who owes whom.</p>
-        </div>
-      </aside>
     </main>
   );
 }

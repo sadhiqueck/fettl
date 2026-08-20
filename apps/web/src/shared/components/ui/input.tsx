@@ -8,12 +8,10 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        // Exact computed styles from reference (with light mode fallback)
-        "h-9 w-full min-w-0 rounded-2xl border border-border dark:border-[#4d4d4d] bg-background dark:bg-[#0f0f0f] px-3 py-2",
-        "text-sm font-medium text-foreground dark:text-[#d4d4d4] outline-none transition-all",
+        "h-9 w-full min-w-0 rounded-md border border-input bg-card px-3 py-2",
+        "text-sm text-foreground outline-none transition-colors",
         "placeholder:text-muted-foreground",
-        // Focus: primary ring matching brand
-        "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30",
+        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
         // File input
         "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
         // States
