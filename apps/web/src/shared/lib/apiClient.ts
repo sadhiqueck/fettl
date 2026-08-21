@@ -9,9 +9,11 @@ export const apiClient = axios.create({
 });
 let refresh: Promise<unknown> | undefined;
 export function refreshSession() {
-  refresh ??= apiClient.post("/auth/refresh").finally(() => {
-    refresh = undefined;
-  });
+  refresh ??= apiClient
+    .post("/auth/refresh", undefined, { timeout: 10_000 })
+    .finally(() => {
+      refresh = undefined;
+    });
   return refresh;
 }
 apiClient.interceptors.response.use(undefined, async (error: AxiosError) => {

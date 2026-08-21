@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useUserProfile } from "@/shared/hooks/useUser";
 import { userKeys } from "@/shared/hooks/queryKeys";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -13,6 +14,10 @@ import { GoogleIcon } from "@/shared/components/ui/icons";
 export default function AuthPage() {
   const signup = useLocation().pathname === "/signup";
   const navigate = useNavigate();
+  const { error: sessionError } = useUserProfile();
+  const sessionUnavailable =
+    sessionError &&
+    !(isAxiosError(sessionError) && sessionError.response?.status === 401);
   const cache = useQueryClient();
   const { sendOtp, verifyOtp, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
@@ -43,6 +48,11 @@ export default function AuthPage() {
                 ? "Create a group and start sharing expenses."
                 : "Sign in to see your groups and balances."}
           </p>
+          {sessionUnavailable && (
+            <div role="status" className="mb-4 text-sm text-muted-foreground">
+              We couldn’t check your session. You can try signing in below.
+            </div>
+          )}
           <form
             onSubmit={(event) => {
               event.preventDefault();

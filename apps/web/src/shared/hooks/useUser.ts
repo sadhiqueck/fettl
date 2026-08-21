@@ -9,13 +9,7 @@ const userKeys = {
 };
 
 async function fetchUserProfile(): Promise<User> {
-  const { data } = await apiClient.get<User>("/users/me", {
-    headers: {
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    },
-  });
+  const { data } = await apiClient.get<User>("/users/me", { timeout: 10_000 });
   return data;
 }
 
@@ -32,6 +26,7 @@ export function useUserProfile() {
   return useQuery({
     queryKey: userKeys.profile,
     queryFn: fetchUserProfile,
+    networkMode: "always",
     staleTime: 1000 * 60 * 5,
     retry: false, // don't retry 401s so route guards resolve quickly
   });

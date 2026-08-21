@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios";
 import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUserProfile } from "@/shared/hooks/useUser";
@@ -6,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { FullAppSkeleton } from "@/shared/components/layout/FullAppSkeleton";
 
 export function ProtectedRoute() {
-  const { data: user, isLoading, isError, error, refetch } = useUserProfile();
+  const { data: user, isLoading, isError } = useUserProfile();
   const location = useLocation();
 
   useEffect(() => {
@@ -24,16 +23,6 @@ export function ProtectedRoute() {
     return <FullAppSkeleton />;
   }
 
-  if (isError && !(isAxiosError(error) && error.response?.status === 401)) {
-    return (
-      <main className="state-panel m-auto">
-        <h1>Unable to load your account</h1>
-        <button className="clay-btn-secondary" onClick={() => refetch()}>
-          Try again
-        </button>
-      </main>
-    );
-  }
   if (isError || !user) {
     return <Navigate to="/login" replace />;
   }
