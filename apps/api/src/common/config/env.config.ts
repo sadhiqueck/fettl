@@ -1,3 +1,4 @@
+import { parseFrontendOrigins } from './browser-origin';
 import { z } from 'zod';
 
 export const envSchema = z
@@ -21,7 +22,14 @@ export const envSchema = z
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
-    FRONTEND_URL: z.string().url(),
+    FRONTEND_URL: z.string().refine((value) => {
+      try {
+        parseFrontendOrigins(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }, 'Expected a comma-separated list of HTTP(S) origins, with the sign-in destination first'),
     MAX_GROUP_MEMBERS: z.coerce.number().default(50),
     VPA_ENCRYPTION_KEY: z.string().min(1).optional(),
     VAPID_PUBLIC_KEY: z.string().min(1).optional(),

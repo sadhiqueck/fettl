@@ -1,3 +1,4 @@
+import { parseFrontendOrigins } from '../common/config/browser-origin';
 import {
   Controller,
   Post,
@@ -36,9 +37,10 @@ export class AuthController {
   }
 
   private getFrontendUrl() {
-    return (
-      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173'
-    ).replace(/\/$/, '');
+    const [primary] = parseFrontendOrigins(
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173',
+    );
+    return primary;
   }
 
   private setCookies(
