@@ -2,20 +2,20 @@ import { cva } from "class-variance-authority";
 
 export const buttonVariants = cva(
   // Base
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium tracking-[-0.2px] whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium tracking-[-0.2px] whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:brightness-95",
+        default: "border border-primary bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.16),0_1px_2px_rgba(0,0,0,.16)] hover:brightness-95",
         secondary: "bg-secondary text-secondary-foreground hover:opacity-90",
-        outline: "border border-border bg-card text-foreground hover:bg-muted",
+        outline: "border border-border bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,.04)] hover:bg-muted",
         glassyInverted: "bg-foreground text-background hover:opacity-90",
         ghost: "text-foreground hover:bg-muted",
         destructive: "bg-destructive text-white hover:brightness-90",
         link: "text-foreground underline underline-offset-4",
       },
       size: {
-        default: "h-10 px-4 py-2.5",
+        default: "h-9 px-3 py-2",
         xs: "h-7 px-2.5 text-xs [&_svg:not([class*='size-'])]:size-3",
         sm: "h-9 px-3",
         lg: "h-11 px-5 text-base",

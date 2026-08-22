@@ -34,10 +34,10 @@ export default function AuthPage() {
   return (
     <main className="auth-page">
       <section className="auth-form-panel">
-        <Link to="/" className="auth-brand">
-          <img src="/icon-192x192.png" width="35" height="35" alt="" /> Fettl
-        </Link>
         <div className="auth-form">
+          <Link to="/" className="auth-brand justify-center">
+            <img src="/icon-192x192.png" width="35" height="35" alt="" /> Fettl
+          </Link>
           <h1>
             {sent
               ? "Check your email"
@@ -56,6 +56,18 @@ export default function AuthPage() {
             <div role="status" className="mb-4 text-sm text-muted-foreground">
               We couldn’t check your session. You can try signing in below.
             </div>
+          )}
+          {!sent && (
+            <>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={loginWithGoogle}
+              >
+                <GoogleIcon size={18} /> Continue with Google
+              </Button>
+              <div className="auth-or">or continue with email</div>
+            </>
           )}
           <form
             onSubmit={(event) => {
@@ -144,14 +156,6 @@ export default function AuthPage() {
             </Button>
           ) : (
             <>
-              <div className="auth-or">or</div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={loginWithGoogle}
-              >
-                <GoogleIcon size={18} /> Continue with Google
-              </Button>
               <p className="auth-switch">
                 {signup ? "Already have an account?" : "New to Fettl?"}{" "}
                 <Link to={signup ? "/login" : "/signup"}>
