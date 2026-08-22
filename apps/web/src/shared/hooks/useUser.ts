@@ -27,6 +27,7 @@ export function useUserProfile() {
     queryKey: userKeys.profile,
     queryFn: fetchUserProfile,
     networkMode: "always",
+    retryOnMount: false,
     staleTime: 1000 * 60 * 5,
     retry: false, // don't retry 401s so route guards resolve quickly
   });

@@ -45,7 +45,7 @@ export function ProtectedRoute() {
 }
 
 export function PublicRoute() {
-  const { data: user, isLoading, isError } = useUserProfile();
+  const { data: user, isLoading, isError, error } = useUserProfile();
 
   if (isLoading) {
     return (
@@ -60,5 +60,5 @@ export function PublicRoute() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return <Outlet context={error} />;
 }

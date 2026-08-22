@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+} from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useUserProfile } from "@/shared/hooks/useUser";
 import { userKeys } from "@/shared/hooks/queryKeys";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -14,7 +18,7 @@ import { GoogleIcon } from "@/shared/components/ui/icons";
 export default function AuthPage() {
   const signup = useLocation().pathname === "/signup";
   const navigate = useNavigate();
-  const { error: sessionError } = useUserProfile();
+  const sessionError = useOutletContext<Error | null>();
   const sessionUnavailable =
     sessionError &&
     !(isAxiosError(sessionError) && sessionError.response?.status === 401);

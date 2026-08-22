@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { apiClient } from "@/shared/lib/apiClient";
-import { ProtectedRoute } from "./RouteGuards";
+import AuthPage from "@/pages/AuthPage";
+import { ProtectedRoute, PublicRoute } from "./RouteGuards";
 
 vi.mock("@/shared/lib/apiClient", () => ({
   apiClient: { get: vi.fn() },
@@ -31,14 +32,16 @@ it.each([
             <Route element={<ProtectedRoute />}>
               <Route path="*" element={<h1>Private workspace</h1>} />
             </Route>
-            <Route path="/login" element={<h1>Sign in</h1>} />
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<AuthPage />} />
+            </Route>
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Sign in" }),
+      await screen.findByRole("heading", { name: "Welcome back" }),
     ).toBeTruthy();
     expect(screen.queryByText("Private workspace")).toBeNull();
   },
