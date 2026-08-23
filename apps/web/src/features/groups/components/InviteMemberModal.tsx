@@ -13,7 +13,6 @@ import {
 } from "@/shared/components/ui/avatar";
 import { Input } from "@/shared/components/ui/input";
 import {
-  Users as GroupIcon,
   Check as CheckIcon,
   Copy,
   Share2,
@@ -88,25 +87,22 @@ export function InviteMemberModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm text-center flex flex-col items-center p-8">
-        <div className="app-card p-4 mb-4 bg-soft-clay rounded-full">
-          <GroupIcon size={32} className="text-primary" />
-        </div>
-        <DialogTitle className="font-display text-xl font-bold mb-2">
-          Invite Members
+      <DialogContent className="max-w-md">
+        <DialogTitle className="text-base font-semibold">
+          Invite members
         </DialogTitle>
-        <DialogDescription className="text-sm text-muted-foreground mb-6">
-          Share this code with your friends so they can join {groupName}.
+        <DialogDescription>
+          Share this code or link to invite someone to {groupName}.
         </DialogDescription>
 
-        <div className="w-full bg-soft-clay p-4 rounded-2xl flex items-center justify-between mb-6 shadow-inner">
-          <span className="font-mono text-xl font-bold tracking-widest text-foreground select-all">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-3">
+          <span className="select-all font-mono text-base font-semibold tracking-widest text-foreground">
             {inviteCode || "No Code"}
           </span>
           <Button
-            variant="ghost"
-            size="icon"
-            className="clay-btn-ghost size-10 rounded-xl"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Copy invite code"
             onClick={() => {
               if (inviteCode) {
                 navigator.clipboard.writeText(inviteCode);
@@ -124,7 +120,7 @@ export function InviteMemberModal({
         </div>
 
         <Button
-          className="clay-btn-primary w-full py-6 text-sm font-display flex items-center gap-2 justify-center shadow-lg"
+          className="w-full"
           onClick={async () => {
             if (navigator.share && inviteCode) {
               try {
@@ -146,16 +142,17 @@ export function InviteMemberModal({
           }}
         >
           <Share2 size={18} />
-          Share Invite Code
+          Share invite link
         </Button>
 
-        <div className="w-full mt-6">
+        <div>
           <div className="relative">
             <Input
               name="email"
               type="text"
-              placeholder="Search users by email..."
-              className="clay-input w-full h-12 text-sm pl-4 pr-10"
+              placeholder="Search by email"
+              aria-label="Search users by email"
+              className="pr-10"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -165,14 +162,14 @@ export function InviteMemberModal({
           </div>
 
           {email.length >= 3 && searchResults && searchResults.length > 0 && (
-            <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2 text-left">
-                Search Results
+            <div className="mt-3 max-h-40 space-y-1 overflow-y-auto">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Search results
               </p>
               {searchResults.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-3 bg-soft-clay rounded-xl border border-border/50"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-2"
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
                     <Avatar className="size-8">
@@ -192,7 +189,6 @@ export function InviteMemberModal({
                   </div>
                   <Button
                     size="sm"
-                    className="clay-btn-primary px-3 rounded-full h-8"
                     onClick={() => handleConfirmAdd(user.email, user.name)}
                     disabled={addMemberByEmailMutation.isPending}
                   >
@@ -204,15 +200,8 @@ export function InviteMemberModal({
           )}
         </div>
 
-        {/* Add Friends Section */}
-        <div className="w-full mt-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              Or Add Friends
-            </span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
+        <div className="border-t border-border pt-4">
+          <p className="mb-3 text-sm font-medium">Recent contacts</p>
 
           {contactsLoading ? (
             <div className="flex justify-center p-4">
@@ -223,7 +212,7 @@ export function InviteMemberModal({
               {contacts.map((contact) => (
                 <div
                   key={contact.id}
-                  className="flex items-center justify-between p-2 rounded-xl hover:bg-soft-clay transition-colors group"
+                  className="group flex items-center justify-between rounded-lg p-2 hover:bg-muted"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
@@ -250,7 +239,8 @@ export function InviteMemberModal({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 rounded-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                    className="h-8 w-8 p-0"
+                    aria-label={`Add ${contact.name}`}
                     onClick={() => {
                       const toastId = toast.loading(
                         `Adding ${contact.name}...`,

@@ -9,8 +9,10 @@ import {
   DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { ArrowRightIcon } from "@/shared/components/ui/icons";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import { useMarkAsPaid } from "@/features/groups/hooks/useGroups";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
@@ -67,84 +69,48 @@ export function MarkAsPaidDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
-        <DialogHeader className="pb-2">
-          <div className="flex flex-col items-center text-center gap-3">
-            <div className="app-card-elevated p-4 rounded-2xl bg-primary/10">
-              <CheckCircle2 size={32} className="text-primary" />
-            </div>
-            <div>
-              <DialogTitle className="font-display text-lg font-bold">
-                Mark as Paid
-              </DialogTitle>
-              <DialogDescription className="text-sm mt-1">
-                Record this payment as completed
-              </DialogDescription>
-            </div>
-          </div>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Report a payment</DialogTitle>
+          <DialogDescription>
+            The receiver will confirm it before balances change.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Settlement details */}
-        <div className="app-card-pressed p-5 rounded-2xl text-center my-1 space-y-3">
-          <p className="font-sans font-extrabold text-3xl text-foreground">
+        <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
+          <p className="text-2xl font-semibold tabular-nums text-foreground">
             {formatCurrency(amount)}
           </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
-              {fromName}
-            </span>
-            <ArrowRightIcon size={16} className="text-muted-foreground mx-1" />
-            <span className="font-display font-bold text-sm bg-card px-3 py-1 rounded-full shadow-sm">
-              {toName}
-            </span>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>{fromName}</span>
+            <ArrowRightIcon size={16} />
+            <span>{toName}</span>
           </div>
         </div>
 
-        {/* Optional note */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Note (optional)
-          </label>
-          <input
-            type="text"
+        <div className="grid gap-2">
+          <Label htmlFor="payment-note">Note (optional)</Label>
+          <Input
+            id="payment-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Paid in cash, Google Pay, Bank transfer..."
+            placeholder="Cash, Google Pay, bank transfer…"
             maxLength={200}
-            className="w-full app-card-pressed px-4 py-3 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
           />
         </div>
 
-        {/* Info note */}
-        <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3 flex gap-3">
-          <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-          <p className="text-xs text-foreground/70 leading-relaxed">
-            The receiver will confirm the payment before your group balances
-            change.
-          </p>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            className="clay-btn-ghost font-display flex-1"
-            disabled={isPending}
-          >
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
-          <button
+          <Button
             type="button"
             onClick={handleConfirm}
             disabled={isPending}
-            className={`clay-btn-primary flex-1 px-6 py-2.5 text-sm font-display font-bold flex items-center justify-center gap-2 ${
-              isPending ? "opacity-70 cursor-not-allowed" : ""
-            }`}
           >
             {isPending && <Loader2 className="animate-spin" size={16} />}
-            {isPending ? "Recording..." : "Report payment"}
-          </button>
+            {isPending ? "Recording…" : "Report payment"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

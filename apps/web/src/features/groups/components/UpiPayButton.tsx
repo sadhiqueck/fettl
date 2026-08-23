@@ -80,12 +80,9 @@ export function UpiPayButton({
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="inline-block">
-            <button
-              disabled
-              className="clay-btn-secondary text-xs px-4 py-2 shrink-0 opacity-50 cursor-not-allowed pointer-events-none"
-            >
+            <Button disabled variant="outline" size="sm">
               No UPI ID
-            </button>
+            </Button>
           </span>
         </TooltipTrigger>
         <TooltipContent side="top">Recipient hasn't set up their UPI ID yet</TooltipContent>
@@ -124,36 +121,22 @@ export function UpiPayButton({
 
   return (
     <>
-      <button
-        onClick={handlePayClick}
-        className="clay-btn-primary text-xs px-4 py-2 shrink-0 shadow-sm flex items-center gap-1.5 hover:scale-[1.02] transition-transform"
-      >
-        <ExternalLink size={12} />
+      <Button onClick={handlePayClick} size="sm">
+        <ExternalLink size={14} />
         Pay via UPI
-      </button>
+      </Button>
 
-      {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="app-card-elevated border-0 ring-0 rounded-3xl max-w-sm">
-          <DialogHeader className="pb-2">
-            <div className="flex flex-col items-center text-center gap-3">
-              <div className="app-card-elevated p-4 rounded-2xl bg-primary/10">
-                <span className="text-3xl">💳</span>
-              </div>
-              <div>
-                <DialogTitle className="font-display text-lg font-bold">
-                  Pay {receiverName}
-                </DialogTitle>
-                <DialogDescription className="text-sm mt-1">
-                  Scan QR or open your UPI app
-                </DialogDescription>
-              </div>
-            </div>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Pay {receiverName}</DialogTitle>
+            <DialogDescription>
+              Scan the QR code or open your UPI app.
+            </DialogDescription>
           </DialogHeader>
 
-          {/* QR Code */}
-          <div className="flex flex-col items-center gap-3 my-1">
-            <div className="app-card-pressed p-4 rounded-2xl bg-white">
+          <div className="flex flex-col items-center gap-3">
+            <div className="rounded-lg border border-border bg-white p-4">
               <QRCodeSVG
                 id="upi-qr-code"
                 value={upiUrl}
@@ -166,22 +149,21 @@ export function UpiPayButton({
             </div>
             <button
               onClick={handleDownloadQr}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-1.5 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <Download size={12} />
               Save QR Code
             </button>
           </div>
 
-          {/* Payment details */}
-          <div className="app-card-pressed p-4 rounded-2xl text-center space-y-1.5">
-            <p className="font-sans font-extrabold text-2xl text-foreground">
+          <div className="space-y-1 rounded-lg border border-border bg-muted/50 p-4 text-center">
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
               ₹{amount.toLocaleString("en-IN")}
             </p>
             <div className="flex items-center justify-center gap-2">
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-sm text-muted-foreground">
                 to{" "}
-                <span className="font-bold text-foreground">
+                <span className="font-medium text-foreground">
                   {receiverVpa}
                 </span>
               </p>
@@ -189,7 +171,8 @@ export function UpiPayButton({
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleCopyVpa}
-                    className="text-primary hover:scale-110 transition-transform p-1"
+                    className="rounded p-1 text-foreground hover:bg-muted"
+                    aria-label="Copy UPI ID"
                   >
                     {copied ? (
                       <Check size={14} className="text-green-500" />
@@ -201,44 +184,30 @@ export function UpiPayButton({
                 <TooltipContent side="top">Copy UPI ID</TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-[11px] text-muted-foreground/70 font-medium">
+            <p className="text-xs text-muted-foreground">
               Fettl: {groupName}
             </p>
           </div>
 
-          {/* Warning */}
-          <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3 flex gap-3">
-            <div className="shrink-0 mt-0.5">
-              <AlertCircle size={16} className="text-primary" />
-            </div>
-            <p className="text-xs text-primary/80 leading-relaxed">
+          <div className="flex gap-2 text-xs text-muted-foreground">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <p>
               Please verify the recipient's name matches your friend's name on
               your UPI app before entering your PIN.
             </p>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowConfirm(false)}
-              className="clay-btn-ghost font-display flex-1"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowConfirm(false)}>
               Cancel
             </Button>
             {isMobile ? (
-              <button
-                onClick={handleConfirmPay}
-                className="clay-btn-primary flex-1 px-6 py-2.5 text-sm font-display font-bold flex items-center justify-center gap-2"
-              >
+              <Button onClick={handleConfirmPay}>
               <ExternalLink size={14} />
-              Open UPI App
-              </button>
+              Open UPI app
+              </Button>
             ) : (
-              <button
-                onClick={handleCopyVpa}
-                className="clay-btn-primary flex-1 px-6 py-2.5 text-sm font-display font-bold flex items-center justify-center gap-2"
-              >
+              <Button onClick={handleCopyVpa}>
                 {copied ? (
                   <>
                     <Check size={14} />
@@ -250,7 +219,7 @@ export function UpiPayButton({
                     Copy UPI ID
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>

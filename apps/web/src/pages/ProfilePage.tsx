@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { VPA_REGEX } from "@fettl/shared";
 import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
 import {
@@ -102,7 +103,7 @@ export default function ProfilePage() {
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="space-y-2">
                     <Skeleton className="h-4 w-1/6" />
-                    <Skeleton className="h-10 rounded-2xl" />
+                  <Skeleton className="h-10 rounded-md" />
                   </div>
                 ))}
               </div>
@@ -115,27 +116,18 @@ export default function ProfilePage() {
 
   return (
     <div className="chat-main-panel overflow-y-auto">
-      <header className="chat-header">
+      <header className="chat-header bg-card">
         <div>
-          <h1 className="font-display text-lg font-extrabold">My profile</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-xl font-semibold tracking-tight">Profile</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage your account settings
           </p>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full animate-app-fade-up">
-        {/* Profile card */}
-        <div className="chat-info-card p-8 mb-6 flex flex-col items-center text-center relative overflow-hidden">
-          <div
-            className="absolute top-[-50%] left-[-10%] w-64 h-64 rounded-full opacity-10 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(circle, #00C700 0%, transparent 70%)",
-              filter: "blur(40px)",
-            }}
-          />
-          <div className="app-avatar size-24 border-4 border-white mb-4 relative z-10">
+      <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto p-6">
+        <div className="mb-6 flex items-center gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="app-avatar size-14 shrink-0 overflow-hidden">
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -144,28 +136,24 @@ export default function ProfilePage() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-full h-full rounded-full bg-primary flex items-center justify-center">
-                <span className="font-display font-bold text-3xl text-primary-foreground">
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <span className="text-lg font-semibold text-foreground">
                   {getInitials(user?.name || "")}
                 </span>
               </div>
             )}
           </div>
-          <h2 className="font-display text-2xl font-extrabold z-10">{name}</h2>
-          <p className="text-muted-foreground font-medium z-10">{email}</p>
-          {user?.vpa && (
-            <p className="text-sm text-primary font-medium z-10 flex items-center gap-1 mt-1">
-              <AtSign size={14} />
-              {user.vpa}
-            </p>
-          )}
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold">{name}</h2>
+            <p className="truncate text-sm text-muted-foreground">{email}</p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card className="chat-info-card border-0 ring-0 p-0 shadow-none">
+          <Card className="rounded-xl border border-border bg-card p-0 shadow-none">
             <CardHeader className="pb-4 pt-6 px-6">
-              <CardTitle className="font-display text-xl font-bold flex items-center gap-2">
-                <UserIcon size={20} className="text-primary" /> Edit details
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <UserIcon size={18} className="text-muted-foreground" /> Personal details
               </CardTitle>
               <CardDescription>
                 Update your personal information below.
@@ -175,7 +163,7 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="profile-name"
-                  className="font-display font-bold text-sm"
+                  className="text-sm font-medium"
                 >
                   Full name
                 </Label>
@@ -184,31 +172,29 @@ export default function ProfilePage() {
                   maxLength={80}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="clay-input"
                 />
               </div>
               <div className="space-y-2">
                 <Label
                   htmlFor="profile-email"
-                  className="font-display font-bold text-sm"
+                  className="text-sm font-medium"
                 >
                   Email address
                 </Label>
                 <Input
                   id="profile-email"
                   value={email}
-                  className="clay-input"
                   disabled
                 />
               </div>
               <div className="space-y-2">
                 <Label
                   htmlFor="profile-vpa"
-                  className="font-display font-bold text-sm flex items-center gap-2"
+                  className="flex items-center gap-2 text-sm font-medium"
                 >
                   UPI ID (VPA)
                   {vpa && isVpaValid && (
-                    <span className="app-badge app-badge-green text-[10px] px-2 py-0 flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 text-xs text-emerald">
                       <CheckCircle2 size={10} />
                       Valid
                     </span>
@@ -224,13 +210,8 @@ export default function ProfilePage() {
                     value={vpa}
                     onChange={(e) => setVpa(e.target.value.trim())}
                     placeholder="yourname@upi"
-                    className={`clay-input pl-11 ${
-                      vpa && !isVpaValid
-                        ? "ring-2 ring-red-500/30"
-                        : vpa && isVpaValid
-                          ? "ring-2 ring-green-500/30"
-                          : ""
-                    }`}
+                    aria-invalid={Boolean(vpa && !isVpaValid)}
+                    className="pl-11"
                   />
                 </div>
                 {vpa && !isVpaValid && (
@@ -243,37 +224,29 @@ export default function ProfilePage() {
               <Separator className="app-divider my-4" />
 
               <div className="flex justify-end">
-                <button
+                <Button
                   onClick={handleSaveChanges}
                   disabled={Boolean(
                     updateProfileMutation.isPending ||
                     (name === user?.name && vpa === (user?.vpa || "")) ||
                     (vpa && !isVpaValid),
                   )}
-                  className={`clay-btn-primary px-8 text-sm ${
-                    updateProfileMutation.isPending ||
-                    (name === user?.name && vpa === (user?.vpa || "")) ||
-                    (vpa && !isVpaValid)
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
                 >
                   {updateProfileMutation.isPending
-                    ? "Saving..."
+                    ? "Saving…"
                     : "Save changes"}
-                </button>
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          <section className="app-card p-6">
+          <section className="rounded-xl border border-border bg-card p-6">
             <ThemeToggle />
           </section>
-          {/* Notifications Card */}
-          <Card className="chat-info-card border-0 ring-0 p-0 shadow-none">
+          <Card className="rounded-xl border border-border bg-card p-0 shadow-none">
             <CardHeader className="pb-4 pt-6 px-6">
-              <CardTitle className="font-display text-xl font-bold flex items-center gap-2">
-                <Bell size={20} className="text-primary" /> Push Notifications
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Bell size={18} className="text-muted-foreground" /> Notifications
               </CardTitle>
               <CardDescription>
                 Receive alerts for new expenses and messages even when the app
@@ -296,27 +269,27 @@ export default function ProfilePage() {
                   settings.
                 </p>
               ) : (
-                <button
+                <Button
                   onClick={async () => {
                     if (!(await subscribe()))
                       toast.error("Could not enable notifications.");
                   }}
                   disabled={pushLoading}
-                  className={`clay-btn-primary px-6 text-sm ${pushLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {pushLoading ? "Enabling..." : "Enable Notifications"}
-                </button>
+                  {pushLoading ? "Enabling…" : "Enable notifications"}
+                </Button>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <button
+        <Button
           onClick={() => logoutMutation.mutate()}
-          className="w-full chat-info-card mt-6 p-5 flex justify-center items-center gap-2 font-display font-bold text-destructive hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+          variant="outline"
+          className="mt-6 w-full text-destructive hover:text-destructive"
         >
           <LogOut size={18} /> Log out
-        </button>
+        </Button>
       </div>
     </div>
   );
