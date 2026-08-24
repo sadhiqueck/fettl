@@ -177,7 +177,7 @@ export function MoneyIcon({ size = 48, className, ...props }: IconProps) {
       <ellipse cx="24" cy="24" rx="14" ry="4.5" fill="url(#primaryGrad)" filter="url(#iconShadow)" />
       <ellipse cx="24" cy="18" rx="12" ry="4" fill="url(#primaryGrad)" filter="url(#iconShadow)" />
       {/* Rupee symbol */}
-      <text x="24" y="22" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold" fontFamily="Geist Variable, sans-serif">₹</text>
+      <text x="24" y="22" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold" fontFamily="Inter Variable, sans-serif">₹</text>
       {/* Shine */}
       <ellipse cx="19" cy="16" rx="4" ry="1.5" fill="white" opacity="0.3" />
     </svg>
