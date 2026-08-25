@@ -227,24 +227,16 @@
 
   /* ── Cards ── */
   .app-card {
-    @apply bg-card rounded-2xl border border-border;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .app-card:hover {
-    @apply shadow-sm;
+    @apply bg-card rounded-xl border border-border;
   }
 
   .app-card-elevated {
-    @apply bg-card rounded-2xl border border-border shadow-sm;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .app-card-elevated:hover {
-    transform: translateY(-2px);
-    @apply shadow-md;
+    @apply bg-card rounded-xl border border-border;
+    box-shadow: 0 10px 24px -26px rgba(32, 57, 84, 0.5);
   }
 
   .app-card-pressed {
-    @apply bg-muted rounded-2xl border border-border/50;
+    @apply bg-muted rounded-lg border border-border;
   }
 
   /* ── Badges ── */
@@ -476,7 +468,8 @@
 .group-row:hover { background:#f7faff; }
 .dark .group-row:hover { background:var(--muted); }
 .group-ledger li+li { border-top:1px solid var(--border); }
-.group-row img { width:47px; height:47px; object-fit:cover; border-radius:12px; }
+.group-row-icon { display:grid; place-items:center; flex:none; width:44px; height:44px; border:1px solid #d7e7fa; border-radius:10px; background:#edf4ff; color:var(--insight); }
+.dark .group-row-icon { border-color:var(--border); background:var(--muted); }
 .group-identity { flex:1; min-width:0; }
 .group-identity strong,.group-identity span,.group-amount span,.group-amount strong { display:block; }
 .group-identity strong { overflow-wrap:anywhere; }
@@ -509,7 +502,7 @@
   .balance-breakdown div { padding:5px 0; }
   .balance-breakdown div + div { border:0; }
   .group-row { padding:14px 12px; gap:9px; }
-  .group-row img { width:36px; height:36px; }
+  .group-row-icon { width:36px; height:36px; }
   .group-search input { width:105px; }
 }
 @media(prefers-reduced-motion:reduce) {
@@ -552,12 +545,23 @@
   .onboarding-form-panel { min-height:min(650px,calc(100svh - 110px)); padding:25px 22px; }
   .onboarding-preview { display:none; }
 }
-.expense-editor,.expense-editor fieldset,.expense-editor details[open] { display:grid; gap:14px; }
-.expense-editor label { display:grid; gap:5px; font-size:13px; font-weight:550; }
-.editor-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.expense-editor select,.expense-editor textarea { width:100%; border:1px solid var(--border); background:var(--card); color:var(--foreground); padding:7px 10px; border-radius:8px; min-height:38px; }
-.expense-editor fieldset,.expense-editor details { padding:12px; border:1px solid var(--border); border-radius:10px; min-width:0; }
-.expense-editor legend,.expense-editor summary { font-weight:600; }.expense-editor summary { cursor:pointer; }
-.editor-members>div { min-height:44px; display:flex; justify-content:space-between; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+.expense-editor { display:grid; gap:20px; }
+.expense-editor label { display:grid; gap:7px; font-size:13px; font-weight:500; }
+.expense-editor input:not([type=checkbox]):not([type=file]) { min-height:39px; }
+.editor-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.expense-editor select,.expense-editor textarea { width:100%; border:1px solid var(--border); background:var(--card); color:var(--foreground); padding:8px 11px; border-radius:8px; min-height:39px; font-size:14px; outline:none; }
+.expense-editor select:focus-visible,.expense-editor textarea:focus-visible { border-color:var(--ring); box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 18%,transparent); }
+.expense-editor textarea { min-height:88px; resize:vertical; }
+.expense-editor fieldset,.expense-editor details { min-width:0; padding:16px; border:1px solid var(--border); border-radius:10px; background:color-mix(in srgb,var(--card) 76%,var(--muted)); }
+.expense-editor fieldset,.expense-editor details[open] { display:grid; gap:15px; }
+.expense-editor legend { padding:0 5px; font-size:14px; font-weight:600; }
+.expense-editor summary { cursor:pointer; font-size:13px; font-weight:500; }
+.editor-members>div { min-height:45px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.editor-members>div:last-child { border-bottom:0; }
 .editor-members label,.expense-editor .inline-choice { display:inline-flex; align-items:center; gap:8px; }
-.editor-members input[type=number] { width:90px; }.editor-item { display:grid; gap:8px; }
+.expense-editor input[type=checkbox] { width:16px; height:16px; accent-color:var(--insight); }
+.expense-editor input[type=number] { appearance:textfield; }
+.expense-editor input[type=number]::-webkit-inner-spin-button,.expense-editor input[type=number]::-webkit-outer-spin-button { appearance:none; margin:0; }
+.editor-members input[type=number] { width:95px; }
+.editor-item { display:grid; gap:12px; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+@media(max-width:480px) { .editor-pair { grid-template-columns:1fr; } }
