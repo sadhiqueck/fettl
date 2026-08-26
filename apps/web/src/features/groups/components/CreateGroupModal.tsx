@@ -10,14 +10,6 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { IconStack } from "@/shared/components/reui/icon-stack";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-  EmptyDescription,
-} from "@/shared/components/ui/empty";
 import {
   Search,
   Loader2,
@@ -26,6 +18,11 @@ import {
   ArrowLeft,
   ArrowRight,
   UserPlus,
+  Plane,
+  House,
+  BriefcaseBusiness,
+  UsersRound,
+  Shapes,
 } from "lucide-react";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import {
@@ -46,32 +43,31 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 
-// Category IDs must match the backend GroupCategory enum exactly when uppercased
 const CATEGORIES = [
   {
     id: "TRIP",
     label: "Trip",
-    imageUrl: "/icons/travel.png",
+    icon: Plane,
   },
   {
     id: "HOME",
     label: "Home",
-    imageUrl: "/icons/home.png",
+    icon: House,
   },
   {
     id: "OFFICE",
     label: "Work",
-    imageUrl: "/icons/office.png",
+    icon: BriefcaseBusiness,
   },
   {
     id: "FRIENDS",
     label: "Friends",
-    imageUrl: "/icons/friends.png",
+    icon: UsersRound,
   },
   {
     id: "OTHER",
     label: "Other",
-    imageUrl: "/icons/other.png",
+    icon: Shapes,
   },
 ];
 
@@ -138,10 +134,10 @@ export function CreateGroupModal({
   };
 
   const handleSubmit = () => {
-    if (!name.trim()) return;
+    if (name.trim().length < 2 || !category) return;
 
     createGroupMutation.mutate(
-      { name, category, description: description || undefined },
+      { name: name.trim(), category, description: description.trim() || undefined },
       {
         onSuccess: async (response) => {
           // response is { message: string, group: { id, ... } }
@@ -162,7 +158,7 @@ export function CreateGroupModal({
           onOpenChange(false);
           navigate(`/groups/${groupId}`);
         },
-        onError: () => {},
+        onError: () => toast.error("Couldn’t create the group. Please try again."),
       },
     );
   };
@@ -172,120 +168,95 @@ export function CreateGroupModal({
 
   return (
     <Dialog open={open} onOpenChange={isCreating ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-120 p-0 overflow-hidden bg-background border-border shadow-xl sm:rounded-2xl">
-        {/* STEP 1: Details & Category */}
+      <DialogContent className="overflow-hidden p-0 sm:max-w-[520px]" showCloseButton={false}>
         {step === 1 && (
-          <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-left-4 fade-in duration-300 min-h-135">
+          <div className="flex flex-col gap-6 p-6">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-semibold">
-                Create a group
-              </DialogTitle>
+              <span className="text-xs font-semibold text-[var(--insight)]">Step 1 of 2 · Details</span>
+              <DialogTitle className="text-xl font-semibold">Create a group</DialogTitle>
               <DialogDescription>
-                Set up your group to split expenses together.
+                Give your shared space a name and category.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="create-group-name">Group Name</Label>
+                <Label htmlFor="create-group-name">Group name</Label>
                 <Input
                   id="create-group-name"
                   maxLength={50}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Weekend trip"
-                  className="rounded-2xl"
                   autoFocus
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="create-group-description">
-                  Description (Optional)
+                  Description (optional)
                 </Label>
                 <Input
                   id="create-group-description"
                   maxLength={200}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What's this group about?"
-                  className="rounded-2xl"
+                  placeholder="What are you sharing?"
                 />
               </div>
-              <div className="space-y-2 pt-2">
-                <Label>Category</Label>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2 pt-1">
+                <Label id="group-category-label">Category</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-labelledby="group-category-label">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => setCategory(cat.id)}
+                      aria-pressed={category === cat.id}
                       className={cn(
-                        "relative flex items-center gap-2 p-2 rounded-2xl border bg-card transition-all hover:border-primary/50 group text-left",
+                        "flex min-h-16 items-center gap-3 rounded-lg border bg-card px-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                         category === cat.id
-                          ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary"
+                          ? "border-[var(--insight)] bg-accent text-accent-foreground"
                           : "border-border",
                       )}
                     >
-                      <IconStack
-                        className={cn(
-                          "h-8 w-8 shrink-0 transition-transform group-hover:scale-105 p-0 overflow-hidden",
-                          category === cat.id && "border-primary/50",
-                        )}
-                      >
-                        <img
-                          src={cat.imageUrl}
-                          alt={cat.label}
-                          className="h-full w-full object-cover"
-                        />
-                      </IconStack>
-                      <span className="text-xs sm:text-sm font-medium leading-tight">
-                        {cat.label}
-                      </span>
+                      <cat.icon size={18} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+                      <span>{cat.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-auto pt-4">
-              <Button variant="ghost" onClick={handleClose}>
+            <div className="flex justify-end gap-2 border-t border-border pt-5">
+              <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
               <Button
                 onClick={() => setStep(2)}
                 disabled={name.trim().length < 2 || !category}
               >
-                Next <ArrowRight className="ml-2 h-4 w-4" />
+                Continue <ArrowRight size={15} />
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 2: Members */}
         {step === 2 && (
-          <div className="p-6 flex flex-col gap-5 animate-in slide-in-from-right-4 fade-in duration-300 min-h-135 max-h-[85vh]">
+          <div className="flex max-h-[85vh] min-h-[480px] flex-col gap-5 p-6">
             <DialogHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 -ml-2 rounded-full"
-                  onClick={() => setStep(1)}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <DialogTitle className="text-xl">Add members</DialogTitle>
-              </div>
+              <span className="text-xs font-semibold text-[var(--insight)]">Step 2 of 2 · People</span>
+              <DialogTitle className="text-xl font-semibold">Add members</DialogTitle>
               <DialogDescription>
                 Invite people to your group. You can also do this later.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="relative mb-2">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by email..."
-                className="pl-9 bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-border rounded-2xl"
+                aria-label="Search people by email"
+                placeholder="Search by email"
+                className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -329,6 +300,7 @@ export function CreateGroupModal({
                   <button
                     type="button"
                     onClick={() => toggleMember(user)}
+                    aria-label={`Remove ${user.name}`}
                     className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 rounded-full p-0.5"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -337,22 +309,21 @@ export function CreateGroupModal({
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4 max-h-75">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
               {/* Search Results */}
               {debouncedSearch.length >= 3 &&
                 searchResults &&
                 searchResults.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Search Results
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Search results
                     </h4>
                     {filteredSearchResults.map((user) => {
                       const isSelected = selectedMembers.has(user.id);
                       return (
                         <div
                           key={user.id}
-                          className="flex items-center justify-between p-2 rounded-2xl hover:bg-muted/50 transition-colors group cursor-pointer"
-                          onClick={() => toggleMember(user)}
+                          className="group flex items-center justify-between rounded-lg border border-border p-2"
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
                             <Avatar className="h-9 w-9">
@@ -373,10 +344,7 @@ export function CreateGroupModal({
                           <Button
                             size="sm"
                             variant={isSelected ? "ghost" : "secondary"}
-                            className={cn(
-                              "shrink-0 rounded-full h-8 px-3",
-                              isSelected ? "text-primary" : "",
-                            )}
+                            className="shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleMember(user);
@@ -401,16 +369,15 @@ export function CreateGroupModal({
                 <div className="space-y-2">
                   {contacts.length > 0 ? (
                     <>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Recent Contacts
+                      <h4 className="text-sm font-medium text-muted-foreground">
+                        Recent contacts
                       </h4>
                       {contacts.map((contact) => {
                         const isSelected = selectedMembers.has(contact.id);
                         return (
                           <div
                             key={contact.id}
-                            className="flex items-center justify-between p-2 rounded-2xl hover:bg-muted/50 transition-colors group cursor-pointer"
-                            onClick={() => toggleMember(contact)}
+                            className="group flex items-center justify-between rounded-lg border border-border p-2"
                           >
                             <div className="flex items-center gap-3 overflow-hidden">
                               <Avatar className="h-9 w-9">
@@ -435,12 +402,7 @@ export function CreateGroupModal({
                             <Button
                               size="sm"
                               variant={isSelected ? "ghost" : "outline"}
-                              className={cn(
-                                "shrink-0 h-8 rounded-full px-3",
-                                isSelected
-                                  ? "text-primary"
-                                  : "opacity-0 group-hover:opacity-100",
-                              )}
+                              className="shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleMember(contact);
@@ -459,45 +421,45 @@ export function CreateGroupModal({
                       })}
                     </>
                   ) : (
-                    <div className="py-8">
-                      <Empty>
-                        <EmptyHeader>
-                          <EmptyMedia>
-                            <IconStack className="h-16 w-16 rounded-xl border-border bg-card shadow-sm p-0 flex items-center justify-center">
-                              <UserPlus className="h-7 w-7 text-muted-foreground" />
-                            </IconStack>
-                          </EmptyMedia>
-                          <EmptyTitle className="text-xl font-semibold mt-4">
-                            Invite the first people in
-                          </EmptyTitle>
-                          <EmptyDescription className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                            Bring friends, roommates, and family into the group
-                            with a fast email invite.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                      </Empty>
+                    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-5 py-8 text-center">
+                      <UserPlus size={23} className="text-muted-foreground" />
+                      <h4 className="text-sm font-medium">No recent contacts</h4>
+                      <p className="max-w-xs text-xs text-muted-foreground">
+                        Search by email to add someone, or create the group and
+                        invite them later.
+                      </p>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="flex justify-between pt-4 border-t border-border mt-auto">
+            <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
               <Button
                 variant="ghost"
-                onClick={handleSubmit}
+                onClick={() => setStep(1)}
                 disabled={isCreating}
+                size="icon-sm"
+                aria-label="Back to group details"
+                className="sm:hidden"
               >
-                Skip for now
+                <ArrowLeft size={15} />
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setStep(1)}
+                disabled={isCreating}
+                className="hidden sm:inline-flex"
+              >
+                <ArrowLeft size={15} /> Back
               </Button>
               <Button onClick={handleSubmit} disabled={isCreating}>
                 {isCreating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Creating...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Creating…
                   </>
                 ) : (
-                  "Create Group"
+                  "Create group"
                 )}
               </Button>
             </div>

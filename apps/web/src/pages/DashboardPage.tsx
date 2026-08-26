@@ -9,6 +9,11 @@ import {
   Search,
   Users,
   Wallet,
+  Plane,
+  House,
+  BriefcaseBusiness,
+  UsersRound,
+  Shapes,
 } from "lucide-react";
 import { CreateGroupModal } from "@/features/groups/components/CreateGroupModal";
 import { useGroups, useJoinGroup } from "@/features/groups/hooks/useGroups";
@@ -24,11 +29,11 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { formatCurrency } from "@/shared/lib/format";
 
-const categoryImages: Record<string, string> = {
-  Travel: "travel",
-  Home: "home",
-  Friends: "friends",
-  Work: "office",
+const categoryIcons: Record<string, typeof Plane> = {
+  Travel: Plane,
+  Home: House,
+  Friends: UsersRound,
+  Work: BriefcaseBusiness,
 };
 
 export default function DashboardPage() {
@@ -148,37 +153,38 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <ul className="group-ledger">
-                  {visible.map((group) => (
-                    <li key={group.id}>
-                      <Link to={`/groups/${group.id}`} className="group-row">
-                        <img
-                          src={`/icons/${categoryImages[group.category] ?? "other"}.png`}
-                          loading="lazy"
-                          alt=""
-                        />
-                        <div className="group-identity">
-                          <strong>{group.name}</strong>
-                          <span>
-                            {group.category} · {group.memberCount}{" "}
-                            {group.memberCount === 1 ? "member" : "members"}
+                  {visible.map((group) => {
+                    const CategoryIcon = categoryIcons[group.category] ?? Shapes;
+                    return (
+                      <li key={group.id}>
+                        <Link to={`/groups/${group.id}`} className="group-row">
+                          <span className="group-row-icon">
+                            <CategoryIcon size={20} aria-hidden="true" />
                           </span>
-                        </div>
-                        <div className="group-amount">
-                          <span>
-                            {group.userBalance > 0
-                              ? "Owed to you"
-                              : group.userBalance < 0
-                                ? "You owe"
-                                : "Settled up"}
-                          </span>
-                          {group.userBalance !== 0 && (
-                            <strong>{formatCurrency(group.userBalance)}</strong>
-                          )}
-                        </div>
-                        <ChevronRight size={16} aria-hidden="true" />
-                      </Link>
-                    </li>
-                  ))}
+                          <div className="group-identity">
+                            <strong>{group.name}</strong>
+                            <span>
+                              {group.category} · {group.memberCount}{" "}
+                              {group.memberCount === 1 ? "member" : "members"}
+                            </span>
+                          </div>
+                          <div className="group-amount">
+                            <span>
+                              {group.userBalance > 0
+                                ? "Owed to you"
+                                : group.userBalance < 0
+                                  ? "You owe"
+                                  : "Settled up"}
+                            </span>
+                            {group.userBalance !== 0 && (
+                              <strong>{formatCurrency(group.userBalance)}</strong>
+                            )}
+                          </div>
+                          <ChevronRight size={16} aria-hidden="true" />
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>
