@@ -45,9 +45,9 @@ export function ProtectedRoute() {
 }
 
 export function PublicRoute() {
-  const { data: user, isLoading, isError, error } = useUserProfile();
+  const { data: user, isLoading, isFetched, isError, error } = useUserProfile();
 
-  if (isLoading) {
+  if (isLoading && !isFetched) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <Loader2 className="size-8 animate-spin text-primary" />

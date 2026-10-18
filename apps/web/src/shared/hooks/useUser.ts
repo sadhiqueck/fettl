@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import type { User, UpdateProfileInput } from "@fettl/shared";
 import { toast } from "sonner";
+import { clearPendingOtp } from "@/features/auth/lib/pendingOtp";
 
 const userKeys = {
   profile: ["user", "profile"] as const,
@@ -52,6 +53,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
+      clearPendingOtp();
       queryClient.clear();
       navigate("/login", { replace: true });
     },

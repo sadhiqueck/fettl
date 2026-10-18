@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Link,
   useLocation,
@@ -14,6 +14,15 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { GoogleIcon } from "@/shared/components/ui/icons";
+import {
+  clearPendingOtp,
+  readPendingOtp,
+  savePendingOtp,
+  type PendingOtp,
+} from "@/features/auth/lib/pendingOtp";
+
+const OTP_LIFETIME_MS = 15 * 60 * 1000;
+const RESEND_WAIT_MS = 62 * 1000;
 
 export default function AuthPage() {
   const signup = useLocation().pathname === "/signup";
@@ -24,12 +33,68 @@ export default function AuthPage() {
     !(isAxiosError(sessionError) && sessionError.response?.status === 401);
   const cache = useQueryClient();
   const { sendOtp, verifyOtp, loginWithGoogle } = useAuth();
-  const [email, setEmail] = useState("");
+  const [pending, setPending] = useState<PendingOtp | null>(readPendingOtp);
+  const [email, setEmail] = useState(pending?.email ?? "");
   const [code, setCode] = useState("");
-  const [sent, setSent] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [now, setNow] = useState(Date.now);
+  const sent = pending !== null;
+  const codeExpired = Boolean(pending && now - pending.sentAt >= OTP_LIFETIME_MS);
+  const resendSeconds = pending
+    ? Math.max(0, Math.ceil((pending.sentAt + RESEND_WAIT_MS - now) / 1000))
+    : 0;
+
+  useEffect(() => {
+    if (!pending) return;
+    const updateNow = () => setNow(Date.now());
+    const interval = window.setInterval(updateNow, 1000);
+    window.addEventListener("focus", updateNow);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", updateNow);
+    };
+  }, [pending]);
+
+  const requestCode = (requestedEmail: string, resent = false) => {
+    sendOtp.mutate(requestedEmail, {
+      onSuccess: () => {
+        const next = { email: requestedEmail, sentAt: Date.now() };
+        savePendingOtp(next);
+        setPending(next);
+        setEmail(requestedEmail);
+        setCode("");
+        setNow(next.sentAt);
+        setNotice(resent ? "A new code has been sent." : "");
+        verifyOtp.reset();
+      },
+    });
+  };
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!pending) {
+      requestCode(email.trim().toLowerCase());
+      return;
+    }
+    if (codeExpired) return;
+    verifyOtp.mutate(
+      { email: pending.email, otp: code },
+      {
+        onSuccess: async () => {
+          clearPendingOtp();
+          await cache.invalidateQueries({ queryKey: userKeys.profile });
+          navigate("/dashboard", { replace: true });
+        },
+      },
+    );
+  };
+
   const mutation = sent ? verifyOtp : sendOtp;
   const message = isAxiosError(mutation.error)
     ? mutation.error.response?.data?.message
+    : null;
+  const resendMessage = isAxiosError(sendOtp.error)
+    ? sendOtp.error.response?.data?.message
     : null;
   return (
     <main className="auth-page">
@@ -69,31 +134,7 @@ export default function AuthPage() {
               <div className="auth-or">or continue with email</div>
             </>
           )}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!sent)
-                sendOtp.mutate(email.trim(), {
-                  onSuccess: () => {
-                    setEmail(email.trim());
-                    setSent(true);
-                  },
-                });
-              else
-                verifyOtp.mutate(
-                  { email, otp: code },
-                  {
-                    onSuccess: async () => {
-                      await cache.invalidateQueries({
-                        queryKey: userKeys.profile,
-                      });
-                      navigate("/dashboard", { replace: true });
-                    },
-                  },
-                );
-            }}
-            className="grid gap-3"
-          >
+          <form onSubmit={submit} className="grid gap-3">
             {sent ? (
               <>
                 <Label htmlFor="code">Verification code</Label>
@@ -108,6 +149,16 @@ export default function AuthPage() {
                   required
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 />
+                {codeExpired && (
+                  <p role="status" className="text-sm text-muted-foreground">
+                    This code has expired. Request a new one below.
+                  </p>
+                )}
+                {notice && (
+                  <p role="status" className="text-sm text-emerald">
+                    {notice}
+                  </p>
+                )}
               </>
             ) : (
               <>
@@ -123,16 +174,22 @@ export default function AuthPage() {
                 />
               </>
             )}
-            {mutation.isError && (
+            {(mutation.isError || (sent && sendOtp.isError)) && (
               <p role="alert" className="text-sm text-destructive">
-                {typeof message === "string"
-                  ? message
+                {typeof (sent && sendOtp.isError ? resendMessage : message) ===
+                "string"
+                  ? sent && sendOtp.isError
+                    ? resendMessage
+                    : message
                   : "Something went wrong. Please try again."}
               </p>
             )}
             <Button
               type="submit"
-              disabled={mutation.isPending || (sent && code.length !== 6)}
+              disabled={
+                mutation.isPending ||
+                (sent && (code.length !== 6 || codeExpired))
+              }
             >
               {mutation.isPending
                 ? "Please wait…"
@@ -143,17 +200,32 @@ export default function AuthPage() {
             </Button>
           </form>
           {sent ? (
-            <Button
-              variant="link"
-              onClick={() => {
-                setSent(false);
-                setCode("");
-                sendOtp.reset();
-                verifyOtp.reset();
-              }}
-            >
-              Change email or request another code
-            </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                variant="link"
+                onClick={() => {
+                  clearPendingOtp();
+                  setPending(null);
+                  setCode("");
+                  setNotice("");
+                  sendOtp.reset();
+                  verifyOtp.reset();
+                }}
+              >
+                Change email
+              </Button>
+              <Button
+                variant="link"
+                disabled={resendSeconds > 0 || sendOtp.isPending}
+                onClick={() => requestCode(pending!.email, true)}
+              >
+                {sendOtp.isPending
+                  ? "Sending…"
+                  : resendSeconds > 0
+                    ? `Resend in ${resendSeconds}s`
+                    : "Resend code"}
+              </Button>
+            </div>
           ) : (
             <>
               <p className="auth-switch">
