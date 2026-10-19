@@ -1,99 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Download, X, ZoomIn } from "lucide-react";
+import { memo, useCallback, useState } from "react";
+import { Download, ImageOff, Loader2, X, ZoomIn } from "lucide-react";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogTitle,
+  DialogTrigger,
 } from "@/shared/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
-
-// ─── Image Lightbox (Full-screen viewer with download) ───
-
-interface ImageLightboxProps {
-  src: string;
-  isOpen: boolean;
-  onClose: () => void;
-  senderName?: string;
-}
-
-function ImageLightbox({ src, isOpen, onClose, senderName }: ImageLightboxProps) {
-  const handleDownload = useCallback(async () => {
-    try {
-      const response = await fetch(src);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `fettl-${Date.now()}.${blob.type.split("/")[1] || "jpg"}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      window.open(src, "_blank");
-    }
-  }, [src]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, onClose]);
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto h-auto p-0 border-0 bg-black/95 backdrop-blur-xl rounded-2xl overflow-hidden [&>button]:hidden">
-        <DialogTitle className="sr-only">Image from {senderName || "chat"}</DialogTitle>
-
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-5 md:p-6 bg-gradient-to-b from-black/60 to-transparent">
-          <span className="text-white/90 text-sm font-medium truncate">
-            {senderName || "Image"}
-          </span>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleDownload}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                >
-                  <Download size={18} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Download image</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Close</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Image */}
-        <div className="flex items-center justify-center w-full h-full min-h-[50vh] p-4">
-          <img
-            src={src}
-            alt="Full size"
-            className="max-w-full max-h-[85vh] object-contain rounded-lg select-none"
-            draggable={false}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Chat Image Bubble (Blur-up loading + click to open) ───
 
 interface ChatImageBubbleProps {
   src: string;
@@ -102,63 +17,98 @@ interface ChatImageBubbleProps {
 
 type ImageLoadState = "loading" | "loaded" | "error";
 
-export const ChatImageBubble = React.memo(function ChatImageBubble({ src, senderName }: ChatImageBubbleProps) {
+export const ChatImageBubble = memo(function ChatImageBubble({
+  src,
+  senderName,
+}: ChatImageBubbleProps) {
   const [loadState, setLoadState] = useState<ImageLoadState>("loading");
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const handleDownload = useCallback(async () => {
+    try {
+      const response = await fetch(src);
+      if (!response.ok) throw new Error("Image download failed.");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fettl-${Date.now()}.${blob.type.split("/")[1] || "jpg"}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(src, "_blank", "noopener,noreferrer");
+    }
+  }, [src]);
+
+  if (loadState === "error") {
+    return (
+      <p className="flex min-h-20 items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
+        <ImageOff size={16} aria-hidden="true" /> Image unavailable
+      </p>
+    );
+  }
 
   return (
-    <>
-      <div
-        className="relative rounded-xl overflow-hidden cursor-pointer group"
-        onClick={() => loadState === "loaded" && setLightboxOpen(true)}
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Open image from ${senderName}`}
+          disabled={loadState !== "loaded"}
+          className="group/image relative block min-h-11 max-w-full overflow-hidden rounded-xl border border-border bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <img
+            src={src}
+            alt=""
+            className="block max-h-72 min-h-11 max-w-full object-contain"
+            loading="lazy"
+            onLoad={() => setLoadState("loaded")}
+            onError={() => setLoadState("error")}
+          />
+          {loadState === "loading" ? (
+            <span className="absolute inset-0 flex items-center justify-center bg-muted" aria-hidden="true">
+              <Loader2 size={18} className="motion-safe:animate-spin" />
+            </span>
+          ) : (
+            <span className="absolute right-2 bottom-2 rounded-lg bg-black/65 p-2 text-white opacity-0 transition-opacity group-hover/image:opacity-100 group-focus-visible/image:opacity-100" aria-hidden="true">
+              <ZoomIn size={16} />
+            </span>
+          )}
+        </button>
+      </DialogTrigger>
+
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-[90dvh] w-[min(92vw,60rem)] max-w-none gap-0 overflow-hidden border-0 bg-neutral-950 p-0 text-white motion-reduce:animate-none"
       >
-        {/* Blurred placeholder while loading */}
-        {loadState === "loading" && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/30 backdrop-blur-sm animate-pulse">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              <span className="text-[10px] text-muted-foreground font-medium">Loading...</span>
-            </div>
+        <div className="flex items-center justify-between gap-2 border-b border-white/15 px-4 py-2">
+          <DialogTitle className="truncate text-sm font-medium">Image from {senderName}</DialogTitle>
+          <DialogDescription className="sr-only">Full-size chat attachment.</DialogDescription>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              onClick={() => void handleDownload()}
+              aria-label="Download image"
+              className="text-white hover:bg-white/15"
+            >
+              <Download aria-hidden="true" />
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon-lg" aria-label="Close image" className="text-white hover:bg-white/15">
+                <X aria-hidden="true" />
+              </Button>
+            </DialogClose>
           </div>
-        )}
-
-        {/* Error state */}
-        {loadState === "error" && (
-          <div className="flex items-center justify-center h-32 bg-muted/20 rounded-xl">
-            <span className="text-xs text-muted-foreground">Failed to load image</span>
-          </div>
-        )}
-
-        {/* Actual image */}
+        </div>
         <img
           src={src}
-          alt="Attached"
-          className={`max-w-full h-auto object-cover transition-all duration-500 ${
-            loadState === "loaded" ? "blur-0 scale-100 opacity-100" : "blur-lg scale-105 opacity-40"
-          }`}
-          loading="lazy"
-          onLoad={() => setLoadState("loaded")}
-          onError={() => setLoadState("error")}
+          alt={`Attachment from ${senderName}`}
+          className="mx-auto max-h-[calc(90dvh-3.875rem)] max-w-full object-contain"
         />
-
-        {/* Hover overlay with zoom icon */}
-        {loadState === "loaded" && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors duration-200">
-            <ZoomIn
-              size={28}
-              className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Full-screen lightbox */}
-      <ImageLightbox
-        src={src}
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        senderName={senderName}
-      />
-    </>
+      </DialogContent>
+    </Dialog>
   );
 });

@@ -31,7 +31,7 @@ export function ExpenseDetailsModal({
   return (
     <DialogContent
       showCloseButton={false}
-      className="inset-x-0 top-auto bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-2xl rounded-b-none p-0 motion-reduce:animate-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[min(30rem,92vw)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
+      className="inset-x-0 top-auto bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-2xl rounded-b-none p-0 motion-reduce:animate-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[min(85dvh,44rem)] sm:w-[min(30rem,92vw)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
     >
       <DialogDescription className="sr-only">
         Expense total, payer and individual shares.
@@ -70,7 +70,7 @@ export function ExpenseDetailsModal({
           </dl>
         </div>
 
-        <div className="space-y-5 px-5 py-5 sm:px-6">
+        <div className="space-y-5 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
           <div className="flex items-center gap-2.5">
             <Avatar className="size-8 shrink-0" aria-hidden="true">
               {expense.paidByAvatar && (

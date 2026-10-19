@@ -96,10 +96,14 @@ export function useChat(groupId: string) {
     [socket, groupId],
   );
 
-  const loadMore = useCallback(() => {
-    if (socket && isConnected && messages.length > 0 && hasMore) {
-      socket.emit("loadMoreMessages", { groupId, cursor: messages[0].id });
-    }
+  const loadMore = useCallback(async () => {
+    if (!socket?.connected || !isConnected || !messages.length || !hasMore) return;
+
+    const reply = await socket.timeout(10000).emitWithAck("loadMoreMessages", {
+      groupId,
+      cursor: messages[0].id,
+    });
+    if (reply?.status !== "success") throw new Error("Message history failed to load.");
   }, [socket, isConnected, groupId, messages, hasMore]);
 
   return {
@@ -107,6 +111,7 @@ export function useChat(groupId: string) {
     hasMore,
     loadMore,
     sendMessage,
+    isConnected,
     setMessages,
   };
 }

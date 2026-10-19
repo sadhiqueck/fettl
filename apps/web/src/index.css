@@ -359,28 +359,45 @@
   }
 
   .chat-main-panel {
-    @apply flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent;
+    @apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background;
+  }
+
+  .thread-rail {
+    @apply mx-auto w-[calc(100%-1.5rem)] max-w-3xl sm:w-[calc(100%-3rem)];
   }
 
   .chat-header {
-    @apply shrink-0 flex items-center justify-between px-6 py-4 border-b border-border/30 bg-transparent;
+    @apply shrink-0 bg-card py-2.5 sm:py-3.5;
   }
 
-  .chat-messages {
-    @apply flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-transparent;
+  .thread-tab {
+    @apply relative inline-flex min-h-12 flex-auto items-center justify-center gap-2 whitespace-nowrap px-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-[state=active]:font-semibold data-[state=active]:text-foreground sm:flex-none sm:px-4 sm:text-sm;
+  }
+
+  .thread-tab[data-state="active"]::after {
+    content: "";
+    @apply absolute inset-x-1.5 bottom-0 h-0.5 rounded-full bg-ring sm:inset-x-4;
+  }
+
+  .thread-panel {
+    @apply min-h-0 flex-1 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring;
+  }
+
+  .thread-scroll {
+    scrollbar-color: var(--muted-foreground) var(--background);
+    scrollbar-width: thin;
+
+    @variant sm {
+      scrollbar-gutter: stable both-edges;
+    }
   }
 
   .chat-info-panel {
-    @apply shrink-0 flex-col overflow-y-auto bg-white dark:bg-[#0f0f0f] md:rounded-2xl shadow-lg;
-    @apply hidden xl:flex w-[320px];
-    border-left: none;
+    @apply hidden w-64 shrink-0 flex-col overflow-y-auto border-l border-border bg-card xl:flex 2xl:w-72;
   }
 
   .chat-info-card {
-    @apply p-6 border-b border-border/40 last:border-0;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
+    @apply border-b border-border px-5 py-6 last:border-0;
   }
 
   .expense-category-icon {
@@ -389,40 +406,24 @@
   }
 
   .chat-bubble-system {
-    @apply rounded-2xl px-4 py-2 mx-auto max-w-[85%] text-center text-xs;
-    background: var(--muted);
-    color: var(--muted-foreground);
+    @apply mx-auto max-w-[85%] rounded-2xl bg-muted px-4 py-2 text-center text-xs text-muted-foreground;
   }
 
   .chat-input-bar {
-    @apply shrink-0 flex items-center gap-3 px-5 py-4 border-t border-border/30 bg-background;
+    @apply shrink-0 border-t border-border bg-card pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:py-3.5;
   }
-
-  .chat-input-field {
-    @apply flex-1 rounded-full px-5 py-3 text-sm outline-none border border-border;
-    background: var(--muted);
-    color: var(--foreground);
-  }
-
-  .chat-send-btn {
-    @apply size-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer border-0 transition-transform;
-    background: var(--primary);
-    color: var(--primary-foreground);
-  }
-  .chat-send-btn:hover  { transform: scale(1.05); }
-  .chat-send-btn:active { transform: scale(0.95); }
 
   .chat-date-divider {
-    @apply flex items-center gap-3 my-4;
+    @apply mt-2 mb-4 flex items-center gap-3 text-xs font-medium text-muted-foreground sm:gap-4;
   }
-  .chat-date-divider span {
-    @apply text-[11px] font-bold uppercase tracking-widest text-muted-foreground shrink-0;
-  }
+
+  .chat-date-divider::before,
   .chat-date-divider::after {
     content: "";
-    @apply flex-1 h-px bg-border/60;
+    @apply h-px flex-1 bg-border;
   }
 }
+
 .workspace { display:flex; height:100dvh; min-height:0; }
 .workspace-nav { display:flex; flex-direction:column; gap:30px; flex:0 0 214px; padding:24px 14px; background:#fbfcfe; border-inline-end:1px solid var(--border); }
 .dark .workspace-nav { background:var(--background); }

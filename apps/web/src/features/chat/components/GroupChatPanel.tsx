@@ -5,14 +5,18 @@ import {
   Plus,
   MoreVertical,
   LogOut,
-  Info,
+  Activity,
+  Receipt,
+  UsersRound,
+  UserPlus,
+  Wallet,
   ArrowLeft,
   MessageCircle,
 } from "lucide-react";
+import { DropdownMenu, Tabs } from "radix-ui";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
-import { WalletIcon } from "@/shared/components/ui/icons";
 import type {
   GroupDetailsData,
   GroupExpense,
@@ -32,7 +36,12 @@ import { ChatActivity } from "./ChatActivity";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useChat } from "@/features/chat/hooks/useChat";
 
-type ChatView = "feed" | "balances" | "activity";
+const views = [
+  { id: "conversation", label: "Conversation", icon: MessageCircle },
+  { id: "expenses", label: "Expenses", icon: Receipt },
+  { id: "balances", label: "Balances", icon: Wallet },
+  { id: "activity", label: "Activity", icon: Activity },
+] as const;
 
 interface GroupChatPanelProps {
   group: GroupDetailsData;
@@ -40,7 +49,6 @@ interface GroupChatPanelProps {
 
 export function GroupChatPanel({ group }: GroupChatPanelProps) {
   const navigate = useNavigate();
-  const [chatView, setChatView] = useState<ChatView>("feed");
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<GroupExpense | null>(
@@ -51,8 +59,8 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   );
   const [settlingPayment, setSettlingPayment] =
     useState<GroupSettlement | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const { data: currentUser } = useUserProfile();
   const leaveGroupMutation = useLeaveGroup();
 
@@ -61,7 +69,7 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   const { uploadFile, isUploading } = useUpload(group.id);
 
   // Real-time chat integration
-  const { messages, hasMore, loadMore, sendMessage } = useChat(group.id);
+  const { messages, hasMore, loadMore, sendMessage, isConnected } = useChat(group.id);
 
   // Optimistic preview: show a local preview immediately while uploading
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -87,7 +95,22 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
     }
   };
 
-  // We moved sorting logic down to the children (ChatFeed and ChatActivity)
+  const handleSendMessage = async () => {
+    const message = chatInput.trim();
+    if (!message || isSending || !isConnected) return false;
+
+    setIsSending(true);
+    try {
+      await sendMessage(message);
+      setChatInput("");
+      return true;
+    } catch {
+      toast.error("Message could not be confirmed. Check the conversation before retrying.");
+      return false;
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleLeaveGroup = () => {
     if (
@@ -108,139 +131,118 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
   return (
     <div className="flex min-h-0 flex-1">
       <div className="chat-main-panel">
-        {/* Header */}
         <header className="chat-header">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/dashboard")}
-              aria-label="Back to overview"
-              className="size-9 rounded-full flex items-center justify-center hover:bg-soft-clay transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="font-display text-lg font-extrabold text-foreground">
-                {group.name}
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {group.memberCount}{" "}
-                {group.memberCount === 1 ? "member" : "members"} ·{" "}
-                {group.category}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button size="sm" onClick={() => setIsAddExpenseOpen(true)}>
-              <Plus /> Add expense
-            </Button>
-            <div className="relative">
+          <div className="thread-rail flex min-w-0 items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <Button
                 variant="ghost"
-                size="icon"
-                className="rounded-full size-9 text-muted-foreground"
-                aria-label="Group options"
-                aria-expanded={showMenu}
-                onClick={() => setShowMenu(!showMenu)}
+                size="icon-lg"
+                onClick={() => navigate("/dashboard")}
+                aria-label="Back to overview"
               >
-                <MoreVertical size={18} />
+                <ArrowLeft className="size-5" aria-hidden="true" />
               </Button>
-              {showMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-1 z-50 app-card py-1 min-w-40 animate-app-scale-in">
-                    <button
-                      onClick={() => {
-                        setIsInviteModalOpen(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-soft-clay font-medium"
+              <span className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground sm:inline-flex">
+                <UsersRound size={19} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="truncate text-base leading-tight font-semibold tracking-tight sm:text-lg" title={group.name}>
+                  {group.name}
+                </h1>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
+                  <span className="hidden sm:inline"> · {group.category}</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <Button className="h-11 gap-1.5 px-2.5 sm:px-3.5" onClick={() => setIsAddExpenseOpen(true)}>
+                <Plus aria-hidden="true" /> Add expense
+              </Button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button variant="ghost" size="icon-lg" aria-label="Group options" className="text-muted-foreground">
+                    <MoreVertical className="size-5" aria-hidden="true" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={6}
+                    className="z-40 min-w-44 rounded-xl border border-border bg-popover p-1 text-sm text-popover-foreground shadow-md"
+                  >
+                    <DropdownMenu.Item
+                      onSelect={() => setIsInviteModalOpen(true)}
+                      className="flex min-h-11 cursor-default items-center gap-2 rounded-lg px-3 outline-none data-highlighted:bg-muted"
                     >
-                      Invite members
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleLeaveGroup();
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-red-50 text-rose-500 font-medium flex items-center gap-2"
+                      <UserPlus size={16} aria-hidden="true" /> Invite members
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      onSelect={handleLeaveGroup}
+                      className="flex min-h-11 cursor-default items-center gap-2 rounded-lg px-3 text-destructive outline-none data-highlighted:bg-muted"
                     >
-                      <LogOut size={14} />
-                      Leave group
-                    </button>
-                  </div>
-                </>
-              )}
+                      <LogOut size={16} aria-hidden="true" /> Leave group
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
             </div>
           </div>
         </header>
 
-        {/* View tabs */}
-        <div className="shrink-0 flex gap-1 px-6 py-2 border-b border-border/20 bg-muted/20">
-          {(
-            [
-              { id: "feed" as const, label: "Feed", icon: MessageCircle },
-              {
-                id: "balances" as const,
-                label: "Balances",
-                icon: WalletIcon,
-              },
-              { id: "activity" as const, label: "Activity", icon: Info },
-            ] as const
-          ).map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setChatView(id)}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-display font-bold transition-all ${
-                chatView === id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs.Root defaultValue="conversation" activationMode="manual" className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 border-b border-border bg-card">
+            <Tabs.List className="thread-rail flex" aria-label="Group views">
+              {views.map(({ id, label, icon: Icon }) => (
+                <Tabs.Trigger
+                  key={id}
+                  value={id}
+                  className="thread-tab"
+                >
+                  <Icon size={16} aria-hidden="true" className="hidden sm:block" />
+                  {label}
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+          </div>
 
-        <div className="chat-messages p-0 md:p-0 overflow-hidden flex flex-col flex-1">
-          {chatView === "feed" && (
-            <ChatFeed
-              group={group}
-              currentUser={currentUser}
-              messages={messages}
-              hasMore={hasMore}
-              loadMore={loadMore}
-              chatInput={chatInput}
-              setChatInput={setChatInput}
-              sendMessage={sendMessage}
-              isUploading={isUploading}
-              uploadPreview={uploadPreview}
-              handleImageUpload={handleImageUpload}
-              fileInputRef={fileInputRef}
-              setIsAddExpenseOpen={setIsAddExpenseOpen}
-              setEditingExpense={setEditingExpense}
-              setDeletingExpense={setDeletingExpense}
-            />
-          )}
-
-          {chatView === "balances" && (
-            <div className="p-4 md:p-6 overflow-y-auto flex-1">
-              <ChatBalances
+          {(["conversation", "expenses"] as const).map((view) => (
+            <Tabs.Content key={view} value={view} tabIndex={-1} className="thread-panel flex flex-col">
+              <ChatFeed
                 group={group}
-                onSettlePayment={setSettlingPayment}
+                currentUserId={currentUser?.id}
+                expensesOnly={view === "expenses"}
+                messages={messages}
+                hasMore={hasMore}
+                loadMore={loadMore}
+                isConnected={isConnected}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                sendMessage={handleSendMessage}
+                isSending={isSending}
+                isUploading={isUploading || !!uploadPreview}
+                uploadPreview={uploadPreview}
+                handleImageUpload={handleImageUpload}
+                fileInputRef={fileInputRef}
+                onAddExpense={() => setIsAddExpenseOpen(true)}
+                onEditExpense={setEditingExpense}
+                onDeleteExpense={setDeletingExpense}
               />
-            </div>
-          )}
+            </Tabs.Content>
+          ))}
 
-          {chatView === "activity" && (
-            <div className="p-4 md:p-6 overflow-y-auto flex-1">
+          <Tabs.Content value="balances" className="thread-panel overflow-y-auto">
+            <div className="thread-rail py-5 sm:py-6">
+              <ChatBalances group={group} onSettlePayment={setSettlingPayment} />
+            </div>
+          </Tabs.Content>
+
+          <Tabs.Content value="activity" className="thread-panel overflow-y-auto">
+            <div className="thread-rail py-5 sm:py-6">
               <ChatActivity group={group} />
             </div>
-          )}
-        </div>
+          </Tabs.Content>
+        </Tabs.Root>
 
         {/* Modals */}
         <AddExpenseModal
@@ -301,62 +303,36 @@ export function GroupChatPanel({ group }: GroupChatPanelProps) {
 
 export function GroupChatLoading() {
   return (
-    <div className="chat-main-panel overflow-hidden">
-      {/* Header Skeleton */}
-      <header className="chat-header flex items-center justify-between border-b border-border/10">
-        <div className="flex items-center gap-3">
-          <Skeleton
-            aria-label="Back to overview"
-            className="size-9 rounded-full"
-          />
-          <div className="space-y-2">
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-3 w-20" />
+    <div className="chat-main-panel" aria-busy="true" aria-label="Loading conversation">
+      <header className="chat-header">
+        <div className="thread-rail flex items-center gap-3">
+          <Skeleton className="size-11 shrink-0 rounded-xl" />
+          <div className="mr-auto space-y-2">
+            <Skeleton className="h-5 w-24 sm:w-36" />
+            <Skeleton className="h-3 w-16" />
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="size-9 rounded-full" />
-          <Skeleton className="size-9 rounded-full" />
-          <Skeleton className="size-9 rounded-full" />
+          <Skeleton className="h-11 w-24 shrink-0 rounded-lg sm:w-32" />
+          <Skeleton className="size-11 shrink-0 rounded-lg" />
         </div>
       </header>
-
-      {/* Messages List Skeleton */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-        {[...Array(4)].map((_, i) => {
-          const isLeft = i % 2 === 0;
-          return (
-            <div
-              key={i}
-              className={`flex items-end gap-2 ${
-                isLeft ? "justify-start" : "justify-end"
-              }`}
-            >
-              {isLeft && (
-                <Skeleton className="size-8 rounded-full mb-1 shrink-0" />
-              )}
-              <div
-                className={`flex flex-col gap-1 max-w-[70%] ${
-                  isLeft ? "items-start" : "items-end"
-                }`}
-              >
-                {isLeft && <Skeleton className="h-3 w-16 mb-1" />}
-                <Skeleton
-                  className={`h-16 ${i % 3 === 0 ? "w-64" : "w-48"} rounded-2xl`}
-                />
-              </div>
-            </div>
-          );
-        })}
+      <div className="shrink-0 border-b border-border bg-card">
+        <div className="thread-rail flex min-h-12 items-center gap-3">
+          {[18, 12, 12, 10].map((width, index) => (
+            <Skeleton key={index} className="h-3" style={{ width: `${width}%`, maxWidth: 84 }} />
+          ))}
+        </div>
       </div>
-
-      {/* Input bar skeleton */}
+      <div className="flex-1 overflow-hidden">
+        <div className="thread-rail space-y-4 py-6">
+          <Skeleton className="h-3 w-24 mx-auto" />
+          <Skeleton className="h-14 w-2/3 max-w-80 rounded-2xl" />
+          <Skeleton className="ml-auto h-14 w-1/2 max-w-64 rounded-2xl" />
+          <Skeleton className="h-32 w-full max-w-lg rounded-2xl" />
+        </div>
+      </div>
       <div className="chat-input-bar">
-        <Skeleton className="size-10 rounded-full shrink-0" />
-        <Skeleton className="flex-1 h-10 rounded-full" />
-        <div className="flex gap-2 shrink-0">
-          <Skeleton className="size-10 rounded-full" />
-          <Skeleton className="size-10 rounded-full" />
+        <div className="thread-rail">
+          <Skeleton className="h-[54px] rounded-2xl" />
         </div>
       </div>
     </div>

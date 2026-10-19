@@ -31,14 +31,16 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
   );
 
   return (
-    <aside className="chat-info-panel hidden xl:flex">
+    <aside className="chat-info-panel" aria-label="Group info">
       {/* Group info card */}
       <div className="chat-info-card">
         <h3 className="font-display font-bold text-sm mb-3">Group info</h3>
 
         <button
+          type="button"
+          aria-expanded={filesExpanded}
           onClick={() => setFilesExpanded(!filesExpanded)}
-          className="flex items-center justify-between w-full text-left py-2"
+          className="flex min-h-11 w-full items-center justify-between rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
         >
           <span className="text-sm font-semibold flex items-center gap-2">
             <Receipt size={16} className="text-primary" />
@@ -54,7 +56,6 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
           <div className="space-y-2 mt-1 pl-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground flex items-center gap-2">
-                <span className="size-2 rounded-full bg-emerald-500" />
                 {expenseCount} recent expenses
               </span>
             </div>
@@ -88,14 +89,14 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display font-bold text-sm flex items-center gap-2">
             <Users size={16} className="text-primary" />
-            {group.memberCount} members
+            {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
           </h3>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 aria-label="Invite member"
                 onClick={onInvite}
-                className="size-7 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                className="flex size-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <Plus size={14} />
               </button>
@@ -132,7 +133,7 @@ export function GroupInfoSidebar({ group, onInvite }: GroupInfoSidebarProps) {
                   </p>
                   {balance && balance.balance !== 0 && (
                     <p
-                      className={`text-[10px] font-medium ${balance.balance > 0 ? "text-emerald-500" : "text-rose-500"}`}
+                      className={`text-xs font-medium tabular-nums ${balance.balance > 0 ? "text-emerald dark:text-emerald-300" : "text-rose dark:text-rose-300"}`}
                     >
                       {balance.balance > 0
                         ? `gets ${formatCurrency(balance.balance)}`
