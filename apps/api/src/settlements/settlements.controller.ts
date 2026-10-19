@@ -1,5 +1,7 @@
 import {
   Patch,
+  Get,
+  Header,
   Controller,
   Post,
   Body,
@@ -27,6 +29,16 @@ export class SettlementsController {
     private readonly settlementsService: SettlementsService,
     private readonly chatGateway: ChatGateway,
   ) {}
+
+  @Get('expenses/:expenseId')
+  @Header('Cache-Control', 'private, no-store')
+  expensePayments(
+    @Param('id') groupId: string,
+    @Param('expenseId') expenseId: string,
+    @GetUser('id') userId: string,
+  ) {
+    return this.settlementsService.expensePayments(userId, groupId, expenseId);
+  }
 
   @Post()
   @UsePipes(new ZodValidationPipe(createSettlementSchema))

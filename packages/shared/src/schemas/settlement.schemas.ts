@@ -9,6 +9,10 @@ export const createSettlementSchema = z.object({
     .positive()
     .max(2147483647),
   note: z.string().max(200).optional(),
+  expenseId: z.string().min(1).optional(),
+  reportId: z.string().uuid().optional(),
+}).refine(({ expenseId, reportId }) => Boolean(expenseId) === Boolean(reportId), {
+  message: "Expense payments require a report ID.",
 });
 
 export type CreateSettlementInput = z.infer<typeof createSettlementSchema>;

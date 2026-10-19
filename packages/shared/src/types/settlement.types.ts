@@ -1,5 +1,18 @@
 export type SettlementStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED'
 
+export interface ExpensePayments {
+  availableAmount: number
+  receiverVpa: string | null
+  payments: {
+    id: string
+    payerId: string
+    name: string
+    amount: number
+    status: SettlementStatus
+    note: string | null
+  }[]
+}
+
 export interface Settlement {
   id: string
   payer: { id: string; name: string; avatarUrl: string | null }

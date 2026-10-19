@@ -192,6 +192,7 @@ model Expense {
   group      Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   splits     ExpenseSplit[]
   activities ActivityLog[]
+  settlements Settlement[]
 
   @@index([groupId])
   @@index([paidById])
@@ -241,6 +242,8 @@ model Settlement {
   groupId    String
   payerId    String
   receiverId String
+  expenseId  String?
+  reportId   String?
   amount     Int              // Amount in smallest currency unit (paise/cents)
   status     SettlementStatus @default(PENDING)
   note       String?
@@ -251,8 +254,11 @@ model Settlement {
   group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer    User  @relation("SettlementPayer",   fields: [payerId],    references: [id])
   receiver User  @relation("SettlementReceiver", fields: [receiverId], references: [id])
+  expense  Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
 
+  @@unique([groupId, payerId, reportId])
   @@index([groupId])
+  @@index([expenseId])
   @@index([payerId])
   @@index([receiverId])
   @@map("settlements")

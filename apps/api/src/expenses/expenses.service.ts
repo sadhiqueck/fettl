@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -56,6 +57,25 @@ async function postBalances(
       create: { groupId, userId, balance: delta },
       update: { balance: { increment: delta } },
     });
+  }
+}
+
+async function checkExpensePayments(
+  tx: Prisma.TransactionClient,
+  expenseId: string,
+) {
+  const payment = await tx.settlement.findFirst({
+    where: {
+      expenseId,
+      isDeleted: false,
+      status: { in: ['PENDING', 'CONFIRMED'] },
+    },
+    select: { id: true },
+  });
+  if (payment) {
+    throw new ConflictException(
+      'The split can’t change and the expense can’t be deleted while it has pending or confirmed payments.',
+    );
   }
 }
 
@@ -197,6 +217,7 @@ export class ExpensesService {
         (field) => field !== undefined,
       );
       if (financialChange) {
+        await checkExpensePayments(tx, id);
         if (!splits || !amount || !splitMethod || !paidById)
           throw new BadRequestException(
             'Provide all allocations when changing a split.',
@@ -245,6 +266,7 @@ export class ExpensesService {
   deleteExpense(userId: string, groupId: string, id: string) {
     return withGroupLock(this.prisma, groupId, async (tx) => {
       const expense = await this.ownedExpense(tx, groupId, id, userId);
+      await checkExpensePayments(tx, id);
       const deleted = await tx.expense.update({
         where: { id },
         data: { isDeleted: true },

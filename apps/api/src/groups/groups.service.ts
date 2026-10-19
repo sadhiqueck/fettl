@@ -323,6 +323,7 @@ export class GroupsService {
             receiverId: true,
             amount: true,
             note: true,
+            expense: { select: { title: true } },
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -389,9 +390,22 @@ export class GroupsService {
       balance: b.balance / 100,
     }));
 
-    // --- Settlement suggestions (greedy algorithm) ---
+    // Exclude amounts awaiting confirmation from new payment suggestions.
+    const availableBalances = new Map(
+      group.balances.map((balance) => [balance.userId, balance.balance]),
+    );
+    for (const { payerId, receiverId, amount } of group.settlements) {
+      const debt = availableBalances.get(payerId) ?? 0;
+      const credit = availableBalances.get(receiverId) ?? 0;
+      if (debt < 0) availableBalances.set(payerId, Math.min(0, debt + amount));
+      if (credit > 0)
+        availableBalances.set(receiverId, Math.max(0, credit - amount));
+    }
     const settlements = this.calculateSettlements(
-      group.balances,
+      Array.from(availableBalances, ([userId, balance]) => ({
+        userId,
+        balance,
+      })),
       memberNameMap,
       memberVpaMap,
       userId,
@@ -445,8 +459,9 @@ export class GroupsService {
       hasOlderExpenses: group.expenses.length > 20,
       balances,
       settlements,
-      pendingPayments: group.settlements.map((payment) => ({
+      pendingPayments: group.settlements.map(({ expense, ...payment }) => ({
         ...payment,
+        expenseTitle: expense?.title ?? null,
         amount: payment.amount / 100,
       })),
       activity,
