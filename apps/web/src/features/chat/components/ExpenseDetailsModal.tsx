@@ -9,9 +9,12 @@ import {
 } from "@/shared/components/ui/dialog";
 import { formatCurrency } from "@/shared/lib/format";
 import type { GroupExpense } from "@/features/groups/hooks/useGroups";
+import { ExpensePaymentPanel } from "./ExpensePaymentPanel";
 
 interface ExpenseDetailsModalProps {
   expense: GroupExpense;
+  groupId: string;
+  groupName: string;
   currentUserId?: string;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -21,6 +24,8 @@ const expenseDate = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" });
 
 export function ExpenseDetailsModal({
   expense,
+  groupId,
+  groupName,
   currentUserId,
   onEdit,
   onDelete,
@@ -88,6 +93,16 @@ export function ExpenseDetailsModal({
               )}
             </p>
           </div>
+
+          {currentUserId && (isPayer || (share && share.amount > 0)) && (
+            <ExpensePaymentPanel
+              groupId={groupId}
+              groupName={groupName}
+              expense={expense}
+              currentUserId={currentUserId}
+              shareAmount={share?.amount ?? 0}
+            />
+          )}
 
           <section>
             <h3 className="mb-1 text-sm font-semibold">Split breakdown</h3>

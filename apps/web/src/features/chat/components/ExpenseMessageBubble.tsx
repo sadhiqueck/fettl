@@ -28,6 +28,8 @@ const categories = {
 
 interface ExpenseMessageBubbleProps {
   expense: GroupExpense;
+  groupId: string;
+  groupName: string;
   currentUserId?: string;
   onEdit: (expense: GroupExpense) => void;
   onDelete: (expense: GroupExpense) => void;
@@ -35,6 +37,8 @@ interface ExpenseMessageBubbleProps {
 
 export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
   expense,
+  groupId,
+  groupName,
   currentUserId,
   onEdit,
   onDelete,
@@ -103,6 +107,8 @@ export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
       </DialogTrigger>
       <ExpenseDetailsModal
         expense={expense}
+        groupId={groupId}
+        groupName={groupName}
         currentUserId={currentUserId}
         onEdit={isPayer ? () => onEdit(expense) : undefined}
         onDelete={isPayer ? () => onDelete(expense) : undefined}

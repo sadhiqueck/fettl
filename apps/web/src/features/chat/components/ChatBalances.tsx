@@ -65,7 +65,8 @@ export function ChatBalances({ group, onSettlePayment }: ChatBalancesProps) {
               <p className="text-sm">
                 {memberName(p.payerId)} reported paying{" "}
                 <strong>{formatCurrency(p.amount)}</strong> to{" "}
-                {memberName(p.receiverId)}.
+                {memberName(p.receiverId)}
+                {p.expenseTitle && <> for <strong>{p.expenseTitle}</strong></>}.
               </p>
               {p.note && (
                 <p className="text-sm text-muted-foreground">{p.note}</p>

@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 import { Button } from "@/shared/components/ui/button";
@@ -17,6 +18,8 @@ interface UpiPayButtonProps {
   receiverName: string;
   amount: number;
   groupName: string;
+  buttonText?: string;
+  disabled?: boolean;
 }
 
 function generateUpiUrl(
@@ -70,6 +73,8 @@ export function UpiPayButton({
   receiverName,
   amount,
   groupName,
+  buttonText,
+  disabled,
 }: UpiPayButtonProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -91,10 +96,6 @@ export function UpiPayButton({
   }
 
   const upiUrl = generateUpiUrl(receiverVpa, receiverName, amount, groupName);
-
-  const handlePayClick = () => {
-    setShowConfirm(true);
-  };
 
   const handleConfirmPay = () => {
     window.location.href = upiUrl;
@@ -120,110 +121,109 @@ export function UpiPayButton({
   };
 
   return (
-    <>
-      <Button onClick={handlePayClick} size="sm">
-        <ExternalLink size={14} />
-        Pay via UPI
-      </Button>
+    <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <DialogTrigger asChild>
+        <Button size="sm" className={buttonText ? "min-h-11" : undefined} disabled={disabled}>
+          <ExternalLink size={14} aria-hidden="true" />
+          {buttonText ?? "Pay via UPI"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Pay {receiverName}</DialogTitle>
+          <DialogDescription>
+            Scan the QR code or open your UPI app.
+          </DialogDescription>
+        </DialogHeader>
 
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Pay {receiverName}</DialogTitle>
-            <DialogDescription>
-              Scan the QR code or open your UPI app.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-col items-center gap-3">
-            <div className="rounded-lg border border-border bg-white p-4">
-              <QRCodeSVG
-                id="upi-qr-code"
-                value={upiUrl}
-                size={180}
-                level="M"
-                includeMargin={false}
-                bgColor="transparent"
-                fgColor="#1a1a1a"
-              />
-            </div>
-            <button
-              onClick={handleDownloadQr}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Download size={12} />
-              Save QR Code
-            </button>
+        <div className="flex flex-col items-center gap-3">
+          <div className="rounded-lg border border-border bg-white p-4">
+            <QRCodeSVG
+              id="upi-qr-code"
+              value={upiUrl}
+              size={180}
+              level="M"
+              includeMargin={false}
+              bgColor="transparent"
+              fgColor="#1a1a1a"
+            />
           </div>
+          <button
+            onClick={handleDownloadQr}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Download size={12} />
+            Save QR Code
+          </button>
+        </div>
 
-          <div className="space-y-1 rounded-lg border border-border bg-muted/50 p-4 text-center">
-            <p className="text-2xl font-semibold tabular-nums text-foreground">
-              ₹{amount.toLocaleString("en-IN")}
+        <div className="space-y-1 rounded-lg border border-border bg-muted/50 p-4 text-center">
+          <p className="text-2xl font-semibold tabular-nums text-foreground">
+            ₹{amount.toLocaleString("en-IN")}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              to{" "}
+              <span className="font-medium text-foreground">
+                {receiverVpa}
+              </span>
             </p>
-            <div className="flex items-center justify-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                to{" "}
-                <span className="font-medium text-foreground">
-                  {receiverVpa}
-                </span>
-              </p>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleCopyVpa}
-                    className="rounded p-1 text-foreground hover:bg-muted"
-                    aria-label="Copy UPI ID"
-                  >
-                    {copied ? (
-                      <Check size={14} className="text-green-500" />
-                    ) : (
-                      <Copy size={14} />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Copy UPI ID</TooltipContent>
-              </Tooltip>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Fettl: {groupName}
-            </p>
-          </div>
-
-          <div className="flex gap-2 text-xs text-muted-foreground">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            <p>
-              Please verify the recipient's name matches your friend's name on
-              your UPI app before entering your PIN.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowConfirm(false)}>
-              Cancel
-            </Button>
-            {isMobile ? (
-              <Button onClick={handleConfirmPay}>
-              <ExternalLink size={14} />
-              Open UPI app
-              </Button>
-            ) : (
-              <Button onClick={handleCopyVpa}>
-                {copied ? (
-                  <>
-                    <Check size={14} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleCopyVpa}
+                  className="rounded p-1 text-foreground hover:bg-muted"
+                  aria-label="Copy UPI ID"
+                >
+                  {copied ? (
+                    <Check size={14} className="text-green-500" />
+                  ) : (
                     <Copy size={14} />
-                    Copy UPI ID
-                  </>
-                )}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Copy UPI ID</TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Fettl: {groupName}
+          </p>
+        </div>
+
+        <div className="flex gap-2 text-xs text-muted-foreground">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <p>
+            Please verify the recipient's name matches your friend's name on
+            your UPI app before entering your PIN.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setShowConfirm(false)}>
+            Cancel
+          </Button>
+          {isMobile ? (
+            <Button onClick={handleConfirmPay}>
+            <ExternalLink size={14} />
+            Open UPI app
+            </Button>
+          ) : (
+            <Button onClick={handleCopyVpa}>
+              {copied ? (
+                <>
+                  <Check size={14} />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  Copy UPI ID
+                </>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

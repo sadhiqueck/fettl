@@ -1,5 +1,5 @@
 import { formatCurrency } from "@/shared/lib/format";
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ interface MarkAsPaidDialogProps {
   toName: string;
   toId: string;
   amount: number; // In display currency (e.g. ₹500, not paise)
+  expense?: { id: string; title: string; reportId: string };
 }
 
 export function MarkAsPaidDialog({
@@ -37,9 +38,11 @@ export function MarkAsPaidDialog({
   toName,
   toId,
   amount,
+  expense,
 }: MarkAsPaidDialogProps) {
+  const noteId = useId();
   const [note, setNote] = useState("");
-  const { mutate: markAsPaid, isPending } = useMarkAsPaid();
+  const { mutate: markAsPaid, isPending, error } = useMarkAsPaid();
 
   const handleConfirm = () => {
     markAsPaid(
@@ -49,6 +52,8 @@ export function MarkAsPaidDialog({
         receiverId: toId,
         amount: Math.round(amount * 100), // Convert to paise
         note: note.trim() || undefined,
+        expenseId: expense?.id,
+        reportId: expense?.reportId,
       },
       {
         onSuccess: () => {
@@ -57,23 +62,17 @@ export function MarkAsPaidDialog({
           });
           onClose();
         },
-        onError: (error: Error) => {
-          const err = error as AxiosError<{ message: string }>;
-          toast.error(
-            err.response?.data?.message || "Failed to record payment",
-          );
-        },
       },
     );
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isPending && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Report a payment</DialogTitle>
           <DialogDescription>
-            The receiver will confirm it before balances change.
+            Report this after you’ve paid. The recipient will confirm it before balances change.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,18 +85,27 @@ export function MarkAsPaidDialog({
             <ArrowRightIcon size={16} />
             <span>{toName}</span>
           </div>
+          {expense && <p className="text-sm wrap-anywhere">{expense.title}</p>}
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="payment-note">Note (optional)</Label>
+          <Label htmlFor={noteId}>Note (optional)</Label>
           <Input
-            id="payment-note"
+            id={noteId}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Cash, Google Pay, bank transfer…"
             maxLength={200}
+            disabled={isPending}
           />
         </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {(error as AxiosError<{ message: string }>).response?.data?.message ||
+              "Couldn’t record the payment. Try again."}
+          </p>
+        )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>

@@ -233,6 +233,8 @@ export function ChatFeed({
                         <div className="mb-3.5 sm:mb-4">
                           <ExpenseMessageBubble
                             expense={item.data}
+                            groupId={group.id}
+                            groupName={group.name}
                             currentUserId={currentUserId}
                             onEdit={onEditExpense}
                             onDelete={onDeleteExpense}

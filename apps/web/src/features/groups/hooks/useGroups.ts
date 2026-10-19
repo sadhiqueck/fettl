@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { apiClient } from "@/shared/lib/apiClient";
-import type { ExpenseSplit } from "@fettl/shared";
+import type { CreateSettlementInput, ExpensePayments, ExpenseSplit } from "@fettl/shared";
 export interface GroupMember {
   id: string;
   name: string;
@@ -85,6 +85,7 @@ export interface GroupDetailsData extends GroupData {
     receiverId: string;
     amount: number;
     note: string | null;
+    expenseTitle?: string | null;
   }[];
   activity: GroupActivity[];
 }
@@ -294,13 +295,7 @@ export function useLeaveGroup() {
 
 /* ─── Mark as Paid (Manual Settlement) ─── */
 
-interface MarkAsPaidPayload {
-  groupId: string;
-  payerId: string;
-  receiverId: string;
-  amount: number; // In paise/cents (smallest currency unit)
-  note?: string;
-}
+type MarkAsPaidPayload = CreateSettlementInput & { groupId: string };
 
 async function markAsPaid({ groupId, ...body }: MarkAsPaidPayload) {
   const { data } = await apiClient.post(`/groups/${groupId}/settlements`, body);
@@ -312,15 +307,20 @@ export function useMarkAsPaid() {
 
   return useMutation({
     mutationFn: markAsPaid,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: groupKeys.detail(variables.groupId),
-      });
-      queryClient.invalidateQueries({ queryKey: groupKeys.all });
+    onSettled: () => queryClient.invalidateQueries({ queryKey: groupKeys.all }),
+  });
+}
+
+export function useExpensePayments(groupId: string, expenseId: string) {
+  return useQuery({
+    queryKey: [...groupKeys.detail(groupId), "expense-payments", expenseId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ExpensePayments>(
+        `/groups/${groupId}/settlements/expenses/${expenseId}`,
+      );
+      return data;
     },
-    onError: () => {
-      toast.error("Couldn't record the settlement. Try again.");
-    },
+    refetchOnMount: "always",
   });
 }
 
