@@ -169,11 +169,9 @@ export function ChatFeed({
                   <ExpenseMessageBubble
                     key={`expense-${item.data.id}`}
                     expense={item.data}
-                    isOwn={item.data.paidById === currentUser?.id}
-                    onEdit={() => setEditingExpense(item.data)}
-                    onDelete={() => setDeletingExpense(item.data)}
+                    onEdit={setEditingExpense}
+                    onDelete={setDeletingExpense}
                     currentUserId={currentUser?.id}
-                    members={group.members}
                   />
                 );
               }

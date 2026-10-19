@@ -1,198 +1,113 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/shared/components/ui/avatar";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import type {
-  GroupExpense,
-  GroupMember,
-} from "@/features/groups/hooks/useGroups";
+  ArrowUpRight,
+  BedDouble,
+  CarFront,
+  Clapperboard,
+  House,
+  Receipt,
+  ShoppingBag,
+  Utensils,
+  Zap,
+} from "lucide-react";
+import { Dialog, DialogTrigger } from "@/shared/components/ui/dialog";
+import type { GroupExpense } from "@/features/groups/hooks/useGroups";
 import { formatCurrency, formatMessageTime } from "@/shared/lib/format";
 import { ExpenseDetailsModal } from "./ExpenseDetailsModal";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  FOOD: "🍕",
-  TRANSPORT: "🚕",
-  ACCOMMODATION: "🏨",
-  SHOPPING: "🛍️",
-  ENTERTAINMENT: "🎬",
-  UTILITIES: "💡",
-  RENT: "🏠",
-  OTHER: "📦",
-};
+const categories = {
+  FOOD: { label: "Food", Icon: Utensils },
+  TRANSPORT: { label: "Transport", Icon: CarFront },
+  ACCOMMODATION: { label: "Accommodation", Icon: BedDouble },
+  SHOPPING: { label: "Shopping", Icon: ShoppingBag },
+  ENTERTAINMENT: { label: "Entertainment", Icon: Clapperboard },
+  UTILITIES: { label: "Utilities", Icon: Zap },
+  RENT: { label: "Rent", Icon: House },
+  OTHER: { label: "Other", Icon: Receipt },
+} as const;
 
 interface ExpenseMessageBubbleProps {
   expense: GroupExpense;
-  isOwn: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
   currentUserId?: string;
-  members: GroupMember[];
+  onEdit: (expense: GroupExpense) => void;
+  onDelete: (expense: GroupExpense) => void;
 }
 
 export const ExpenseMessageBubble = React.memo(function ExpenseMessageBubble({
   expense,
-  isOwn,
+  currentUserId,
   onEdit,
   onDelete,
-  currentUserId,
-  members,
 }: ExpenseMessageBubbleProps) {
-  const [showDetails, setShowDetails] = useState(false);
-  const emoji = CATEGORY_EMOJI[expense.category] ?? "📦";
-
-  // Get max 3 splits to show in the avatar stack
-  const visibleSplits = expense.splits.slice(0, 3);
-  const remainingSplits = Math.max(0, expense.splits.length - 3);
-
-  const avatarStack = (
-    <div className="flex items-center mt-2 opacity-90">
-      <div className="flex -space-x-2">
-        {visibleSplits.map((split) => {
-          const member = (members || []).find((m) => m.id === split.userId);
-          return (
-            <Avatar
-              key={split.userId}
-              className="size-5 border border-background"
-            >
-              {member?.avatarUrl && (
-                <AvatarImage
-                  src={member.avatarUrl}
-                  alt={split.name}
-                  referrerPolicy="no-referrer"
-                />
-              )}
-              <AvatarFallback className="bg-muted text-[8px] font-bold text-muted-foreground">
-                {split.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-          );
-        })}
-      </div>
-      {remainingSplits > 0 && (
-        <span className="text-[10px] ml-1.5 font-medium">
-          +{remainingSplits}
-        </span>
-      )}
-    </div>
-  );
-
-  if (isOwn) {
-    return (
-      <div className="flex flex-col items-end gap-1 group">
-        <div className="flex items-end gap-2 max-w-[85%]">
-          <div
-            className="chat-bubble-outgoing cursor-pointer"
-            onClick={() => setShowDetails(true)}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{emoji}</span>
-              <span className="font-display font-bold text-[15px]">
-                Request for {expense.title}
-              </span>
-            </div>
-            <p className="text-2xl font-bold tracking-tight">
-              {formatCurrency(expense.amount)}
-            </p>
-            {avatarStack}
-            <div className="flex items-center justify-between gap-4 mt-2 opacity-70">
-              <span className="text-[10px]">
-                {formatMessageTime(expense.date)}
-              </span>
-              <ChevronDown
-                size={12}
-                className="opacity-70 group-hover:opacity-100 transition-opacity"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
-          <button
-            onClick={onEdit}
-            className="p-1 rounded hover:bg-soft-clay text-muted-foreground hover:text-primary"
-          >
-            <Pencil size={12} />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-coral-red"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-
-        <ExpenseDetailsModal
-          expense={expense}
-          isOpen={showDetails}
-          onClose={() => setShowDetails(false)}
-          currentUserId={currentUserId}
-        />
-      </div>
-    );
-  }
-
-  const myShare =
-    expense.splits.find((s) => s.userId === currentUserId)?.amount ?? 0;
+  const { label, Icon } =
+    categories[expense.category as keyof typeof categories] ?? categories.OTHER;
+  const isPayer = expense.paidById === currentUserId;
+  const share = expense.splits.find((split) => split.userId === currentUserId);
+  const splitCount = expense.splits.length;
 
   return (
-    <div className="flex flex-col items-start gap-1 group">
-      <span className="text-xs font-semibold text-muted-foreground ml-12">
-        {expense.paidBy}
-      </span>
-      <div className="flex items-end gap-2 max-w-[85%]">
-        <Avatar className="app-avatar size-8 shrink-0 border border-border/50">
-          {expense.paidByAvatar && (
-            <AvatarImage
-              src={expense.paidByAvatar}
-              alt={expense.paidBy}
-              referrerPolicy="no-referrer"
-            />
-          )}
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
-            {expense.paidBy.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div
-          className="chat-bubble-incoming cursor-pointer border border-border/50"
-          onClick={() => setShowDetails(true)}
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="group/expense w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card text-left transition-colors hover:border-ring/50 active:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">{emoji}</span>
-            <span className="font-display font-bold text-[15px] text-foreground">
-              Request for {expense.title}
+          <span className="flex items-start gap-3 p-3.5 sm:p-4">
+            <span className="expense-category-icon size-10">
+              <Icon size={19} aria-hidden="true" />
             </span>
-          </div>
-          <p className="text-xl font-bold text-foreground tracking-tight">
-            {formatCurrency(expense.amount)}
-          </p>
-
-          <div className="mt-2 bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-semibold border border-primary/20 inline-block">
-            Your share: {formatCurrency(myShare)}
-          </div>
-
-          {avatarStack}
-
-          <div className="flex items-center justify-between gap-4 mt-2">
-            <span className="text-[10px] text-muted-foreground">
-              {formatMessageTime(expense.date)}
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground">
+                {label}
+              </span>
+              <span className="text-[15px] leading-5 font-semibold wrap-anywhere">
+                {expense.title}
+              </span>
+              <span className="text-xs leading-5 text-muted-foreground wrap-anywhere">
+                {isPayer ? "You paid" : `Paid by ${expense.paidBy}`} ·{" "}
+                <time dateTime={expense.date}>{formatMessageTime(expense.date)}</time>
+              </span>
             </span>
-            <ChevronDown
-              size={12}
-              className="text-muted-foreground opacity-70 group-hover:opacity-100 transition-transform"
-            />
-          </div>
-        </div>
-      </div>
-
+            <span className="min-w-0 max-w-[45%] shrink-0 text-right">
+              <span className="block text-base leading-5 font-semibold tracking-tight tabular-nums wrap-anywhere sm:text-lg">
+                {formatCurrency(expense.amount)}
+              </span>
+              <span className="text-xs text-muted-foreground">Total</span>
+            </span>
+          </span>
+          <span className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border bg-muted/55 px-3.5 py-2.5 transition-colors group-hover/expense:bg-muted sm:px-4">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              {share ? (
+                <>
+                  <span>Your share</span>
+                  <strong className="font-semibold text-foreground tabular-nums wrap-anywhere">
+                    {formatCurrency(share.amount)}
+                  </strong>
+                </>
+              ) : currentUserId ? (
+                <span>You weren’t part of this split</span>
+              ) : (
+                <span>Split with {splitCount} {splitCount === 1 ? "person" : "people"}</span>
+              )}
+              {expense.receiptUrl && (
+                <span className="inline-flex items-center gap-1">
+                  <Receipt size={13} aria-hidden="true" /> Receipt
+                </span>
+              )}
+            </span>
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
+              View split <ArrowUpRight size={15} aria-hidden="true" />
+            </span>
+          </span>
+        </button>
+      </DialogTrigger>
       <ExpenseDetailsModal
         expense={expense}
-        isOpen={showDetails}
-        onClose={() => setShowDetails(false)}
         currentUserId={currentUserId}
+        onEdit={isPayer ? () => onEdit(expense) : undefined}
+        onDelete={isPayer ? () => onDelete(expense) : undefined}
       />
-    </div>
+    </Dialog>
   );
 });
 

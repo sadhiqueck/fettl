@@ -1,162 +1,166 @@
+import { Pencil, Receipt, Trash2, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Button } from "@/shared/components/ui/button";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/shared/components/ui/avatar";
-
-import {
-  Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { formatCurrency } from "@/shared/lib/format";
 import type { GroupExpense } from "@/features/groups/hooks/useGroups";
-import { Receipt, Users } from "lucide-react";
 
 interface ExpenseDetailsModalProps {
-  expense: GroupExpense | null;
-  isOpen: boolean;
-  onClose: () => void;
+  expense: GroupExpense;
   currentUserId?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
+
+const expenseDate = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" });
 
 export function ExpenseDetailsModal({
   expense,
-  isOpen,
-  onClose,
+  currentUserId,
+  onEdit,
+  onDelete,
 }: ExpenseDetailsModalProps) {
-  if (!expense) return null;
+  const isPayer = expense.paidById === currentUserId;
+  const share = expense.splits.find((split) => split.userId === currentUserId);
 
-  const totalAmount = expense.amount;
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:rounded-3xl rounded-none p-0 flex flex-col m-0 border-0 overflow-hidden bg-background">
-        <DialogHeader className="p-6 pb-0 shrink-0 relative">
-          <div className="flex items-center gap-4 mb-4 mt-2 sm:mt-0">
-            <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <Receipt size={24} />
-            </div>
-            <div>
-              <DialogTitle className="font-display text-xl font-bold line-clamp-1">
-                {expense.title}
-              </DialogTitle>
-              <p className="text-2xl font-bold tracking-tight mt-1 text-foreground">
-                {formatCurrency(totalAmount)}
-              </p>
-            </div>
+    <DialogContent
+      showCloseButton={false}
+      className="inset-x-0 top-auto bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-2xl rounded-b-none p-0 motion-reduce:animate-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[min(30rem,92vw)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
+    >
+      <DialogDescription className="sr-only">
+        Expense total, payer and individual shares.
+      </DialogDescription>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <div className="border-b border-border bg-muted/60 px-5 pt-5 pb-4 sm:px-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="expense-category-icon size-10">
+              <Receipt size={20} aria-hidden="true" />
+            </span>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon-lg" aria-label="Close expense details">
+                <X aria-hidden="true" />
+              </Button>
+            </DialogClose>
           </div>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2 no-scrollbar">
-          <div className="space-y-6">
-            {/* Paid By Section */}
-            <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Paid By
-              </h3>
-              <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-border/50">
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-10 border-2 border-background shadow-sm">
-                    {expense.paidByAvatar && (
-                      <AvatarImage
-                        src={expense.paidByAvatar}
-                        alt={expense.paidBy}
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-                      {expense.paidBy.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-sm">{expense.paidBy}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Paid full amount
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-neon-green">
-                    {formatCurrency(totalAmount)}
-                  </p>
-                </div>
-              </div>
+          <DialogTitle className="text-xl leading-tight font-semibold tracking-tight wrap-anywhere">
+            {expense.title}
+          </DialogTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <time dateTime={expense.date}>{expenseDate.format(new Date(expense.date))}</time>
+          </p>
+          <dl className="mt-4 grid grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Total paid</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums wrap-anywhere">
+                {formatCurrency(expense.amount)}
+              </dd>
             </div>
+            <div className="min-w-0 border-l border-border pl-4">
+              <dt className="text-xs font-medium text-muted-foreground">Your share</dt>
+              <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums wrap-anywhere">
+                {share ? formatCurrency(share.amount) : "—"}
+              </dd>
+            </div>
+          </dl>
+        </div>
 
-            {expense.notes && (
-              <section>
-                <h3 className="font-semibold">Notes</h3>
-                <p className="whitespace-pre-wrap break-words">
-                  {expense.notes}
-                </p>
-              </section>
+        <div className="space-y-5 px-5 py-5 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Avatar className="size-8 shrink-0" aria-hidden="true">
+              {expense.paidByAvatar && (
+                <AvatarImage src={expense.paidByAvatar} alt="" referrerPolicy="no-referrer" />
+              )}
+              <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
+                {expense.paidBy.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-sm wrap-anywhere">
+              {isPayer ? (
+                <strong className="font-semibold">You paid</strong>
+              ) : (
+                <>Paid by <strong className="font-semibold">{expense.paidBy}</strong></>
+              )}
+            </p>
+          </div>
+
+          <section>
+            <h3 className="mb-1 text-sm font-semibold">Split breakdown</h3>
+            {expense.splits.length > 0 ? (
+              <ul className="divide-y divide-border">
+                {expense.splits.map((split) => (
+                  <li key={split.userId} className="flex items-center gap-2.5 py-2.5 text-sm">
+                    <Avatar className="size-8 shrink-0" aria-hidden="true">
+                      <AvatarFallback className="bg-muted text-xs font-semibold text-foreground">
+                        {split.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="min-w-0 flex-1 font-medium wrap-anywhere">
+                      {split.userId === currentUserId ? "You" : split.name}
+                    </span>
+                    <span className="max-w-[48%] text-right font-semibold tabular-nums wrap-anywhere">
+                      {formatCurrency(split.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-2 text-muted-foreground">No shares recorded.</p>
             )}
-            {expense.receiptUrl && (
-              <section>
-                <h3 className="font-semibold">Receipt</h3>
+          </section>
+
+          {expense.notes && (
+            <section className="border-t border-border pt-4">
+              <h3 className="mb-1 text-sm font-semibold">Notes</h3>
+              <p className="whitespace-pre-wrap text-muted-foreground wrap-anywhere">
+                {expense.notes}
+              </p>
+            </section>
+          )}
+          {expense.receiptUrl && (
+            <section className="border-t border-border pt-4">
+              <h3 className="mb-2 text-sm font-semibold">Receipt</h3>
+              <a
+                href={expense.receiptUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open receipt in a new tab"
+                className="block w-fit max-w-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
                 <img
                   alt="Expense receipt"
-                  className="mt-2 max-h-72 rounded-lg object-contain"
+                  className="max-h-72 max-w-full rounded-lg border border-border object-contain"
                   src={expense.receiptUrl}
                 />
-              </section>
-            )}
-            {/* Split Details Section */}
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                <Users size={14} />
-                Split Details
-              </div>
-              <div className="space-y-2">
-                {expense.splits.map((split) => {
-                  const isPayer = split.userId === expense.paidById;
-
-                  const sharePercentage = (split.amount / totalAmount) * 100;
-
-                  return (
-                    <div
-                      key={split.userId}
-                      className="bg-card p-4 rounded-2xl border border-border/50 hover:shadow-sm transition-shadow flex flex-col gap-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-8">
-                            <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
-                              {split.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-semibold text-sm">
-                            {split.name}
-                          </span>
-                        </div>
-                        <div className="text-right flex flex-col items-end">
-                          <span
-                            className={`font-bold ${isPayer ? "text-neon-green" : "text-primary"}`}
-                          >
-                            {formatCurrency(split.amount)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                            {sharePercentage.toFixed(0)}% share
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Visual Progress Bar (simulated share) */}
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${isPayer ? "bg-neon-green" : "bg-primary"}`}
-                          style={{ width: `${sharePercentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+              </a>
+            </section>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      {(onEdit || onDelete) && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+          {onEdit && (
+            <DialogClose asChild>
+              <Button variant="outline" onClick={onEdit} className="h-11">
+                <Pencil aria-hidden="true" /> Edit expense
+              </Button>
+            </DialogClose>
+          )}
+          {onDelete && (
+            <DialogClose asChild>
+              <Button variant="ghost" onClick={onDelete} className="h-11 text-destructive hover:text-destructive">
+                <Trash2 aria-hidden="true" /> Delete
+              </Button>
+            </DialogClose>
+          )}
+        </div>
+      )}
+    </DialogContent>
   );
 }
