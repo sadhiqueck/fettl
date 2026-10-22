@@ -34,7 +34,11 @@ export class AuthService {
 
   // ─── Passwordless Auth ─────────────────────────────────
 
-  async passwordlessStart(dto: PasswordlessStartInput) {
+  async passwordlessStart(dto: PasswordlessStartInput, frontend?: string) {
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (!apiKey)
+      throw new ServiceUnavailableException('Email sign-in is unavailable.');
+
     const recentRequest = await this.prisma.passwordlessRequest.findFirst({
       where: {
         email: dto.email,
@@ -65,7 +69,10 @@ export class AuthService {
       this.configService.get<string>('API_URL') ||
       `http://localhost:${this.configService.get<number>('PORT') || 3000}`
     ).replace(/\/$/, '');
-    const magicLink = `${apiUrl}/auth/magic-link/verify?token=${magicToken}`;
+    const magicLinkUrl = new URL(`${apiUrl}/auth/magic-link/verify`);
+    magicLinkUrl.searchParams.set('token', magicToken);
+    if (frontend) magicLinkUrl.searchParams.set('returnTo', frontend);
+    const magicLink = magicLinkUrl.toString();
 
     await this.prisma.$transaction([
       this.prisma.passwordlessRequest.deleteMany({
@@ -76,19 +83,21 @@ export class AuthService {
       }),
     ]);
 
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    if (!apiKey)
-      throw new ServiceUnavailableException('Email sign-in is unavailable.');
     const resend = new Resend(apiKey);
 
-    const { error } = await resend.emails.send({
-      from:
-        this.configService.get<string>('EMAIL_FROM') ||
-        'Fettl <noreply@sqck.online>',
-      to: dto.email,
-      subject: 'Your Fettl login code',
-      html: getMagicLinkEmailTemplate(otp, magicLink),
-    });
+    let error: unknown;
+    try {
+      ({ error } = await resend.emails.send({
+        from:
+          this.configService.get<string>('EMAIL_FROM') ||
+          'Fettl <noreply@sqck.online>',
+        to: dto.email,
+        subject: 'Your Fettl login code',
+        html: getMagicLinkEmailTemplate(otp, magicLink),
+      }));
+    } catch {
+      error = true;
+    }
     if (error) {
       await this.prisma.passwordlessRequest.deleteMany({
         where: { email: dto.email, tokenHash },
@@ -191,7 +200,7 @@ export class AuthService {
       throw new UnauthorizedException('No user from google');
     }
 
-    const email = profile.emails?.[0]?.value;
+    const email = profile.emails?.[0]?.value?.trim().toLowerCase();
     const name = profile.displayName;
     const googleId = profile.id;
     const avatarUrl = profile.photos?.[0]?.value;

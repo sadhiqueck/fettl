@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 const emailField = z
   .string()
+  .trim()
+  .toLowerCase()
   .email('Invalid email format')
   .regex(
     /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
