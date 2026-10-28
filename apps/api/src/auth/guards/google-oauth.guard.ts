@@ -1,12 +1,17 @@
 import {
+  BadRequestException,
   ExecutionContext,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
+import {
+  createGoogleState,
+  originFromGoogleState,
+  selectFrontendOrigin,
+} from '../google-return-origin';
 
 @Injectable()
 export class GoogleOauthGuard extends AuthGuard('google') {
@@ -16,6 +21,7 @@ export class GoogleOauthGuard extends AuthGuard('google') {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     const res = http.getResponse<Response>();
+    const frontends = process.env.FRONTEND_URL || 'http://localhost:5173';
     const options = {
       path: '/auth/google',
       httpOnly: true,
@@ -33,9 +39,20 @@ export class GoogleOauthGuard extends AuthGuard('google') {
       ) {
         throw new UnauthorizedException('Google sign-in expired. Start again.');
       }
+      try {
+        originFromGoogleState(frontends, req.query.state);
+      } catch {
+        throw new UnauthorizedException('Google sign-in expired. Start again.');
+      }
       return {};
     }
-    const state = randomBytes(32).toString('hex');
+    let origin: string;
+    try {
+      origin = selectFrontendOrigin(frontends, req.query.returnTo);
+    } catch {
+      throw new BadRequestException('Invalid sign-in destination');
+    }
+    const state = createGoogleState(origin);
     res.cookie('oauth_state', state, { ...options, maxAge: 600_000 });
     return { state };
   }

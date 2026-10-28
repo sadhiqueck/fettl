@@ -11,7 +11,9 @@ export function useAuth() {
       apiClient.post("/auth/passwordless/verify", data),
   });
   const loginWithGoogle = () => {
-    window.location.assign(`${apiClient.defaults.baseURL}/auth/google`);
+    const url = new URL(`${apiClient.defaults.baseURL}/auth/google`);
+    url.searchParams.set("returnTo", window.location.origin);
+    window.location.assign(url.toString());
   };
   return { sendOtp, verifyOtp, loginWithGoogle };
 }

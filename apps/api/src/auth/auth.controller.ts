@@ -1,6 +1,7 @@
 import { parseFrontendOrigins } from '../common/config/browser-origin';
 import {
   Controller,
+  BadRequestException,
   Post,
   Body,
   UsePipes,
@@ -21,6 +22,10 @@ import type { Response, Request } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import {
+  originFromGoogleState,
+  selectFrontendOrigin,
+} from './google-return-origin';
 
 @Controller('auth')
 export class AuthController {
@@ -73,8 +78,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(passwordlessStartSchema))
-  passwordlessStart(@Body() dto: PasswordlessStartInput) {
-    return this.authService.passwordlessStart(dto);
+  passwordlessStart(@Body() dto: PasswordlessStartInput, @Req() req: Request) {
+    const frontend = req.headers.origin
+      ? selectFrontendOrigin(
+          this.configService.get<string>('FRONTEND_URL') ??
+            'http://localhost:5173',
+          req.headers.origin,
+        )
+      : this.getFrontendUrl();
+    return this.authService.passwordlessStart(dto, frontend);
   }
 
   @Post('passwordless/verify')
@@ -92,12 +104,26 @@ export class AuthController {
   }
 
   @Get('magic-link/verify')
-  async magicLinkVerify(@Query('token') token: string, @Res() res: Response) {
+  async magicLinkVerify(
+    @Query('token') token: string,
+    @Query('returnTo') returnTo: string | undefined,
+    @Res() res: Response,
+  ) {
+    let frontend: string;
+    try {
+      frontend = selectFrontendOrigin(
+        this.configService.get<string>('FRONTEND_URL') ??
+          'http://localhost:5173',
+        returnTo,
+      );
+    } catch {
+      throw new BadRequestException('Invalid sign-in destination');
+    }
     const { access_token, refresh_token } =
       await this.authService.verifyMagicLink(token);
     this.setCookies(res, access_token, refresh_token);
 
-    return res.redirect(`${this.getFrontendUrl()}/dashboard`);
+    return res.redirect(`${frontend}/dashboard`);
   }
 
   // ─── Google OAuth ──────────────────────────────────────
@@ -111,12 +137,16 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleOauthGuard)
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    const frontend = originFromGoogleState(
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173',
+      req.query.state,
+    );
     const { access_token, refresh_token } = await this.authService.googleLogin(
       req.user as import('./auth.service').GoogleProfile,
     );
     this.setCookies(res, access_token, refresh_token);
 
-    return res.redirect(`${this.getFrontendUrl()}/dashboard`);
+    return res.redirect(`${frontend}/dashboard`);
   }
 
   // ─── Session Management ────────────────────────────────
