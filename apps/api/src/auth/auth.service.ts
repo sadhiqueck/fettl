@@ -14,6 +14,7 @@ import { decryptVpaSafe } from '../common/utils/encryption';
 import { getMagicLinkEmailTemplate } from './templates/magic-link.template';
 import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
+import { parseFrontendOrigins } from '../common/config/browser-origin';
 
 export interface GoogleProfile {
   id: string;
@@ -65,13 +66,14 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-    const apiUrl = (
-      this.configService.get<string>('API_URL') ||
-      `http://localhost:${this.configService.get<number>('PORT') || 3000}`
-    ).replace(/\/$/, '');
-    const magicLinkUrl = new URL(`${apiUrl}/auth/magic-link/verify`);
-    magicLinkUrl.searchParams.set('token', magicToken);
-    if (frontend) magicLinkUrl.searchParams.set('returnTo', frontend);
+    const destination =
+      frontend ||
+      parseFrontendOrigins(
+        this.configService.get<string>('FRONTEND_URL') ||
+          'http://localhost:5173',
+      )[0];
+    const magicLinkUrl = new URL('/auth/confirm', destination);
+    magicLinkUrl.hash = new URLSearchParams({ token: magicToken }).toString();
     const magicLink = magicLinkUrl.toString();
 
     await this.prisma.$transaction([

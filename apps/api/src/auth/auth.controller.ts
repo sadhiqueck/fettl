@@ -16,8 +16,16 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { passwordlessStartSchema, verifyOtpSchema } from '@fettl/shared';
-import type { PasswordlessStartInput, VerifyOtpInput } from '@fettl/shared';
+import {
+  passwordlessStartSchema,
+  verifyMagicLinkSchema,
+  verifyOtpSchema,
+} from '@fettl/shared';
+import type {
+  PasswordlessStartInput,
+  VerifyMagicLinkInput,
+  VerifyOtpInput,
+} from '@fettl/shared';
 import type { Response, Request } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 import { ConfigService } from '@nestjs/config';
@@ -26,6 +34,7 @@ import {
   originFromGoogleState,
   selectFrontendOrigin,
 } from './google-return-origin';
+import { secureAuthCookies } from './auth-cookie-policy';
 
 @Controller('auth')
 export class AuthController {
@@ -35,9 +44,9 @@ export class AuthController {
   ) {}
 
   private get secureCookies() {
-    return (
-      process.env.NODE_ENV === 'production' ||
-      this.configService.get<string>('API_URL')?.startsWith('https://') === true
+    return secureAuthCookies(
+      process.env.NODE_ENV,
+      this.configService.get<string>('API_URL'),
     );
   }
 
@@ -104,7 +113,7 @@ export class AuthController {
   }
 
   @Get('magic-link/verify')
-  async magicLinkVerify(
+  legacyMagicLink(
     @Query('token') token: string,
     @Query('returnTo') returnTo: string | undefined,
     @Res() res: Response,
@@ -119,11 +128,27 @@ export class AuthController {
     } catch {
       throw new BadRequestException('Invalid sign-in destination');
     }
-    const { access_token, refresh_token } =
-      await this.authService.verifyMagicLink(token);
-    this.setCookies(res, access_token, refresh_token);
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+      throw new BadRequestException('Invalid login link');
+    }
+    return res.redirect(
+      302,
+      `${frontend}/auth/confirm#${new URLSearchParams({ token }).toString()}`,
+    );
+  }
 
-    return res.redirect(`${frontend}/dashboard`);
+  @Post('magic-link/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UsePipes(new ZodValidationPipe(verifyMagicLinkSchema))
+  async magicLinkVerify(
+    @Body() dto: VerifyMagicLinkInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { access_token, refresh_token, user } =
+      await this.authService.verifyMagicLink(dto.token);
+    this.setCookies(res, access_token, refresh_token);
+    return { user };
   }
 
   // ─── Google OAuth ──────────────────────────────────────

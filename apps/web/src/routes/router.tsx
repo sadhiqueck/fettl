@@ -10,6 +10,7 @@ import { RouteThemeMode } from "./RouteThemeMode";
 
 // AuthPage stays eager as it's the entry point most sessions hit first
 import AuthPage from "@/pages/AuthPage";
+import MagicLinkPage from "@/pages/MagicLinkPage";
 
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const GroupDetailsPage = lazy(() => import("@/pages/GroupDetailsPage"));
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       // Public static pages (no auth required)
       { path: "terms", element: withSuspense(TermsPage) },
       { path: "privacy", element: withSuspense(PrivacyPage) },
+      { path: "auth/confirm", element: <MagicLinkPage /> },
 
       // Invite links — handled by JoinGroupPage which redirects to login if needed
       { path: "groups/join/:inviteCode", element: withSuspense(JoinGroupPage) },

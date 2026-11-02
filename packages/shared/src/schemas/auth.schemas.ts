@@ -27,7 +27,7 @@ export const verifyOtpSchema = z.object({
 });
 
 export const verifyMagicLinkSchema = z.object({
-  token: z.string().min(1, 'Token is required'),
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Invalid login link'),
 });
 
 export type PasswordlessStartInput = z.infer<typeof passwordlessStartSchema>;

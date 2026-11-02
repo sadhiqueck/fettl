@@ -160,8 +160,8 @@ export function getMagicLinkEmailTemplate(otp: string, magicLink: string) {
           <span>OR</span>
         </div>
         
-        <p class="text" style="margin-bottom: 16px;">Click the button below to instantly log in on this device.</p>
-        <a href="${magicLink}" class="button">Log in to Fettl</a>
+        <p class="text" style="margin-bottom: 16px;">Open the link below, then confirm sign in on the next page.</p>
+        <a href="${magicLink}" class="button">Continue to Fettl</a>
       </div>
       
       <div class="footer">
