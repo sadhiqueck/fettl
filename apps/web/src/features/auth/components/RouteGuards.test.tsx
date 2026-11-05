@@ -18,15 +18,14 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it.each([
-  ["/dashboard", "Session expired"],
-  ["/profile", "Network Error"],
-  ["/analytics", "Service unavailable"],
-  ["/groups/shared-trip", "Network Error"],
-])(
-  "opens sign-in from %s when the session check fails",
-  async (path, message) => {
-    vi.mocked(apiClient.get).mockRejectedValue(new AxiosError(message));
+it.each(["/dashboard", "/profile", "/analytics", "/groups/shared-trip"])(
+  "opens sign-in from %s when the session has expired",
+  async (path) => {
+    vi.mocked(apiClient.get).mockRejectedValue(
+      Object.assign(new AxiosError("Session expired"), {
+        response: { status: 401 },
+      }),
+    );
     const client = new QueryClient();
 
     render(
@@ -50,6 +49,31 @@ it.each([
     expect(screen.queryByText("Private workspace")).toBeNull();
   },
 );
+
+it("offers a retry on connection failure without redirecting to sign-in", async () => {
+  vi.mocked(apiClient.get)
+    .mockRejectedValueOnce(new AxiosError("Network Error", "ERR_NETWORK"))
+    .mockResolvedValue({ data: { id: "user", isOnboarded: true } });
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<h1>Private workspace</h1>} />
+          </Route>
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<AuthPage />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  expect(await screen.findByRole("heading", { name: "Can’t connect to Fettl" })).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(await screen.findByRole("heading", { name: "Private workspace" })).toBeTruthy();
+});
 
 it("keeps the OTP step after the sign-in page remounts", async () => {
   vi.mocked(apiClient.get).mockRejectedValue(new AxiosError("No session"));

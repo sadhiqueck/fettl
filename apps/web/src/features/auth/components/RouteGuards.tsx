@@ -3,9 +3,12 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUserProfile } from "@/shared/hooks/useUser";
 import { Loader2 } from "lucide-react";
 import { FullAppSkeleton } from "@/shared/components/layout/FullAppSkeleton";
+import { isAxiosError } from "axios";
+import { Button } from "@/shared/components/ui/button";
 
 export function ProtectedRoute() {
-  const { data: user, isLoading, isError } = useUserProfile();
+  const { data: user, isLoading, isError, error, refetch, isFetching } =
+    useUserProfile();
   const location = useLocation();
 
   useEffect(() => {
@@ -23,9 +26,32 @@ export function ProtectedRoute() {
     return <FullAppSkeleton />;
   }
 
-  if (isError || !user) {
+  if (isError && isAxiosError(error) && error.response?.status === 401) {
     return <Navigate to="/login" replace />;
   }
+
+  if (isError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-6">
+        <section className="w-full max-w-sm rounded-xl border bg-card p-6 text-center shadow-sm">
+          <h1 className="text-xl font-semibold">Can’t connect to Fettl</h1>
+          <p role="alert" className="mt-2 text-sm text-muted-foreground">
+            Your session couldn’t be checked. Check your connection and try
+            again.
+          </p>
+          <Button
+            className="mt-6 w-full"
+            disabled={isFetching}
+            onClick={() => void refetch()}
+          >
+            {isFetching ? "Trying again…" : "Try again"}
+          </Button>
+        </section>
+      </main>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
 
   // Redirect non-onboarded users to the onboarding page
   if (!user.isOnboarded && location.pathname !== "/onboarding") {
