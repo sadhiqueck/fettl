@@ -12,6 +12,7 @@ import {
   originFromGoogleState,
   selectFrontendOrigin,
 } from '../google-return-origin';
+import { secureAuthCookies } from '../auth-cookie-policy';
 
 @Injectable()
 export class GoogleOauthGuard extends AuthGuard('google') {
@@ -26,9 +27,7 @@ export class GoogleOauthGuard extends AuthGuard('google') {
       path: '/auth/google',
       httpOnly: true,
       sameSite: 'lax' as const,
-      secure:
-        process.env.NODE_ENV === 'production' ||
-        process.env.API_URL?.startsWith('https://') === true,
+      secure: secureAuthCookies(process.env.NODE_ENV, process.env.API_URL),
     };
     if (req.path.endsWith('/callback')) {
       res.clearCookie('oauth_state', options);

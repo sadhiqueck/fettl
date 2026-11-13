@@ -40,6 +40,13 @@ export const envSchema = z
   })
   .superRefine((config, context) => {
     if (config.NODE_ENV === 'production') {
+      if (config.API_URL && !config.API_URL.startsWith('https://')) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['API_URL'],
+          message: 'Production public API URL must use HTTPS',
+        });
+      }
       if (
         config.JWT_ACCESS_SECRET.length < 32 ||
         config.JWT_ACCESS_SECRET.includes('change-in-production')
@@ -89,6 +96,20 @@ export const envSchema = z
         path: ['GOOGLE_CLIENT_SECRET'],
         message: 'Google client ID and secret must be configured together',
       });
+    }
+
+    if (config.GOOGLE_CALLBACK_URL) {
+      const apiUrl = (
+        config.API_URL || `http://localhost:${config.PORT}`
+      ).replace(/\/$/, '');
+      const expected = `${apiUrl}/auth/google/callback`;
+      if (config.GOOGLE_CALLBACK_URL !== expected) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['GOOGLE_CALLBACK_URL'],
+          message: `Must match the public API callback URL: ${expected}`,
+        });
+      }
     }
   });
 

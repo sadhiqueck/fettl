@@ -17,3 +17,14 @@ For an installation originally created with `prisma db push`, back up PostgreSQL
 Run `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`. Run `pnpm --filter @fettl/api test:e2e --runInBand` with an isolated migrated database and the required test environment variables. The integration test creates two temporary accounts and exercises the HTTP ledger.
 
 Serve `apps/web/dist` with SPA fallback to index.html. Set `VITE_API_URL` before building. Run the API with `NODE_ENV=production`, HTTPS frontend and API URLs, and the configured secrets. Use `pnpm --filter @fettl/api start:prod` after migrations and build. WebSocket rooms currently run in one API process. Sign-in delivery, Google redirect URIs, private object storage, and optional push delivery need an acceptance check using the deployment's provider accounts.
+
+## Auth environment checks
+
+| Environment | Frontend and API | Google authorized redirect URI | Session cookies |
+| --- | --- | --- | --- |
+| Local development | `http://localhost:5173` and `http://localhost:3000` | `http://localhost:3000/auth/google/callback` | `HttpOnly`, `SameSite=Lax`; no `Secure` flag |
+| HTTPS deployment | Public `FRONTEND_URL` and `API_URL` over HTTPS | Exactly `${API_URL}/auth/google/callback` | `HttpOnly`, `Secure`, `SameSite=None` |
+
+`GOOGLE_CALLBACK_URL`, if set, must equal the public API callback URL. The API now rejects a mismatched callback at startup; the matching URI must also be registered in the Google OAuth client. `FRONTEND_URL` lists allowed frontend origins. Google sign-in returns to the origin that started it. `VITE_API_URL` must point to the same API origin that sets the OAuth state cookie and receives Google's callback. For local development, keep both the browser's API URL and callback on `localhost:3000`. A public HTTPS API accessed from a localhost frontend relies on third-party cookies, which browsers may block. Prefer a local API for local frontend testing and a stable same-site API hostname for the hosted app.
+
+On each deployed environment, verify that `/auth/google` redirects to Google with the expected `redirect_uri`, the callback returns to the initiating frontend, and the browser retains both auth cookies after callback and refresh. Check `Set-Cookie` attributes in browser developer tools; the cookies are `HttpOnly` and cannot be read from JavaScript. Email links must open `/auth/confirm` without creating a session until **Continue to Fettl** is clicked. Existing emailed API links redirect to the same confirmation page without using their tokens.
