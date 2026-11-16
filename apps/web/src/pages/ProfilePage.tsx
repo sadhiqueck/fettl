@@ -1,11 +1,10 @@
-import { ThemeToggle } from "@/shared/components/ui/ThemeToggle";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { useState } from "react";
 import { VPA_REGEX } from "@fettl/shared";
-import { Input } from "@/shared/components/ui/input";
+import { AtSign, Bell, CheckCircle2, LogOut, UserRound } from "lucide-react";
+import { ThemeToggle } from "@/shared/components/ui/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
-import { Label } from "@/shared/components/ui/label";
-import { Separator } from "@/shared/components/ui/separator";
 import {
   Card,
   CardContent,
@@ -13,31 +12,61 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { usePushNotifications } from "@/shared/hooks/usePushNotifications";
 import {
-  AtSign,
-  CheckCircle2,
-  LogOut,
-  Bell,
-  User as UserIcon,
-} from "lucide-react";
-import {
+  useLogout,
   useUpdateProfile,
   useUserProfile,
-  useLogout,
 } from "@/shared/hooks/useUser";
-import { usePushNotifications } from "@/shared/hooks/usePushNotifications";
-import { Skeleton } from "@/shared/components/ui/skeleton";
+
+type ProfileDraft = { userId: string; name: string; vpa: string };
+
+function initials(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="chat-main-panel overflow-y-auto">
+      <header className="chat-header bg-card">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+      </header>
+      <div className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8">
+        <div className="flex items-center gap-4">
+          <Skeleton className="size-16 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-4 w-52" />
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.85fr)]">
+          <Skeleton className="h-96 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [vpa, setVpa] = useState("");
-  const [isInitialized, setIsInitialized] = useState(false);
-
   const { data: user, isLoading } = useUserProfile();
-  const updateProfileMutation = useUpdateProfile();
-  const logoutMutation = useLogout();
-
+  const [draft, setDraft] = useState<ProfileDraft | null>(null);
+  const updateProfile = useUpdateProfile();
+  const logout = useLogout();
   const {
     isSupported,
     subscription,
@@ -46,73 +75,39 @@ export default function ProfilePage() {
     subscribe,
   } = usePushNotifications();
 
-  if (user && !isInitialized) {
-    setName(user.name || "");
-    setEmail(user.email || "");
-    setVpa(user.vpa || "");
-    setIsInitialized(true);
-  }
+  const currentDraft = draft?.userId === user?.id ? draft : null;
+  const name = currentDraft?.name ?? user?.name ?? "";
+  const vpa = currentDraft?.vpa ?? user?.vpa ?? "";
+  const normalizedName = name.trim();
+  const normalizedVpa = vpa.trim();
+  const nameValid = normalizedName.length >= 2 && normalizedName.length <= 80;
+  const vpaValid = !normalizedVpa || VPA_REGEX.test(normalizedVpa);
+  const changed =
+    Boolean(user) &&
+    (normalizedName !== user?.name || normalizedVpa !== (user?.vpa ?? ""));
 
-  const isVpaValid = vpa.length === 0 || VPA_REGEX.test(vpa);
+  const updateDraft = (patch: Partial<Pick<ProfileDraft, "name" | "vpa">>) => {
+    if (!user) return;
+    setDraft({ userId: user.id, name, vpa, ...patch });
+  };
 
-  const handleSaveChanges = () => {
-    updateProfileMutation.mutate(
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user || !changed || !nameValid || !vpaValid) return;
+    updateProfile.mutate(
+      { name: normalizedName, vpa: normalizedVpa || null },
       {
-        name,
-        vpa: vpa.trim() || null,
-      },
-      {
-        onSuccess: () => toast.success("Profile saved"),
+        onSuccess: () => {
+          setDraft(null);
+          toast.success("Profile saved");
+        },
         onError: () =>
           toast.error("Could not save your profile. Check your details."),
       },
     );
   };
 
-  const getInitials = (fullname: string) => {
-    if (!fullname) return "UK";
-    return fullname
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="chat-main-panel overflow-hidden">
-        <header className="chat-header">
-          <Skeleton className="h-6 w-1/4" />
-          <Skeleton className="h-4 w-1/3 mt-2" />
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full space-y-6">
-          {/* Avatar card skeleton */}
-          <div className="chat-info-card p-8 mb-6 flex flex-col items-center space-y-4">
-            <Skeleton className="size-24 rounded-full" />
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-1/4" />
-          </div>
-
-          <div className="flex flex-col gap-6">
-            {/* Form card skeleton */}
-            <div className="chat-info-card p-6 space-y-6">
-              <Skeleton className="h-6 w-1/4" />
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-1/6" />
-                  <Skeleton className="h-10 rounded-md" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading || !user) return <ProfileSkeleton />;
 
   return (
     <div className="chat-main-panel overflow-y-auto">
@@ -120,176 +115,189 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Profile</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage your account settings
+            Your details and app preferences
           </p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex items-center gap-4 rounded-xl border border-border bg-card p-5">
-          <div className="app-avatar size-14 shrink-0 overflow-hidden">
-            {user?.avatarUrl ? (
-              <img
+      <div className="mx-auto w-full max-w-5xl px-5 py-7 sm:px-8 sm:py-9">
+        <div className="mb-7 flex min-w-0 items-center gap-4 sm:mb-9">
+          <Avatar className="size-16 border-2 border-card bg-muted ring-1 ring-border sm:size-18">
+            {user.avatarUrl && (
+              <AvatarImage
                 src={user.avatarUrl}
-                alt={name}
-                className="w-full h-full rounded-full object-cover"
+                alt=""
                 referrerPolicy="no-referrer"
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted">
-                <span className="text-lg font-semibold text-foreground">
-                  {getInitials(user?.name || "")}
-                </span>
-              </div>
             )}
-          </div>
+            <AvatarFallback className="bg-[#f8edca] text-xl font-semibold text-[#5d481a] dark:bg-[#453a24] dark:text-[#f4dfaa]">
+              {initials(user.name)}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold">{name}</h2>
-            <p className="truncate text-sm text-muted-foreground">{email}</p>
+            <h2 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
+              {user.name}
+            </h2>
+            <p className="truncate text-sm text-muted-foreground">
+              {user.email}
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <Card className="rounded-xl border border-border bg-card p-0 shadow-none">
-            <CardHeader className="pb-4 pt-6 px-6">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.85fr)] lg:gap-6">
+          <Card className="gap-0 py-0 shadow-none">
+            <CardHeader className="gap-1 border-b border-border/70 px-5 py-5 sm:px-7 sm:py-6">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <UserIcon size={18} className="text-muted-foreground" /> Personal details
+                <UserRound className="size-4 text-muted-foreground" />
+                Personal details
               </CardTitle>
               <CardDescription>
-                Update your personal information below.
+                The information people in your groups can see.
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-6 pb-6 space-y-5">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="profile-name"
-                  className="text-sm font-medium"
-                >
-                  Full name
-                </Label>
-                <Input
-                  id="profile-name"
-                  maxLength={80}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="profile-email"
-                  className="text-sm font-medium"
-                >
-                  Email address
-                </Label>
-                <Input
-                  id="profile-email"
-                  value={email}
-                  disabled
-                />
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="profile-vpa"
-                  className="flex items-center gap-2 text-sm font-medium"
-                >
-                  UPI ID (VPA)
-                  {vpa && isVpaValid && (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald">
-                      <CheckCircle2 size={10} />
-                      Valid
-                    </span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <AtSign
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    size={18}
-                  />
+            <CardContent className="px-5 py-6 sm:px-7">
+              <form onSubmit={save} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-name">Full name</Label>
                   <Input
-                    id="profile-vpa"
-                    value={vpa}
-                    onChange={(e) => setVpa(e.target.value.trim())}
-                    placeholder="yourname@upi"
-                    aria-invalid={Boolean(vpa && !isVpaValid)}
-                    className="pl-11"
+                    id="profile-name"
+                    autoComplete="name"
+                    maxLength={80}
+                    value={name}
+                    aria-invalid={Boolean(currentDraft && !nameValid)}
+                    aria-describedby={currentDraft && !nameValid ? "profile-name-error" : undefined}
+                    onChange={(event) => updateDraft({ name: event.target.value })}
                   />
-                </div>
-                {vpa && !isVpaValid && (
-                  <p className="text-xs text-red-500 font-medium">
-                    Enter a valid UPI ID (e.g. name@okaxis)
-                  </p>
-                )}
-              </div>
-
-              <Separator className="app-divider my-4" />
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleSaveChanges}
-                  disabled={Boolean(
-                    updateProfileMutation.isPending ||
-                    (name === user?.name && vpa === (user?.vpa || "")) ||
-                    (vpa && !isVpaValid),
+                  {currentDraft && !nameValid && (
+                    <p id="profile-name-error" className="text-xs text-destructive">
+                      Enter at least two characters.
+                    </p>
                   )}
-                >
-                  {updateProfileMutation.isPending
-                    ? "Saving…"
-                    : "Save changes"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <section className="rounded-xl border border-border bg-card p-6">
-            <ThemeToggle />
-          </section>
-          <Card className="rounded-xl border border-border bg-card p-0 shadow-none">
-            <CardHeader className="pb-4 pt-6 px-6">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <Bell size={18} className="text-muted-foreground" /> Notifications
-              </CardTitle>
-              <CardDescription>
-                Receive alerts for new expenses and messages even when the app
-                is closed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              {!isSupported ? (
-                <p className="text-sm text-muted-foreground">
-                  Push notifications are not supported on your current browser.
-                </p>
-              ) : subscription ? (
-                <div className="flex items-center gap-2 text-green-600 font-medium">
-                  <CheckCircle2 size={18} />
-                  Notifications are enabled
                 </div>
-              ) : permission === "denied" ? (
-                <p className="text-sm text-red-500 font-medium">
-                  Notifications are blocked. Please enable them in your browser
-                  settings.
-                </p>
-              ) : (
-                <Button
-                  onClick={async () => {
-                    if (!(await subscribe()))
-                      toast.error("Could not enable notifications.");
-                  }}
-                  disabled={pushLoading}
-                >
-                  {pushLoading ? "Enabling…" : "Enable notifications"}
-                </Button>
-              )}
+
+                <div className="space-y-2">
+                  <Label>Email address</Label>
+                  <div className="rounded-lg border border-border bg-muted/35 px-3 py-2.5 text-sm text-foreground">
+                    {user.email}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Used for sign in. This address can’t be changed here.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="profile-vpa">UPI ID</Label>
+                  <div className="relative">
+                    <AtSign
+                      aria-hidden="true"
+                      className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                      id="profile-vpa"
+                      value={vpa}
+                      onChange={(event) => updateDraft({ vpa: event.target.value })}
+                      placeholder="yourname@upi"
+                      aria-invalid={Boolean(normalizedVpa && !vpaValid)}
+                      aria-describedby="profile-vpa-help"
+                      className="pl-9"
+                    />
+                  </div>
+                  <p
+                    id="profile-vpa-help"
+                    className={
+                      normalizedVpa && !vpaValid
+                        ? "text-xs text-destructive"
+                        : "text-xs text-muted-foreground"
+                    }
+                  >
+                    {normalizedVpa && !vpaValid
+                      ? "Enter a UPI ID in the format name@bank."
+                      : normalizedVpa
+                        ? "Format looks right. We don’t verify the UPI account."
+                        : "Optional. Group members can use this ID to settle up with you."}
+                  </p>
+                </div>
+
+                <div className="flex justify-end border-t border-border/70 pt-5">
+                  <Button
+                    type="submit"
+                    disabled={
+                      !changed || !nameValid || !vpaValid || updateProfile.isPending
+                    }
+                  >
+                    {updateProfile.isPending ? "Saving…" : "Save changes"}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
-        </div>
 
-        <Button
-          onClick={() => logoutMutation.mutate()}
-          variant="outline"
-          className="mt-6 w-full text-destructive hover:text-destructive"
-        >
-          <LogOut size={18} /> Log out
-        </Button>
+          <div className="grid gap-5">
+            <Card className="gap-0 py-0 shadow-none">
+              <CardHeader className="gap-1 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
+                <CardTitle className="text-base font-semibold">Appearance</CardTitle>
+                <CardDescription>
+                  Choose how Fettl looks on this device.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5 pb-6 sm:px-6">
+                <ThemeToggle />
+              </CardContent>
+            </Card>
+
+            <Card className="gap-0 py-0 shadow-none">
+              <CardHeader className="gap-1 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Bell className="size-4 text-muted-foreground" />
+                  Notifications
+                </CardTitle>
+                <CardDescription>
+                  Alerts for new expenses and messages.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5 pb-6 sm:px-6">
+                {pushLoading ? (
+                  <Skeleton className="h-9 w-36" />
+                ) : !isSupported ? (
+                  <p className="text-sm text-muted-foreground">
+                    Push notifications aren’t available in this browser.
+                  </p>
+                ) : subscription ? (
+                  <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="size-4" /> Notifications are on
+                  </p>
+                ) : permission === "denied" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Notifications are blocked in your browser settings.
+                  </p>
+                ) : (
+                  <Button
+                    variant="outline"
+                    disabled={pushLoading}
+                    onClick={async () => {
+                      if (!(await subscribe()))
+                        toast.error("Could not enable notifications.");
+                    }}
+                  >
+                    Enable notifications
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-start px-1">
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                disabled={logout.isPending}
+                onClick={() => logout.mutate()}
+              >
+                <LogOut className="size-4" />
+                {logout.isPending ? "Signing out…" : "Sign out"}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
