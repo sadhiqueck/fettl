@@ -1,17 +1,18 @@
-import { Check, Moon, Sun, Monitor } from "lucide-react";
+import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { useTheme, type ThemeColor } from "@/context/ThemeContext";
-import { Button } from "@/shared/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/shared/components/ui/tooltip";
+import { cn } from "@/shared/lib/utils";
 
-const COLORS: { name: string; value: ThemeColor; className: string }[] = [
-  { name: "Indigo", value: "indigo", className: "bg-indigo-500" },
-  { name: "Emerald", value: "emerald", className: "bg-emerald-500" },
-  { name: "Rose", value: "rose", className: "bg-rose-500" },
-  { name: "Brand", value: "brand", className: "bg-[#cbe37a]" },
+const MODES = [
+  { name: "Light", value: "light", icon: Sun },
+  { name: "Dark", value: "dark", icon: Moon },
+  { name: "System", value: "system", icon: Monitor },
+] as const;
+
+const COLORS: { name: string; value: ThemeColor; dot: string }[] = [
+  { name: "Fettl", value: "brand", dot: "bg-[#d6af43]" },
+  { name: "Indigo", value: "indigo", dot: "bg-indigo-500" },
+  { name: "Emerald", value: "emerald", dot: "bg-emerald-500" },
+  { name: "Rose", value: "rose", dot: "bg-rose-500" },
 ];
 
 export function ThemeToggle() {
@@ -19,80 +20,54 @@ export function ThemeToggle() {
 
   return (
     <div className="space-y-6">
-      {/* Mode Selection */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">
-          Appearance
-        </label>
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">Mode</legend>
         <div className="grid grid-cols-3 gap-2">
-          <Button
-            variant={themeMode === "light" ? "default" : "outline"}
-            className={`w-full justify-start ${
-              themeMode === "light"
-                ? "border-primary"
-                : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => setThemeMode("light")}
-          >
-            <Sun className="mr-2 h-4 w-4" />
-            Light
-          </Button>
-          <Button
-            variant={themeMode === "dark" ? "default" : "outline"}
-            className={`w-full justify-start ${
-              themeMode === "dark"
-                ? "border-primary"
-                : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => setThemeMode("dark")}
-          >
-            <Moon className="mr-2 h-4 w-4" />
-            Dark
-          </Button>
-          <Button
-            variant={themeMode === "system" ? "default" : "outline"}
-            className={`w-full justify-start ${
-              themeMode === "system"
-                ? "border-primary"
-                : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => setThemeMode("system")}
-          >
-            <Monitor className="mr-2 h-4 w-4" />
-            System
-          </Button>
-        </div>
-      </div>
-
-      {/* Color Theme Selection */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">
-          Color Theme
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {COLORS.map((color) => (
-            <Tooltip key={color.value}>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={color.name}
-                  aria-pressed={themeColor === color.value}
-                  onClick={() => setThemeColor(color.value)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${
-                    themeColor === color.value
-                      ? "border-primary shadow-sm"
-                      : "border-transparent"
-                  } ${color.className}`}
-                >
-                  {themeColor === color.value && (
-                    <Check className="h-5 w-5 text-white" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{color.name}</TooltipContent>
-            </Tooltip>
+          {MODES.map(({ name, value, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={themeMode === value}
+              onClick={() => setThemeMode(value)}
+              className={cn(
+                "flex h-10 items-center justify-center gap-2 rounded-lg border px-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                themeMode === value
+                  ? "border-foreground/30 bg-muted text-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {name}
+            </button>
           ))}
         </div>
-      </div>
+      </fieldset>
+
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">Accent color</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {COLORS.map(({ name, value, dot }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={themeColor === value}
+              onClick={() => setThemeColor(value)}
+              className={cn(
+                "flex h-10 items-center gap-2 rounded-lg border px-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                themeColor === value
+                  ? "border-foreground/30 bg-muted font-medium text-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              )}
+            >
+              <span className={cn("size-4 shrink-0 rounded-full", dot)} aria-hidden="true" />
+              <span className="min-w-0 truncate">{name}</span>
+              {themeColor === value && (
+                <Check className="ml-auto size-3.5 shrink-0" aria-hidden="true" />
+              )}
+            </button>
+          ))}
+        </div>
+      </fieldset>
     </div>
   );
 }
