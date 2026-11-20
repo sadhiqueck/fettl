@@ -284,20 +284,31 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
-
-            <div className="flex justify-start px-1">
-              <Button
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                disabled={logout.isPending}
-                onClick={() => logout.mutate()}
-              >
-                <LogOut className="size-4" />
-                {logout.isPending ? "Signing out…" : "Sign out"}
-              </Button>
-            </div>
           </div>
         </div>
+
+        <section
+          aria-labelledby="profile-session"
+          className="mt-9 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h2 id="profile-session" className="text-sm font-semibold">
+              Account access
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sign out of Fettl on this browser.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={logout.isPending}
+            onClick={() => logout.mutate()}
+          >
+            <LogOut className="size-4" />
+            {logout.isPending ? "Signing out…" : "Sign out"}
+          </Button>
+        </section>
       </div>
     </div>
   );
